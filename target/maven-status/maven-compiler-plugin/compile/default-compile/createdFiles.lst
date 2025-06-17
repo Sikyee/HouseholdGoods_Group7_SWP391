@@ -1,0 +1,15 @@
+Model\Product.class
+Controller\AddAddressController.class
+Model\Category.class
+Controller\DashboardController.class
+DAO\CategoryDAO.class
+DAO\ProductDAO.class
+Controller\UserController.class
+Model\Address.class
+Model\User.class
+Controller\ProductController.class
+DAO\AddressDAO.class
+Controller\ProfileController.class
+DB\DBConnection.class
+Controller\CategoryController.class
+DAO\UserDAO.class
