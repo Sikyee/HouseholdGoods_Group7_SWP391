@@ -258,17 +258,17 @@
                 <div id="banner">
                     <div class="carousel-inner">
                         <div class="carousel-item active" data-bs-interval="10000">
-                            <img id="bannerimg" src="img/banner/banner1.jpg" class="d-block w-100" alt="banner1">
+                            <img id="bannerimg" src="images/banner/banner1.jpg" class="d-block w-100" alt="banner1">
                             <div class="carousel-caption d-none d-md-block">
                             </div>
                         </div>
                         <div class="carousel-item" data-bs-interval="2000">
-                            <img id="bannerimg" src="img/banner/banner2.jpg" class="d-block w-100" alt="banner2">
+                            <img id="bannerimg" src="images/banner/banner2.jpg" class="d-block w-100" alt="banner2">
                             <div class="carousel-caption d-none d-md-block">
                             </div>
                         </div>
                         <div class="carousel-item">
-                            <img id="bannerimg" src="img/banner/banner3.jpg" class="d-block w-100" alt="banner3">
+                            <img id="bannerimg" src="images/banner/banner3.jpg" class="d-block w-100" alt="banner3">
                             <div class="carousel-caption d-none d-md-block">
                             </div>
                         </div>
