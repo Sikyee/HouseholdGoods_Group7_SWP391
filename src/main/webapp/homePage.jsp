@@ -216,27 +216,42 @@
                             aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
-                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                        <!--Search-->
-                        <form class="d-flex container" role="search" aria-label="Search" action="Home?sort=${param['sort']}&search=${param['search']}">
 
-                            <input class="form-control me-2" name="search" type="hidden" placeholder="Search" aria-label="Search">
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <!-- Search -->
+                        <form class="d-flex ms-auto me-3" role="search" action="Home">
+                            <input class="form-control me-2" type="text" placeholder="Search" name="search" aria-label="Search">
+                            <button class="btn btn-outline-light" type="submit">Search</button>
                         </form>
-                        <ul class="navbar-nav d-sm-flex flex-sm-row justify-content-sm-center row me-5">
-                            <!--Login-->
-                            <li class="nav-item col-sm-2">
-                                <a href="/HouseholdGoods/Management/CategoryManagement" class="nav-link
-                                   active
-                                   text-white">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 512 512"
-                                         style="fill: #ffffff;">
-                                    <path d="M217.9 105.9L340.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L217.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1L32 320c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM352 416l64 0c17.7 0 32-14.3 32-32l0-256c0-17.7-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l64 0c53 0 96 43 96 96l0 256c0 53-43 96-96 96l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/>
-                                    </svg>
+
+                        <!-- Session Check -->
+                        <%
+                            Object acc = session.getAttribute("user");
+                        %>
+
+                        <ul class="navbar-nav d-flex flex-row">
+                            <!-- Quản lý (icon) -->
+                            <li class="nav-item me-2">
+                                <a href="/HouseholdGoods/Management/CategoryManagement" class="nav-link text-white">
+                                    <i class="fas fa-th-large"></i>
                                 </a>
                             </li>
-                            <<li> 
-                                <a href="profile" class="btn-profile">Go to Profile</a>
+
+                            <!-- Nút Profile -->
+                            <li class="nav-item me-2">
+                                <a href="profile" class="btn btn-profile">Go to Profile</a>
                             </li>
+
+                            <!-- Nút Login / Logout -->
+                            <% if (acc == null) {%>
+                            <li class="nav-item">
+                                <a href="<%= request.getContextPath()%>/login" class="btn btn-outline-light">Login</a>
+                            </li>
+                            <% } else {%>
+                            <li class="nav-item">
+                                <a href="<%= request.getContextPath()%>/logout" class="btn btn-outline-light">Logout</a>
+                            </li>
+                            <% }%>
                         </ul>
                     </div>
                 </div>
@@ -258,17 +273,17 @@
                 <div id="banner">
                     <div class="carousel-inner">
                         <div class="carousel-item active" data-bs-interval="10000">
-                            <img id="bannerimg" src="images/banner/banner1.jpg" class="d-block w-100" alt="banner1">
+                            <img id="bannerimg" src="img/banner/banner1.jpg" class="d-block w-100" alt="banner1">
                             <div class="carousel-caption d-none d-md-block">
                             </div>
                         </div>
                         <div class="carousel-item" data-bs-interval="2000">
-                            <img id="bannerimg" src="images/banner/banner2.jpg" class="d-block w-100" alt="banner2">
+                            <img id="bannerimg" src="img/banner/banner2.jpg" class="d-block w-100" alt="banner2">
                             <div class="carousel-caption d-none d-md-block">
                             </div>
                         </div>
                         <div class="carousel-item">
-                            <img id="bannerimg" src="images/banner/banner3.jpg" class="d-block w-100" alt="banner3">
+                            <img id="bannerimg" src="img/banner/banner3.jpg" class="d-block w-100" alt="banner3">
                             <div class="carousel-caption d-none d-md-block">
                             </div>
                         </div>

@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <div class="sidebar d-flex flex-column p-3 text-white bg-dark position-fixed" style="width: 220px; height: 100vh;">
-    <a href="dashboard.jsp" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+    <a href="dashboard" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
         <img src="images/logo.png" alt="Logo" style="height: 32px; margin-right: 10px;">
         <span class="fs-5 fw-bold">TRƯỜNG AN</span>
     </a>
@@ -28,6 +28,7 @@
         <li><a href="#" class="nav-link text-white"><i class="fas fa-star"></i> Top 10 Products</a></li>
         <li><a href="#" class="nav-link text-white"><i class="fas fa-users"></i> Top 5 Customers</a></li>
         <li><a href="#" class="nav-link text-white"><i class="fas fa-truck"></i> Supplier</a></li>
+        <li class="nav-item"><a class="nav-link text-white" href="<%= request.getContextPath() %>/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
 </div>
 
