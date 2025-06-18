@@ -13,7 +13,7 @@ import java.util.List;
 @WebServlet("/")
 public class HomeController extends HttpServlet {
 
-    private ProductDAO dao = new ProductDAO();
+    private ProductDAO dao = new ProductDAO();  
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
