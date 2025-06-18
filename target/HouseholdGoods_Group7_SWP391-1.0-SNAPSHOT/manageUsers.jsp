@@ -25,35 +25,37 @@
                 </tr>
             </thead>
             <tbody>
+            <tbody>
                 <%
                     if (users != null && !users.isEmpty()) {
                         for (User u : users) {
-                            String role = (u.getRoleID() == 2) ? "Manager" :
-                                          (u.getRoleID() == 3) ? "Customer" : "Unknown";
+                            if (u.getRoleID() == 2 || u.getRoleID() == 3) { // 🔧 Chỉ hiển thị Staff & Customer
+                                String role = (u.getRoleID() == 2) ? "Staff" : "Customer";
                 %>
                 <tr>
-                    <td><%= u.getUserID() %></td>
-                    <td><%= u.getFullName() %></td>
-                    <td><%= u.getEmail() %></td>
-                    <td><%= u.getPhone() %></td>
-                    <td><%= role %></td>
-                    <td><%= u.getStatus() == 1 ? "Active" : "Banned" %></td>
+                    <td><%= u.getUserID()%></td>
+                    <td><%= u.getFullName()%></td>
+                    <td><%= u.getEmail()%></td>
+                    <td><%= u.getPhone()%></td>
+                    <td><%= role%></td>
+                    <td><%= u.getStatus() == 1 ? "Active" : "Banned"%></td>
                     <td>
-                        <% if (u.getStatus() == 1) { %>
-                            <a href="<%= context %>/User?action=ban&id=<%= u.getUserID() %>" class="btn btn-danger btn-sm">Ban</a>
-                        <% } else { %>
-                            <a href="<%= context %>/User?action=unban&id=<%= u.getUserID() %>" class="btn btn-success btn-sm">Unban</a>
+                        <% if (u.getStatus() == 1) {%>
+                        <a href="<%= context%>/User?action=ban&id=<%= u.getUserID()%>" class="btn btn-danger btn-sm">Ban</a>
+                        <% } else {%>
+                        <a href="<%= context%>/User?action=unban&id=<%= u.getUserID()%>" class="btn btn-success btn-sm">Unban</a>
                         <% } %>
                     </td>
                 </tr>
-                <% 
-                        }
-                    } else {
+                <%
+                        } // end if roleID
+                    } // end for
+                } else {
                 %>
-                <tr>
-                    <td colspan="7" class="text-center">No users found.</td>
-                </tr>
-                <% } %>
+            <tr>
+                <td colspan="7" class="text-center">No users found.</td>
+            </tr>
+            <% }%>
             </tbody>
         </table>
     </div>
