@@ -11,7 +11,7 @@ import Model.User;
 import java.io.IOException;
 
 @WebServlet("/add-address")
-public class AddAddressController extends HttpServlet {
+public class AddressController extends HttpServlet {
 
     private static final String DEFAULT_USERNAME = "Sikyee";
 
