@@ -2,88 +2,80 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package controller;
+package Controller;
 
+import DAO.FeedbackDAO;
 import Model.Feedback;
-import dao.FeedbackDAO;
 
+import jakarta.servlet.*;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
 
-import javax.servlet.*;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.*;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-/**
- *
- * @author thach
- */
+import java.util.List;
 
-
-@WebServlet("/feedback")
+@WebServlet("/Feedback")
 public class FeedbackController extends HttpServlet {
-    private FeedbackDAO feedbackDAO;
+    private FeedbackDAO feedbackDAO = new FeedbackDAO();
 
     @Override
-    public void init() {
-        try {
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            Connection conn = DriverManager.getConnection("jdbc:sqlserver://localhost:1433;databaseName=HouseholdGoods;user=sa;password=123456");
-            feedbackDAO = new FeedbackDAO(conn);
-        } catch (Exception e) {
-            e.printStackTrace();
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String action = request.getParameter("action");
+        int id = request.getParameter("id") != null ? Integer.parseInt(request.getParameter("id")) : -1;
+
+        // Xóa mềm
+        if ("delete".equals(action) && id != -1) {
+            feedbackDAO.softDeleteFeedback(id);
+            response.sendRedirect("Feedback");
+            return;
         }
-    }
 
-    // Gọi: /feedback?action=view&id=...
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String action = req.getParameter("action");
-
-        try {
-            int id = Integer.parseInt(req.getParameter("id"));
-            switch (action) {
-                case "edit":
-                    Feedback fb = feedbackDAO.getFeedbackById(id);
-                    req.setAttribute("fb", fb);
-                    req.getRequestDispatcher("editFeedback.jsp").forward(req, resp);
-                    break;
-
-                case "delete":
-                    feedbackDAO.deleteFeedback(id);
-                    resp.sendRedirect("manageFeedback.jsp");
-                    break;
-
-                case "view":
-                    Feedback detail = feedbackDAO.getFeedbackById(id);
-                    req.setAttribute("fb", detail);
-                    req.getRequestDispatcher("viewFeedback.jsp").forward(req, resp);
-                    break;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            resp.sendRedirect("error.jsp");
+        // Cập nhật trạng thái
+        if ("updateStatus".equals(action) && id != -1) {
+            String status = request.getParameter("status");
+            feedbackDAO.updateStatus(id, status);
+            response.sendRedirect("Feedback");
+            return;
         }
-    }
 
-    // Gọi khi POST submit form chỉnh sửa hoặc phản hồi
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        try {
-            int id = Integer.parseInt(req.getParameter("id"));
-            String action = req.getParameter("action");
+        // Lọc dữ liệu
+        String userName = request.getParameter("userName");
+        String keyword = request.getParameter("keyword");
+        String status = request.getParameter("status");
+        String date = request.getParameter("date");
 
-            if ("edit".equals(action)) {
-                String content = req.getParameter("content");
-                feedbackDAO.updateFeedback(id, content);
-            } else if ("reply".equals(action)) {
-                String reply = req.getParameter("reply");
-                feedbackDAO.replyToFeedback(id, reply);
-            }
-
-            resp.sendRedirect("manageFeedback.jsp");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            resp.sendRedirect("error.jsp");
+        int page = 1;
+        int recordsPerPage = 10;
+        if (request.getParameter("page") != null) {
+            try {
+                page = Integer.parseInt(request.getParameter("page"));
+            } catch (NumberFormatException ignored) {}
         }
+
+        List<Feedback> feedbacks;
+        int totalRecords;
+
+        boolean isFiltered = (userName != null && !userName.isEmpty()) ||
+                             (keyword != null && !keyword.isEmpty()) ||
+                             (status != null && !status.isEmpty()) ||
+                             (date != null && !date.isEmpty());
+
+        if (isFiltered) {
+            feedbacks = feedbackDAO.searchFeedback(userName, keyword, status, date, page, recordsPerPage);
+            totalRecords = feedbackDAO.countFilteredFeedback(userName, keyword, status, date);
+        } else {
+            feedbacks = feedbackDAO.getFeedbackByPage(page, recordsPerPage);
+            totalRecords = feedbackDAO.countAllFeedback();
+        }
+
+        int totalPages = (int) Math.ceil(totalRecords * 1.0 / recordsPerPage);
+
+        request.setAttribute("feedbacks", feedbacks);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
+
+        request.getRequestDispatcher("manageFeedback.jsp").forward(request, response);
     }
 }
