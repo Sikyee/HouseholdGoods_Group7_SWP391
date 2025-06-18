@@ -568,7 +568,7 @@
 
                         <!-- Link ??n trang qu?n lý danh m?c -->
                         <li class="nav-item me-3">
-                            <a class="nav-link" href="<%= request.getContextPath()%>/Management/CategoryManagement">
+                            <a class="nav-link" href="<%= request.getContextPath()%>/Category">
                                 <i class="fas fa-th-large"></i>
                             </a>
                         </li>

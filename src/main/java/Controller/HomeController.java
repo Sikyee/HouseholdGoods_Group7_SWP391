@@ -10,7 +10,7 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/home")
+@WebServlet("/")
 public class HomeController extends HttpServlet {
 
     private ProductDAO dao = new ProductDAO();

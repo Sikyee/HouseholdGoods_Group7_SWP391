@@ -22,6 +22,7 @@ Controller\FeedbackController.class
 Controller\UserController.class
 Model\User.class
 Controller\ProductController.class
+Controller\MainCategoryController.class
 DAO\AddressDAO.class
 Controller\LoginController.class
 Controller\ReplyFeedbackController.class
