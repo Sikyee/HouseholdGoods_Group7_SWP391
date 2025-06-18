@@ -9,16 +9,18 @@ package Model;
  * @author Admin
  */
 public class Category {
-
+    
     private int categoryID;
+    private int subCategoryID;
     private String categoryName;
     private String subCategoryName;
 
     public Category() {
     }
 
-    public Category(int categoryID, String categoryName, String subCategoryName) {
+    public Category(int categoryID, int subCategoryID, String categoryName, String subCategoryName) {
         this.categoryID = categoryID;
+        this.subCategoryID = subCategoryID;
         this.categoryName = categoryName;
         this.subCategoryName = subCategoryName;
     }
@@ -29,6 +31,14 @@ public class Category {
 
     public void setCategoryID(int categoryID) {
         this.categoryID = categoryID;
+    }
+
+    public int getSubCategoryID() {
+        return subCategoryID;
+    }
+
+    public void setSubCategoryID(int categoryID) {
+        this.subCategoryID = categoryID;
     }
 
     public String getCategoryName() {
@@ -46,5 +56,5 @@ public class Category {
     public String getSubCategoryName() {
         return subCategoryName;
     }
-    
+
 }
