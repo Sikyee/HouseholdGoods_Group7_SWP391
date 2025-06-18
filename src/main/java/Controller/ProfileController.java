@@ -49,7 +49,7 @@ public class ProfileController extends HttpServlet {
 
         // Lấy danh sách địa chỉ
         AddressDAO addressDAO = new AddressDAO();
-        List<Address> addressList = addressDAO.getAddressesByCustomerID(user.getUserID());
+        List<Address> addressList = addressDAO.getAddressesByUserID(user.getUserID());
 
         request.setAttribute("user", user);
         request.setAttribute("addressList", addressList);

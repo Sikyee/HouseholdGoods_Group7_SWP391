@@ -1,7 +1,7 @@
 Controller\LogoutController.class
-Controller\AddAddressController.class
 Model\Category.class
 Controller\DashboardController.class
+Controller\HomeController.class
 Model\Utils.class
 DAO\CategoryDAO.class
 DAO\ProductDAO.class
@@ -10,10 +10,13 @@ Model\Feedback.class
 Controller\ProfileController.class
 Controller\PromotionController.class
 DAO\PromotionDAO.class
+Model\ReplyFeedback.class
 Controller\CategoryController.class
 DAO\UserDAO.class
 DAO\FeedbackDAO.class
 Model\Product.class
+DAO\ReplyFeedbackDAO.class
+Controller\AddressController.class
 Model\Promotion.class
 Controller\FeedbackController.class
 Controller\UserController.class
@@ -21,4 +24,5 @@ Model\User.class
 Controller\ProductController.class
 DAO\AddressDAO.class
 Controller\LoginController.class
+Controller\ReplyFeedbackController.class
 DB\DBConnection.class
