@@ -16,7 +16,7 @@
 <div class="content" style="margin-left:240px; padding:20px;">
     <h4>📦 Manage Products</h4>
 
-    <a href="<%= context %>/Product?action=add" class="btn btn-success mb-2">
+    <a href="<%= context%>/Product?action=add" class="btn btn-success mb-2">
         <i class="fas fa-plus-circle"></i> Add Product
     </a>
 
@@ -28,26 +28,27 @@
         </thead>
         <tbody>
             <% if (products != null) {
-                for (Product p : products) { %>
+                    for (Product p : products) {%>
             <tr>
-                <td><%= p.getProductID() %></td>
-                <td><%= p.getProductName() %></td>
-                <td><%= p.getPrice() %> ₫</td>
-                <td><img src="images/<%= p.getImage() %>" width="60"/></td>
+                <td><%= p.getProductID()%></td>
+                <td><%= p.getProductName()%></td>
+                <td><%= p.getPrice()%> ₫</td>
+                <td><img src="images/<%= p.getImage()%>" width="60"/></td>
                 <td>
-                    <a href="<%= context %>/Product?action=edit&id=<%= p.getProductID() %>" class="btn btn-warning btn-sm">
+                    <a href="<%= context%>/Product?action=edit&id=<%= p.getProductID()%>" class="btn btn-warning btn-sm">
                         <i class="fas fa-edit"></i> Edit
                     </a>
 
                     <!-- ✅ Sử dụng confirm() với tên sản phẩm -->
-                    <a href="<%= context %>/Product?action=delete&id=<%= p.getProductID() %>" 
+                    <a href="<%= context%>/Product?action=delete&id=<%= p.getProductID()%>" 
                        class="btn btn-danger btn-sm"
-                       onclick="return confirm('Are you sure you want to delete \"<%= p.getProductName() %>\"?');">
+                       onclick="return confirm('Are you sure you want to delete \"<%= p.getProductName()%>\"?');">
                         <i class="fas fa-trash"></i> Delete
                     </a>
                 </td>
             </tr>
-            <% }} %>
+            <% }
+                }%>
         </tbody>
     </table>
 </div>

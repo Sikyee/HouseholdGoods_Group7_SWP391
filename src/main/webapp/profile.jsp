@@ -1,11 +1,18 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="Model.User, java.util.List, Model.Address" %>
 <%
+    User sessionUser = (User) session.getAttribute("user");
+    if (sessionUser == null) {
+        response.sendRedirect("login.jsp");
+        return;
+    }
+
     User user = (User) request.getAttribute("user");
     List<Address> addressList = (List<Address>) request.getAttribute("addressList");
     String message = (String) request.getAttribute("message");
     String messageType = (String) request.getAttribute("messageType");
 %>
+
 <html>
 <head>
     <title>User Profile</title>

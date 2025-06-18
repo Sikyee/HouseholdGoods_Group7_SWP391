@@ -42,7 +42,7 @@
                         <i class="fas fa-edit"></i> Edit
                     </a>
 
-                    
+
                     <a href="<%= context%>/Product?action=delete&id=#" 
                        class="btn btn-danger btn-sm"
                        onclick="return confirm('Are you sure you want to delete \"#\"?');">

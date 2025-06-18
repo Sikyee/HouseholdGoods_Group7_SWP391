@@ -52,10 +52,10 @@
                     } // end for
                 } else {
                 %>
-            <tr>
-                <td colspan="7" class="text-center">No users found.</td>
-            </tr>
-            <% }%>
+                <tr>
+                    <td colspan="7" class="text-center">No users found.</td>
+                </tr>
+                <% }%>
             </tbody>
         </table>
     </div>
