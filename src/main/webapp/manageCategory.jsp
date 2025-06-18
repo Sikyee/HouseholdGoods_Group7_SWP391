@@ -1,4 +1,12 @@
-<%@ page contentType="text/html;charset=UTF-8" %>
+<<%@ page contentType="text/html;charset=UTF-8" %>
+<%
+    HttpSession s = request.getSession(false);
+    Model.User u = (Model.User) (s != null ? s.getAttribute("user") : null);
+    if (u == null || (u.getRoleID() != 1 && u.getRoleID() != 2)) {
+        response.sendRedirect("login.jsp");
+        return;
+    }
+%>
 <%@ page import="java.util.*, Model.Category" %>
 <%@ include file="left-sidebar.jsp" %>
 
@@ -21,21 +29,16 @@
             </tr>
         </thead>
         <tbody>
-            <%
-                if (categories != null && !categories.isEmpty()) {
-                    for (Category c : categories) {
-            %>
+            <% if (categories != null && !categories.isEmpty()) {
+                    for (Category c : categories) {%>
             <tr>
                 <td><%= c.getSubCategoryID()%></td>
                 <td><%= c.getCategoryName()%></td>
                 <td><%= c.getSubCategoryName()%></td>
-
                 <td>
                     <a href="<%= context%>/Category?action=edit&id=<%= c.getSubCategoryID()%>" class="btn btn-warning btn-sm">
                         <i class="fas fa-edit"></i> Edit
                     </a>
-
-
                     <a href="<%= context%>/Category?action=delete&id=<%= c.getSubCategoryID()%>" 
                        class="btn btn-danger btn-sm"
                        onclick="return confirm('Are you sure you want to delete this category?');">
@@ -43,16 +46,11 @@
                     </a>
                 </td>
             </tr>
-            <%
-                }
-            } else {
-            %>
-            <tr>
-                <td colspan="7" class="text-center">No category found.</td>
-            </tr>
-            <%
-                }
-            %>
+            <% }
+            } else { %>
+            <tr><td colspan="7" class="text-center">No category found.</td></tr>
+            <% }%>
         </tbody>
     </table>
 </div>
+
