@@ -8,16 +8,16 @@
 %>
 
 <div class="content" style="margin-left:240px; padding:20px;">
-    <h4>📦 Manage Categories</h4>
+    <h4>📦 Manage Main Categories</h4>
 
-    <a href="<%= context%>/Category?action=add" class="btn btn-success mb-2">
+    <a href="<%= context%>/MainCategory?action=add" class="btn btn-success mb-2">
         <i class="fas fa-plus-circle"></i> Add Category
     </a>
 
     <table class="table table-bordered">
         <thead>
             <tr>
-                <th>ID</th><th>Category Name</th><th>Sub Category Name</th><th>Actions</th>
+                <th>ID</th><th>Category Name</th><th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -26,17 +26,16 @@
                     for (Category c : categories) {
             %>
             <tr>
-                <td><%= c.getSubCategoryID()%></td>
+                <td><%= c.getCategoryID()%></td>
                 <td><%= c.getCategoryName()%></td>
-                <td><%= c.getSubCategoryName()%></td>
 
                 <td>
-                    <a href="<%= context%>/Category?action=edit&id=<%= c.getSubCategoryID()%>" class="btn btn-warning btn-sm">
+                    <a href="<%= context%>/MainCategory?action=edit&id=<%= c.getCategoryID()%>" class="btn btn-warning btn-sm">
                         <i class="fas fa-edit"></i> Edit
                     </a>
 
 
-                    <a href="<%= context%>/Category?action=delete&id=<%= c.getSubCategoryID()%>" 
+                    <a href="<%= context%>/MainCategory?action=delete&id=<%= c.getCategoryID()%>" 
                        class="btn btn-danger btn-sm"
                        onclick="return confirm('Are you sure you want to delete this category?');">
                         <i class="fas fa-trash"></i> Delete
