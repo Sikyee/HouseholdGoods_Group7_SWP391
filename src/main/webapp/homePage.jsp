@@ -210,7 +210,7 @@
         <header>
             <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
                 <div class="container-fluid">
-                    <a class="navbar-brand text-white fw-bold" style="font-size: xx-large;" href="/HouseholdGoods">Household Goods</a>
+                    <a class="navbar-brand text-white fw-bold" style="font-size: xx-large;" href="/HouseholdGoods_Group7_SWP391/homePage.jsp">Household Goods</a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                             data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                             aria-expanded="false" aria-label="Toggle navigation">
@@ -230,6 +230,13 @@
                         %>
 
                         <ul class="navbar-nav d-flex flex-row">
+                            <li class="nav-item col-sm-2">
+                                <a href="/HouseholdGoods_Group7_SWP391/PromotionController?action=list" class="nav-link text-white">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" viewBox="0 0 640 512" style="fill: #ffffff;">
+                                    <path d="M192 32H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H192V32zM320 32H224V480h96V32zM576 32H448V480h128c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64z"/>
+                                    </svg>
+                                </a>
+                            </li>
                             <!-- Quản lý (icon) -->
                             <li class="nav-item me-2">
                                 <a href="/HouseholdGoods/Management/CategoryManagement" class="nav-link text-white">
