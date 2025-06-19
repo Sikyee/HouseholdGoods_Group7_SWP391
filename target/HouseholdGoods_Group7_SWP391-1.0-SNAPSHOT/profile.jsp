@@ -42,11 +42,34 @@
                 text-align: center;
                 margin-bottom: 30px;
                 color: #333;
+                position: relative;
             }
 
             .header h1 {
                 font-size: 2rem;
                 margin-bottom: 10px;
+            }
+
+            .home-btn {
+                position: absolute;
+                left: 0;
+                top: 0;
+                background-color: #28a745;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                font-size: 1rem;
+                cursor: pointer;
+                text-decoration: none;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                transition: background-color 0.3s;
+            }
+
+            .home-btn:hover {
+                background-color: #218838;
             }
 
             .card {
@@ -221,12 +244,24 @@
                 .card {
                     padding: 15px;
                 }
+
+                .home-btn {
+                    position: static;
+                    margin-bottom: 15px;
+                }
+
+                .header {
+                    text-align: left;
+                }
             }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
+                <a href="home" class="home-btn">
+                    <i class="fas fa-home"></i> Back to Home
+                </a>
                 <h1><i class="fas fa-user-circle"></i> User Profile</h1>
                 <p>Manage your personal information and preferences</p>
             </div>
