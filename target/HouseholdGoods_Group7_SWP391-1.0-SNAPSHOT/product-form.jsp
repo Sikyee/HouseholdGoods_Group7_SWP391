@@ -5,13 +5,14 @@
 --%>
 
 <%@ page contentType="text/html;charset=UTF-8" %>
-<%@ page import="Model.Product" %>
+<%@ page import="Model.Product, java.util.Map" %>
 <%@ include file="left-sidebar.jsp" %>
 
 <%
     Product p = (Product) request.getAttribute("product");
     boolean isEdit = (p != null);
     String context = request.getContextPath();
+    Map<String, String> errors = (Map<String, String>) request.getAttribute("errors");
 %>
 
 <!DOCTYPE html>
@@ -20,7 +21,6 @@
         <meta charset="UTF-8">
         <title><%= isEdit ? "Edit" : "Add"%> Product</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
         <style>
             .content {
                 margin-left: 240px;
@@ -28,6 +28,10 @@
             }
             .form-label {
                 font-weight: 500;
+            }
+            .error {
+                color: red;
+                font-size: 0.9em;
             }
         </style>
     </head>
@@ -38,10 +42,9 @@
                 <h4><%= isEdit ? "✏️ Edit" : "➕ Add"%> Product</h4>
             </div>
 
-            <!-- ✅ Phải có enctype để hỗ trợ upload -->
-            <form method="post" action="<%= context%>/Product" enctype="multipart/form-data" class="row g-3">
+            <form method="post" action="<%= context%>/Product" class="row g-3" enctype="multipart/form-data">
                 <input type="hidden" name="id" value="<%= isEdit ? p.getProductID() : ""%>" />
-                <input type="hidden" name="image" value="<%= isEdit ? p.getImage() : ""%>" />
+                <input type="hidden" name="image" value="<%= isEdit ? p.getImage() : ""%>"/>
 
                 <div class="col-md-6">
                     <label class="form-label">Product Name</label>
@@ -51,6 +54,9 @@
                 <div class="col-md-6">
                     <label class="form-label">Price (₫)</label>
                     <input type="number" name="price" required class="form-control" value="<%= isEdit ? p.getPrice() : ""%>"/>
+                    <% if (errors != null && errors.get("price") != null) {%>
+                    <div class="error"><%= errors.get("price")%></div>
+                    <% }%>
                 </div>
 
                 <div class="col-md-12">
@@ -61,26 +67,33 @@
                 <div class="col-md-6">
                     <label class="form-label">Stock Quantity</label>
                     <input type="number" name="stonkQuantity" required class="form-control" value="<%= isEdit ? p.getStonkQuantity() : ""%>"/>
+                    <% if (errors != null && errors.get("stonkQuantity") != null) {%>
+                    <div class="error"><%= errors.get("stonkQuantity")%></div>
+                    <% } %>
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label">Product Image</label>
-                    <input type="file" name="imageFile" accept="image/*" class="form-control" <%= isEdit ? "" : "required"%> />
-                    <% if (isEdit && p.getImage() != null && !p.getImage().isEmpty()) {%>
-                    <div class="mt-2">
-                        <img src="images/<%= p.getImage()%>" width="100" alt="Current Image"/>
-                    </div>
+                    <label class="form-label">Image File</label>
+                    <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                    <% if (errors != null && errors.get("imageFile") != null) {%>
+                    <div class="error"><%= errors.get("imageFile")%></div>
                     <% }%>
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label">Brand ID</label>
                     <input type="number" name="brandID" required class="form-control" value="<%= isEdit ? p.getBrandID() : ""%>"/>
+                    <% if (errors != null && errors.get("brandID") != null) {%>
+                    <div class="error"><%= errors.get("brandID")%></div>
+                    <% }%>
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label">SubCategory ID</label>
                     <input type="number" name="subCategory" required class="form-control" value="<%= isEdit ? p.getSubCategory() : ""%>"/>
+                    <% if (errors != null && errors.get("subCategory") != null) {%>
+                    <div class="error"><%= errors.get("subCategory")%></div>
+                    <% }%>
                 </div>
 
                 <div class="col-12">
@@ -94,6 +107,7 @@
 
     </body>
 </html>
+
 
 
 
