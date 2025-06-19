@@ -3,12 +3,14 @@ C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Model\Address.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Controller\MainCategoryController.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Controller\HomeController.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Controller\ProfileController.java
+C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Controller\UpdateUserController.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\DAO\ProductDAO.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Model\Product.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\DB\DBConnection.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Controller\CategoryController.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Controller\LogoutController.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Model\Feedback.java
+C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Controller\ChangePasswordController.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Controller\PromotionController.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Model\Utils.java
 C:\Users\noras\HouseholdGoods_Group7_SWP391\src\main\java\Model\Promotion.java

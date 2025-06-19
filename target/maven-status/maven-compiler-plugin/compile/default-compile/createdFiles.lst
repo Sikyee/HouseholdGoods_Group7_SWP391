@@ -18,11 +18,13 @@ Model\Product.class
 DAO\ReplyFeedbackDAO.class
 Controller\AddressController.class
 Model\Promotion.class
+Controller\UpdateUserController.class
 Controller\FeedbackController.class
 Controller\UserController.class
 Model\User.class
 Controller\ProductController.class
 Controller\MainCategoryController.class
+Controller\ChangePasswordController.class
 DAO\AddressDAO.class
 Controller\LoginController.class
 Controller\ReplyFeedbackController.class
