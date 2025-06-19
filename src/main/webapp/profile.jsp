@@ -1,7 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="Model.User, java.util.List, Model.Address" %>
 
-
 <%
     User sessionUser = (User) session.getAttribute("user");
     if (sessionUser == null) {
@@ -244,7 +243,6 @@
             </script>
             <% }%>
 
-
             <!-- Profile Update Form -->
             <div class="card">
                 <div class="card-header">
@@ -360,34 +358,35 @@
                     </a>
                 </div>
             </div>
-        </div>
-        <!-- Change Password Section -->
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-key"></i>
-                <h3>Change Password</h3>
-            </div>
 
-            <form id="changePasswordForm" method="post" action="change-password">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Current Password</label>
-                        <input type="password" name="currentPassword" id="currentPassword" required />
-                    </div>
-                    <div class="form-group">
-                        <label>New Password</label>
-                        <input type="password" name="newPassword" id="newPassword" required />
-                    </div>
-                    <div class="form-group">
-                        <label>Confirm New Password</label>
-                        <input type="password" name="confirmPassword" id="confirmPassword" required />
-                    </div>
+            <!-- Change Password Section -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-key"></i>
+                    <h3>Change Password</h3>
                 </div>
 
-                <button type="button" class="btn" onclick="confirmChangePassword()">
-                    <i class="fas fa-save"></i> Change Password
-                </button>
-            </form>
+                <form id="changePasswordForm" method="post" action="change-password">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Current Password</label>
+                            <input type="password" name="currentPassword" id="currentPassword" required />
+                        </div>
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" name="newPassword" id="newPassword" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm New Password</label>
+                            <input type="password" name="confirmPassword" id="confirmPassword" required />
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn" onclick="confirmChangePassword()">
+                        <i class="fas fa-save"></i> Change Password
+                    </button>
+                </form>
+            </div>
         </div>
 
         <script>
