@@ -24,7 +24,7 @@
         <li><a href="#" class="nav-link text-white"><i class="fas fa-file-invoice"></i> Invoice</a></li>
         <li><a href="User" class="nav-link text-white"><i class="fas fa-users"></i> Accounts</a></li>
         <li><a href="Category" class="nav-link text-white"><i class="fas fa-box"></i> Category</a></li>
-        <li><a href="#" class="nav-link text-white"><i class="fas fa-wallet"></i> Wallets</a></li>
+        <li><a href="Feedback" class="nav-link text-white"><i class="fas fa-wallet"></i> Feedback</a></li>
         <li><a href="Product" class="nav-link text-white"><i class="fas fa-box"></i> Products</a></li>
         <li><a href="#" class="nav-link text-white"><i class="fas fa-star"></i> Top 10 Products</a></li>
         <li><a href="#" class="nav-link text-white"><i class="fas fa-users"></i> Top 5 Customers</a></li>

@@ -263,23 +263,28 @@
                 <form method="post" action="manage-address" id="addressForm">
                     <% if (isEdit) {%>
                     <input type="hidden" name="addressID" value="<%= address.getAddressID()%>" />
-                    <% }%>
+                    <input type="hidden" name="action" value="update" />
+                    <% } else { %>
+                    <input type="hidden" name="action" value="add" />
+                    <% } %>
 
                     <!-- Address Name and Type -->
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="addressName">Address Name</label>
+                            <label for="addressName">Address Name <span class="required">*</span></label>
                             <input type="text" 
                                    id="addressName" 
                                    name="addressName" 
+                                   required
                                    placeholder="e.g., Home, Office, etc."
                                    value="<%= isEdit && address.getAddressName() != null ? address.getAddressName() : ""%>" />
                             <div class="field-help">Give this address a memorable name</div>
                         </div>
 
                         <div class="form-group">
-                            <label for="addressType">Address Type</label>
-                            <select id="addressType" name="addressType">
+                            <label for="addressType">Address Type <span class="required">*</span></label>
+                            <select id="addressType" name="addressType" required>
+                                <option value="">Select Type</option>
                                 <option value="HOME" <%= isEdit && "HOME".equals(address.getAddressType()) ? "selected" : ""%>>Home</option>
                                 <option value="OFFICE" <%= isEdit && "OFFICE".equals(address.getAddressType()) ? "selected" : ""%>>Office</option>
                                 <option value="OTHER" <%= isEdit && "OTHER".equals(address.getAddressType()) ? "selected" : ""%>>Other</option>
@@ -314,19 +319,21 @@
                     <!-- Location Information -->
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="province">Province/City</label>
+                            <label for="province">Province/City <span class="required">*</span></label>
                             <input type="text" 
                                    id="province" 
                                    name="province" 
+                                   required
                                    placeholder="e.g., Ho Chi Minh City"
                                    value="<%= isEdit && address.getProvince() != null ? address.getProvince() : ""%>" />
                         </div>
 
                         <div class="form-group">
-                            <label for="district">District</label>
+                            <label for="district">District <span class="required">*</span></label>
                             <input type="text" 
                                    id="district" 
                                    name="district" 
+                                   required
                                    placeholder="e.g., District 1"
                                    value="<%= isEdit && address.getDistrict() != null ? address.getDistrict() : ""%>" />
                         </div>
@@ -359,6 +366,7 @@
                         <input type="checkbox" 
                                id="isDefault" 
                                name="isDefault" 
+                               value="1"
                                <%= isEdit && address.isDefault() ? "checked" : ""%> />
                         <label for="isDefault">Set as default address</label>
                     </div>
@@ -381,7 +389,6 @@
         <script>
             // Auto-fill complete address when individual fields are filled
             document.addEventListener('DOMContentLoaded', function () {
-                const specificAddress = document.getElementById('specificAddress');
                 const ward = document.getElementById('ward');
                 const district = document.getElementById('district');
                 const province = document.getElementById('province');
@@ -389,7 +396,6 @@
 
                 function updateAddressDetail() {
                     const parts = [
-                        specificAddress.value,
                         ward.value,
                         district.value,
                         province.value
@@ -400,45 +406,101 @@
                     }
                 }
 
-                [specificAddress, ward, district, province].forEach(field => {
-                    field.addEventListener('blur', updateAddressDetail);
+                [ward, district, province].forEach(field => {
+                    if (field) {
+                        field.addEventListener('blur', updateAddressDetail);
+                    }
                 });
 
                 // Phone number validation
                 const phoneInput = document.getElementById('phone');
-                phoneInput.addEventListener('input', function () {
-                    const phone = this.value.replace(/[^0-9]/g, '');
-                    const isValid = phone.length >= 9 && phone.length <= 12 &&
-                            (phone.startsWith('0') || phone.startsWith('84'));
+                if (phoneInput) {
+                    phoneInput.addEventListener('input', function () {
+                        let phone = this.value.replace(/[^0-9+]/g, '');
+                        
+                        // Vietnamese phone validation
+                        let isValid = false;
+                        if (phone.startsWith('+84')) {
+                            phone = phone.substring(3);
+                            isValid = phone.length >= 9 && phone.length <= 10;
+                        } else if (phone.startsWith('84')) {
+                            phone = phone.substring(2);
+                            isValid = phone.length >= 9 && phone.length <= 10;
+                        } else if (phone.startsWith('0')) {
+                            isValid = phone.length >= 10 && phone.length <= 11;
+                        }
 
-                    if (this.value && !isValid) {
-                        this.style.borderColor = '#dc3545';
-                    } else {
-                        this.style.borderColor = '#ddd';
-                    }
-                });
+                        if (this.value && !isValid) {
+                            this.style.borderColor = '#dc3545';
+                        } else {
+                            this.style.borderColor = '#ddd';
+                        }
+                    });
+                }
 
                 // Form validation
                 const form = document.getElementById('addressForm');
-                form.addEventListener('submit', function (e) {
-                    const requiredFields = ['recipientName', 'phone', 'addressDetail'];
-                    let isValid = true;
+                if (form) {
+                    form.addEventListener('submit', function (e) {
+                        const requiredFields = ['addressName', 'addressType', 'recipientName', 'phone', 'province', 'district', 'addressDetail'];
+                        let isValid = true;
+                        let firstInvalidField = null;
 
-                    requiredFields.forEach(fieldName => {
-                        const field = document.getElementById(fieldName);
-                        if (!field.value.trim()) {
-                            field.style.borderColor = '#dc3545';
-                            isValid = false;
-                        } else {
-                            field.style.borderColor = '#ddd';
+                        requiredFields.forEach(fieldName => {
+                            const field = document.getElementById(fieldName);
+                            if (field && !field.value.trim()) {
+                                field.style.borderColor = '#dc3545';
+                                isValid = false;
+                                if (!firstInvalidField) {
+                                    firstInvalidField = field;
+                                }
+                            } else if (field) {
+                                field.style.borderColor = '#ddd';
+                            }
+                        });
+
+                        // Validate phone number format
+                        const phoneField = document.getElementById('phone');
+                        if (phoneField && phoneField.value) {
+                            let phone = phoneField.value.replace(/[^0-9+]/g, '');
+                            let phoneValid = false;
+                            
+                            if (phone.startsWith('+84')) {
+                                phone = phone.substring(3);
+                                phoneValid = phone.length >= 9 && phone.length <= 10;
+                            } else if (phone.startsWith('84')) {
+                                phone = phone.substring(2);
+                                phoneValid = phone.length >= 9 && phone.length <= 10;
+                            } else if (phone.startsWith('0')) {
+                                phoneValid = phone.length >= 10 && phone.length <= 11;
+                            }
+                            
+                            if (!phoneValid) {
+                                phoneField.style.borderColor = '#dc3545';
+                                isValid = false;
+                                if (!firstInvalidField) {
+                                    firstInvalidField = phoneField;
+                                }
+                            }
+                        }
+
+                        if (!isValid) {
+                            e.preventDefault();
+                            alert('Please fill in all required fields correctly.');
+                            if (firstInvalidField) {
+                                firstInvalidField.focus();
+                            }
+                            return false;
+                        }
+
+                        // Show loading state
+                        const submitBtn = form.querySelector('button[type="submit"]');
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Processing...';
                         }
                     });
-
-                    if (!isValid) {
-                        e.preventDefault();
-                        alert('Please fill in all required fields.');
-                    }
-                });
+                }
             });
         </script>
     </body>
