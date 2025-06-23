@@ -4,6 +4,8 @@
  */
 package Model;
 
+import java.util.List;
+
 /**
  *
  * @author thong
@@ -18,6 +20,19 @@ public class Product {
     private int stonkQuantity;
     private int brandID;
     private String image;
+    private List<Attribute> attributes;
+
+    public List<Attribute> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(List<Attribute> attributes) {
+        this.attributes = attributes;
+    }
+
+    public Product(List<Attribute> attributes) {
+        this.attributes = attributes;
+    }
 
     public Product(int productID, String productName, String description, int subCategory, long price, int stonkQuantity, int brandID, String image) {
         this.productID = productID;
