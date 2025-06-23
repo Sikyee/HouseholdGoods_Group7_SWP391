@@ -35,8 +35,9 @@ public class UserDAO {
         return null;
     }
 
+    // Method được gọi trong ProfileController - cập nhật theo userID thay vì userName
     public boolean updateUser(User user) {
-        String sql = "UPDATE users SET fullName = ?, email = ?, phone = ?, dob = ?, gender = ? WHERE userName = ?";
+        String sql = "UPDATE users SET fullName = ?, email = ?, phone = ?, dob = ?, gender = ? WHERE userID = ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, user.getFullName());
             ps.setString(2, user.getEmail());
@@ -49,13 +50,41 @@ public class UserDAO {
             }
 
             ps.setString(5, user.getGender());
-            ps.setString(6, user.getUserName());
+            ps.setInt(6, user.getUserID()); // Thay đổi từ userName sang userID
 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
+    }
+
+    // Method mới được thêm - ProfileController cần method này để kiểm tra email trùng lặp
+    public User getUserByEmail(String email) {
+        String sql = "SELECT * FROM users WHERE email = ?";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                User user = new User();
+                user.setUserID(rs.getInt("userID"));
+                user.setFullName(rs.getString("fullName"));
+                user.setEmail(rs.getString("email"));
+                user.setPassword(rs.getString("password"));
+                user.setUserName(rs.getString("userName"));
+                user.setRoleID(rs.getInt("roleID"));
+                user.setRegistrationDate(rs.getTimestamp("registrationDate"));
+                user.setPhone(rs.getString("phone"));
+                user.setStatus(rs.getInt("status"));
+                user.setDob(rs.getDate("dob"));
+                user.setGender(rs.getString("gender"));
+                return user;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public boolean setUserStatus(int userID, boolean status) {
@@ -114,11 +143,14 @@ public class UserDAO {
             user.setRoleID(rs.getInt("roleID"));
             user.setPhone(rs.getString("phone"));
             user.setStatus(rs.getInt("status"));
+            user.setDob(rs.getDate("dob"));
+            user.setGender(rs.getString("gender"));
             return user;
         }
         return null;
     }
 
+    // Method được gọi trong ProfileController - đã có sẵn và phù hợp
     public User getUserByID(int id) {
         String sql = "SELECT * FROM users WHERE userID = ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -135,6 +167,8 @@ public class UserDAO {
                 user.setGender(rs.getString("gender"));
                 user.setStatus(rs.getInt("status"));
                 user.setRoleID(rs.getInt("roleID"));
+                user.setPassword(rs.getString("password")); // Thêm password để đầy đủ
+                user.setRegistrationDate(rs.getTimestamp("registrationDate")); // Thêm registrationDate
                 return user;
             }
         } catch (Exception e) {
