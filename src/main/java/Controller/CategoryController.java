@@ -50,6 +50,9 @@ public class CategoryController extends HttpServlet {
                 request.setAttribute("categoryList", categoryList);
                 request.getRequestDispatcher("category-form.jsp").forward(request, response);
             } else if ("delete".equals(action)) {
+                int id = Integer.parseInt(request.getParameter("id"));
+                dao.deleteCategory(id);
+                response.sendRedirect(request.getContextPath() + "/Category");
             } else {
                 List<Category> categories = dao.getAllCategories();
                 request.setAttribute("categories", categories);

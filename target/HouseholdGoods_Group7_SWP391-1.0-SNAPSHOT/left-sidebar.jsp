@@ -25,10 +25,21 @@
         <li><a href="User" class="nav-link text-white"><i class="fas fa-users"></i> Accounts</a></li> 
         <li><a href="#" class="nav-link text-white"><i class="fas fa-wallet"></i> Wallets</a></li>
         <li><a href="Product" class="nav-link text-white"><i class="fas fa-box"></i> Products</a></li>
+        <li>
+            <a href="#!" class="nav-link text-white" id="categoryToggle">
+                <i class="fas fa-list"></i> Category
+                <i class="fas fa-caret-down float-end"></i>
+            </a>
+            <ul class="nav flex-column ms-3 collapse" id="categorySubMenu">
+                <li><a href="Category" class="nav-link text-white"><i class="fas fa-tags"></i> Category List</a></li>
+                <li><a href="MainCategory" class="nav-link text-white"><i class="fas fa-list-alt"></i> Main Category</a></li>
+            </ul>
+        </li>
+
         <li><a href="#" class="nav-link text-white"><i class="fas fa-star"></i> Top 10 Products</a></li>
         <li><a href="#" class="nav-link text-white"><i class="fas fa-users"></i> Top 5 Customers</a></li>
         <li><a href="#" class="nav-link text-white"><i class="fas fa-truck"></i> Supplier</a></li>
-        <li class="nav-item"><a class="nav-link text-white" href="<%= request.getContextPath() %>/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        <li class="nav-item"><a class="nav-link text-white" href="<%= request.getContextPath()%>/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
     </ul>
 </div>
 
@@ -45,6 +56,20 @@
     .sidebar .nav-link:hover {
         background-color: #3a3b5a;
     }
+    #categorySubMenu li a {
+        padding-left: 30px;
+        font-size: 0.9rem;
+    }
 </style>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggle = document.getElementById("categoryToggle");
+        const submenu = document.getElementById("categorySubMenu");
 
+        toggle.addEventListener("click", function (e) {
+            e.preventDefault();
+            submenu.classList.toggle("show");
+        });
+    });
+</script>

@@ -32,12 +32,10 @@ public class MainCategoryController extends HttpServlet {
 
             } else if ("add".equals(action)) {
                 request.getRequestDispatcher("mainCategory-form.jsp").forward(request, response);
-                //            } else if ("delete".equals(action)) {
-                //                int id = Integer.parseInt(request.getParameter("id"));
-                //                dao.deleteProduct(id);
-                //                response.sendRedirect(request.getContextPath() + "/Product");
-                //
-                //            } 
+            } else if ("delete".equals(action)) {
+                int id = Integer.parseInt(request.getParameter("id"));
+                dao.deleteMainCategory(id);
+                response.sendRedirect(request.getContextPath() + "/MainCategory");
             } else {
                 List<Category> list = dao.getAllMainCategories();
                 request.setAttribute("categories", list);

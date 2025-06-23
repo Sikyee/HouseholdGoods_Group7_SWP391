@@ -37,7 +37,7 @@
 
                     <a href="<%= context%>/MainCategory?action=delete&id=<%= c.getCategoryID()%>" 
                        class="btn btn-danger btn-sm"
-                       onclick="return confirm('Are you sure you want to delete this category?');">
+                       onclick="return confirm('Are you sure you want to delete this main category?');">
                         <i class="fas fa-trash"></i> Delete
                     </a>
                 </td>
