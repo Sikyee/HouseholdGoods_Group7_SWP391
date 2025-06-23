@@ -5,11 +5,13 @@
 package DAO;
 
 import DB.DBConnection;
+import Model.Attribute;
 import Model.Product;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +24,7 @@ public class ProductDAO {
     public List<Product> getAllProducts() throws Exception {
         List<Product> list = new ArrayList<>();
         Connection conn = DBConnection.getConnection();
-        String sql = "SELECT * FROM Product";
+        String sql = "SELECT * FROM Product WHERE status = 1";
         PreparedStatement ps = conn.prepareStatement(sql);
         ResultSet rs = ps.executeQuery();
         while (rs.next()) {
@@ -36,6 +38,10 @@ public class ProductDAO {
             p.setBrandID(rs.getInt("brandID"));
             p.setImage(rs.getString("image"));
             list.add(p);
+            // Load attributes theo productID
+            List<Attribute> attributes = getAttributesByProductId(p.getProductID());
+
+            p.setAttributes(attributes);
         }
         return list;
     }
@@ -69,11 +75,11 @@ public class ProductDAO {
         ps.executeUpdate();
     }
 
-    public void deleteProduct(int id) throws Exception {
+    public void softDeleteProduct(int productId) throws Exception {
         Connection conn = DBConnection.getConnection();
-        String sql = "DELETE FROM Product WHERE productID=?";
+        String sql = "UPDATE Product SET status = 0 WHERE productID = ?";
         PreparedStatement ps = conn.prepareStatement(sql);
-        ps.setInt(1, id);
+        ps.setInt(1, productId);
         ps.executeUpdate();
     }
 
@@ -96,5 +102,74 @@ public class ProductDAO {
             return p;
         }
         return null;
+    }
+
+    public List<Attribute> getAttributesByProductId(int productId) throws Exception {
+        List<Attribute> list = new ArrayList<>();
+        String query = "SELECT a.attributeID, a.attributeName, pa.value "
+                + "FROM Attribute a "
+                + "JOIN ProductAttribute pa ON a.attributeID = pa.attributeID "
+                + "WHERE a.productID = ?";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setInt(1, productId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Attribute a = new Attribute();
+                a.setAttributeID(rs.getInt("attributeID"));
+                a.setAttributeName(rs.getString("attributeName"));
+                a.setAttributeValue(rs.getString("value"));
+                list.add(a);
+            }
+        }
+        return list;
+    }
+
+    public void updateProductAttributes(int productID, String[] names, String[] values) throws Exception {
+        String delete = "DELETE FROM ProductAttribute WHERE productID = ?";
+        String insertAttr = "INSERT INTO Attribute (attributeName, productID) VALUES (?, ?)";
+        String insertProductAttr = "INSERT INTO ProductAttribute (productID, attributeID, value) VALUES (?, ?, ?)";
+
+        try ( Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try ( PreparedStatement psDel = conn.prepareStatement(delete)) {
+                psDel.setInt(1, productID);
+                psDel.executeUpdate();
+            }
+
+            for (int i = 0; i < names.length; i++) {
+                int attrID = -1;
+
+                try ( PreparedStatement psInsertAttr = conn.prepareStatement(insertAttr, Statement.RETURN_GENERATED_KEYS)) {
+                    psInsertAttr.setString(1, names[i]);
+                    psInsertAttr.setInt(2, productID);
+                    psInsertAttr.executeUpdate();
+                    ResultSet rs = psInsertAttr.getGeneratedKeys();
+                    if (rs.next()) {
+                        attrID = rs.getInt(1);
+                    }
+                }
+
+                try ( PreparedStatement psInsertVal = conn.prepareStatement(insertProductAttr)) {
+                    psInsertVal.setInt(1, productID);
+                    psInsertVal.setInt(2, attrID);
+                    psInsertVal.setString(3, values[i]);
+                    psInsertVal.executeUpdate();
+                }
+            }
+
+            conn.commit();
+        }
+    }
+
+    public int getLastInsertedProductIdByName(String name) throws Exception {
+        Connection conn = DBConnection.getConnection();
+        String sql = "SELECT TOP 1 productID FROM Product WHERE productName = ? ORDER BY productID DESC";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setString(1, name);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1);
+        }
+        return -1;
     }
 }
