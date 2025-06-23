@@ -96,26 +96,28 @@
                 </div>
 
                 <!-- Submit Button -->
-                <div class="d-grid mt-4">
+                <div class="d-flex justify-content-between mt-4">
                     <button type="submit" class="btn btn-primary">
                         <%= (product == null) ? "Add Product" : "Update Product"%>
                     </button>
+
+                    <a href="<%= context%>/Product" class="btn btn-secondary">
+                        Cancel
+                    </a>
                 </div>
-            </form>
-        </div>
 
-        <script>
-            function validateForm() {
-                const price = document.querySelector('input[name="price"]').value;
-                const stock = document.querySelector('input[name="stonkQuantity"]').value;
+                <script>
+                    function validateForm() {
+                        const price = document.querySelector('input[name="price"]').value;
+                        const stock = document.querySelector('input[name="stonkQuantity"]').value;
 
-                if (price < 0 || stock < 0) {
-                    alert("Price and Stock Quantity cannot be negative.");
-                    return false;
-                }
+                        if (price < 0 || stock < 0) {
+                            alert("Price and Stock Quantity cannot be negative.");
+                            return false;
+                        }
 
-                return true;
-            }
-        </script>
-    </body>
-</html>
+                        return true;
+                    }
+                </script>
+                </body>
+                </html>
