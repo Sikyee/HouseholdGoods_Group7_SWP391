@@ -2,6 +2,7 @@ package Controller;
 
 import DAO.ProductDAO;
 import Model.Product;
+import Model.Attribute;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -31,17 +32,17 @@ public class ProductController extends HttpServlet {
             if ("edit".equals(action)) {
                 int id = Integer.parseInt(request.getParameter("id"));
                 Product p = dao.getProductById(id);
+                List<Attribute> attributes = dao.getAttributesByProductId(id);
                 request.setAttribute("product", p);
+                request.setAttribute("attributes", attributes);
                 request.getRequestDispatcher("product-form.jsp").forward(request, response);
 
             } else if ("add".equals(action)) {
                 request.getRequestDispatcher("product-form.jsp").forward(request, response);
-
             } else if ("delete".equals(action)) {
                 int id = Integer.parseInt(request.getParameter("id"));
-                dao.deleteProduct(id);
+                dao.softDeleteProduct(id); // ✅ Soft delete
                 response.sendRedirect(request.getContextPath() + "/Product");
-
             } else {
                 List<Product> list = dao.getAllProducts();
                 request.setAttribute("products", list);
@@ -58,7 +59,6 @@ public class ProductController extends HttpServlet {
         try {
             request.setCharacterEncoding("UTF-8");
             String idStr = request.getParameter("id");
-
             Product p = new Product();
             Map<String, String> errors = new HashMap<>();
 
@@ -118,12 +118,11 @@ public class ProductController extends HttpServlet {
                     if (!uploadDir.exists()) {
                         uploadDir.mkdirs();
                     }
-
                     filePart.write(uploadPath + File.separator + fileName);
                     p.setImage(fileName);
                 }
             } else {
-                p.setImage(request.getParameter("image")); // giữ ảnh cũ nếu không upload mới
+                p.setImage(request.getParameter("image"));
             }
 
             if (!errors.isEmpty()) {
@@ -133,11 +132,21 @@ public class ProductController extends HttpServlet {
                 return;
             }
 
+            int productID;
             if (idStr == null || idStr.isEmpty()) {
                 dao.addProduct(p);
+                productID = dao.getLastInsertedProductIdByName(p.getProductName()); // lấy id
             } else {
-                p.setProductID(Integer.parseInt(idStr));
+                productID = Integer.parseInt(idStr);
+                p.setProductID(productID);
                 dao.updateProduct(p);
+            }
+
+            // Handle attributes
+            String[] attributeNames = request.getParameterValues("attributeName");
+            String[] attributeValues = request.getParameterValues("attributeValue");
+            if (attributeNames != null && attributeValues != null) {
+                dao.updateProductAttributes(productID, attributeNames, attributeValues);
             }
 
             response.sendRedirect(request.getContextPath() + "/Product");
