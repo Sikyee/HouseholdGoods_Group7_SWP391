@@ -13,7 +13,10 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.util.List;
-
+/**
+ *
+ * @author TriTN
+ */
 @WebServlet("/Feedback")
 public class FeedbackController extends HttpServlet {
     private FeedbackDAO feedbackDAO = new FeedbackDAO();
