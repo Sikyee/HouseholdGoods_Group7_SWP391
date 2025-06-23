@@ -23,7 +23,7 @@ public class CategoryDAO {
     public List<Category> getAllCategories() throws Exception {
         List<Category> list = new ArrayList<>();
         Connection conn = DBConnection.getConnection();
-        String sql = "SELECT c.categoryName, sc.subCategoryName, sc.subCategoryID, sc.categoryID FROM [dbo].[Category] c LEFT JOIN [dbo].[SubCategory] sc ON c.categoryID = sc.categoryID WHERE c.categoryID = sc.categoryID;";
+        String sql = "SELECT c.categoryName, sc.subCategoryName, sc.subCategoryID, sc.categoryID FROM [dbo].[Category] c LEFT JOIN [dbo].[SubCategory] sc ON c.categoryID = sc.categoryID WHERE c.categoryID = sc.categoryID AND sc.isDelete = 0;";
         PreparedStatement ps = conn.prepareStatement(sql);
         ResultSet rs = ps.executeQuery();
         while (rs.next()) {
@@ -42,6 +42,14 @@ public class CategoryDAO {
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setInt(1, c.getCategoryID());
         ps.setString(2, c.getSubCategoryName());
+        ps.executeUpdate();
+    }
+
+    public void deleteCategory(int id) throws Exception {
+        Connection conn = DBConnection.getConnection();
+        String sql = "UPDATE subCategory SET isDelete = 1 WHERE subCategoryID = ?;";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setInt(1, id);
         ps.executeUpdate();
     }
 
@@ -97,7 +105,7 @@ public class CategoryDAO {
     public List<Category> getAllMainCategories() throws Exception {
         List<Category> list = new ArrayList<>();
         Connection conn = DBConnection.getConnection();
-        String sql = "SELECT * FROM Category";
+        String sql = "SELECT * FROM Category WHERE isDelete = 0";
         PreparedStatement ps = conn.prepareStatement(sql);
         ResultSet rs = ps.executeQuery();
         while (rs.next()) {
@@ -140,4 +148,26 @@ public class CategoryDAO {
         ps.setInt(2, p.getCategoryID());
         ps.executeUpdate();
     }
+
+    public void deleteMainCategory(int id) throws Exception {
+        Connection conn = DBConnection.getConnection();
+
+        // Xóa mềm Category
+        String sql1 = "UPDATE Category SET isDelete = 1 WHERE categoryID = ?";
+        PreparedStatement ps1 = conn.prepareStatement(sql1);
+        ps1.setInt(1, id);
+        ps1.executeUpdate();
+
+        // Xóa mềm tất cả SubCategory thuộc Category đó
+        String sql2 = "UPDATE SubCategory SET isDelete = 1 WHERE categoryID = ?";
+        PreparedStatement ps2 = conn.prepareStatement(sql2);
+        ps2.setInt(1, id);
+        ps2.executeUpdate();
+
+        // Đóng kết nối
+        ps1.close();
+        ps2.close();
+        conn.close();
+    }
+
 }
