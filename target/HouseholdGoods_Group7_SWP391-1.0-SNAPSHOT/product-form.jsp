@@ -5,109 +5,117 @@
 --%>
 
 <%@ page contentType="text/html;charset=UTF-8" %>
-<%@ page import="Model.Product, java.util.Map" %>
+<%@ page import="Model.Product" %>
 <%@ include file="left-sidebar.jsp" %>
-
 <%
-    Product p = (Product) request.getAttribute("product");
-    boolean isEdit = (p != null);
+    Product product = (Product) request.getAttribute("product");
     String context = request.getContextPath();
-    Map<String, String> errors = (Map<String, String>) request.getAttribute("errors");
 %>
-
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="UTF-8">
-        <title><%= isEdit ? "Edit" : "Add"%> Product</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+        <title><%= (product == null) ? "Add Product" : "Edit Product"%></title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
         <style>
-            .content {
-                margin-left: 240px;
-                padding: 30px;
+            body {
+                background-color: #f5f5f5;
             }
-            .form-label {
-                font-weight: 500;
+            .form-container {
+                max-width: 720px;
+                margin: 40px auto;
+                background: #ffffff;
+                padding: 30px 40px;
+                border-radius: 12px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             }
-            .error {
-                color: red;
-                font-size: 0.9em;
+            .form-title {
+                text-align: center;
+                margin-bottom: 25px;
+                color: #5d4037;
             }
         </style>
     </head>
     <body>
+        <div class="form-container">
+            <h4 class="form-title"><%= (product == null) ? "➕ Add New Household Product" : "✏️ Edit Household Product"%></h4>
 
-        <div class="content">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4><%= isEdit ? "✏️ Edit" : "➕ Add"%> Product</h4>
-            </div>
+            <form method="post" action="<%= context%>/Product" enctype="multipart/form-data" onsubmit="return validateForm()">
+                <% if (product != null) {%>
+                <input type="hidden" name="id" value="<%= product.getProductID()%>"/>
+                <input type="hidden" name="image" value="<%= product.getImage()%>"/>
+                <% }%>
 
-            <form method="post" action="<%= context%>/Product" class="row g-3" enctype="multipart/form-data">
-                <input type="hidden" name="id" value="<%= isEdit ? p.getProductID() : ""%>" />
-                <input type="hidden" name="image" value="<%= isEdit ? p.getImage() : ""%>"/>
-
-                <div class="col-md-6">
+                <!-- Product Name -->
+                <div class="mb-3">
                     <label class="form-label">Product Name</label>
-                    <input type="text" name="productName" required class="form-control" value="<%= isEdit ? p.getProductName() : ""%>"/>
+                    <input type="text" name="productName" class="form-control" required
+                           value="<%= (product != null) ? product.getProductName() : ""%>">
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">Price (₫)</label>
-                    <input type="number" name="price" required class="form-control" value="<%= isEdit ? p.getPrice() : ""%>"/>
-                    <% if (errors != null && errors.get("price") != null) {%>
-                    <div class="error"><%= errors.get("price")%></div>
-                    <% }%>
-                </div>
-
-                <div class="col-md-12">
+                <!-- Description -->
+                <div class="mb-3">
                     <label class="form-label">Description</label>
-                    <textarea name="description" class="form-control" rows="3"><%= isEdit ? p.getDescription() : ""%></textarea>
+                    <textarea name="description" class="form-control" rows="3" required><%= (product != null) ? product.getDescription() : ""%></textarea>
                 </div>
 
-                <div class="col-md-6">
+                <!-- Price -->
+                <div class="mb-3">
+                    <label class="form-label">Price (VND)</label>
+                    <input type="number" name="price" class="form-control" min="0" required
+                           value="<%= (product != null) ? product.getPrice() : ""%>">
+                </div>
+
+                <!-- Stock Quantity -->
+                <div class="mb-3">
                     <label class="form-label">Stock Quantity</label>
-                    <input type="number" name="stonkQuantity" required class="form-control" value="<%= isEdit ? p.getStonkQuantity() : ""%>"/>
-                    <% if (errors != null && errors.get("stonkQuantity") != null) {%>
-                    <div class="error"><%= errors.get("stonkQuantity")%></div>
-                    <% } %>
+                    <input type="number" name="stonkQuantity" class="form-control" min="0" required
+                           value="<%= (product != null) ? product.getStonkQuantity() : ""%>">
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">Image File</label>
-                    <input type="file" name="imageFile" class="form-control" accept="image/*" />
-                    <% if (errors != null && errors.get("imageFile") != null) {%>
-                    <div class="error"><%= errors.get("imageFile")%></div>
-                    <% }%>
+                <!-- Subcategory ID -->
+                <div class="mb-3">
+                    <label class="form-label">Sub Category ID</label>
+                    <input type="number" name="subCategory" class="form-control" min="1" required
+                           value="<%= (product != null) ? product.getSubCategory() : ""%>">
                 </div>
 
-                <div class="col-md-6">
+                <!-- Brand ID -->
+                <div class="mb-3">
                     <label class="form-label">Brand ID</label>
-                    <input type="number" name="brandID" required class="form-control" value="<%= isEdit ? p.getBrandID() : ""%>"/>
-                    <% if (errors != null && errors.get("brandID") != null) {%>
-                    <div class="error"><%= errors.get("brandID")%></div>
+                    <input type="number" name="brandID" class="form-control" min="1" required
+                           value="<%= (product != null) ? product.getBrandID() : ""%>">
+                </div>
+
+                <!-- Image Upload -->
+                <div class="mb-3">
+                    <label class="form-label">Product Image (JPG/PNG)</label>
+                    <input type="file" name="imageFile" accept=".jpg,.jpeg,.png" class="form-control">
+                    <% if (product != null && product.getImage() != null) {%>
+                    <small class="text-muted">Current image: <%= product.getImage()%></small>
                     <% }%>
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">SubCategory ID</label>
-                    <input type="number" name="subCategory" required class="form-control" value="<%= isEdit ? p.getSubCategory() : ""%>"/>
-                    <% if (errors != null && errors.get("subCategory") != null) {%>
-                    <div class="error"><%= errors.get("subCategory")%></div>
-                    <% }%>
-                </div>
-
-                <div class="col-12">
+                <!-- Submit Button -->
+                <div class="d-grid mt-4">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Save
+                        <%= (product == null) ? "Add Product" : "Update Product"%>
                     </button>
-                    <a href="<%= context%>/Product" class="btn btn-secondary">Cancel</a>
                 </div>
             </form>
         </div>
 
+        <script>
+            function validateForm() {
+                const price = document.querySelector('input[name="price"]').value;
+                const stock = document.querySelector('input[name="stonkQuantity"]').value;
+
+                if (price < 0 || stock < 0) {
+                    alert("Price and Stock Quantity cannot be negative.");
+                    return false;
+                }
+
+                return true;
+            }
+        </script>
     </body>
 </html>
-
-
-
-

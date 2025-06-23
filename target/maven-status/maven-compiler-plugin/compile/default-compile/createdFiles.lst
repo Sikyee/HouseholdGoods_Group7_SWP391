@@ -16,7 +16,6 @@ DAO\UserDAO.class
 DAO\FeedbackDAO.class
 Model\Product.class
 DAO\ReplyFeedbackDAO.class
-Controller\AddressController.class
 Model\Promotion.class
 Controller\UpdateUserController.class
 Controller\FeedbackController.class

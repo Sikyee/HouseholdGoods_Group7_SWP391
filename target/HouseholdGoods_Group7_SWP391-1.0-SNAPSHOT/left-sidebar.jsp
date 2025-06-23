@@ -1,51 +1,72 @@
-<%-- 
-    Document   : left-sidebar
-    Created on : Jun 15, 2025, 2:17:32 PM
-    Author     : thong
---%>
-
-<!-- File: left-sidebar.jsp -->
 <%@ page contentType="text/html;charset=UTF-8" %>
-<!-- Bootstrap 5 CDN -->
+<!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<!-- FontAwesome icons (tuỳ chọn) -->
+<!-- FontAwesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<div class="sidebar d-flex flex-column p-3 text-white bg-dark position-fixed" style="width: 220px; height: 100vh;">
-    <a href="dashboard" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-        <img src="images/logo.png" alt="Logo" style="height: 32px; margin-right: 10px;">
-        <span class="fs-5 fw-bold">TRƯỜNG AN</span>
+<!-- Sidebar -->
+<div class="sidebar d-flex flex-column p-3 bg-light border-end position-fixed" style="width: 240px; height: 100vh;">
+    <!-- Logo -->
+    <a href="dashboard" class="d-flex align-items-center mb-4 text-decoration-none text-dark">
+        <span class="fs-5 fw-bold text-uppercase">Household Shop</span>
     </a>
-    <hr>
-    <ul class="nav nav-pills flex-column mb-auto">
-        <li><a href="dashboard" class="nav-link text-white"><i class="fas fa-users"></i> Dashboard</a></li>
-        <li><a href="#" class="nav-link text-white"><i class="fas fa-calendar-week"></i> Revenue (Week)</a></li>
-        <li><a href="#" class="nav-link text-white"><i class="fas fa-calendar-alt"></i> Revenue (Month)</a></li>
-        <li><a href="#" class="nav-link text-white"><i class="fas fa-file-invoice"></i> Invoice</a></li>
-        <li><a href="User" class="nav-link text-white"><i class="fas fa-users"></i> Accounts</a></li>
-        <li><a href="Category" class="nav-link text-white"><i class="fas fa-box"></i> Category</a></li>
-        <li><a href="Feedback" class="nav-link text-white"><i class="fas fa-wallet"></i> Feedback</a></li>
-        <li><a href="Product" class="nav-link text-white"><i class="fas fa-box"></i> Products</a></li>
-        <li><a href="#" class="nav-link text-white"><i class="fas fa-star"></i> Top 10 Products</a></li>
-        <li><a href="#" class="nav-link text-white"><i class="fas fa-users"></i> Top 5 Customers</a></li>
-        <li><a href="#" class="nav-link text-white"><i class="fas fa-truck"></i> Supplier</a></li>
-        <li class="nav-item"><a class="nav-link text-white" href="<%= request.getContextPath()%>/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+
+    <!-- Navigation -->
+    <ul class="nav nav-pills flex-column">
+        <li class="nav-item mb-1">
+            <a href="dashboard" class="nav-link text-dark">
+                <i class="fas fa-chart-line me-2"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item mb-1">
+            <a href="User" class="nav-link text-dark">
+                <i class="fas fa-user-friends me-2"></i> User Accounts
+            </a>
+        </li>
+        <li class="nav-item mb-1">
+            <a href="Category" class="nav-link text-dark">
+                <i class="fas fa-layer-group me-2"></i> Categories
+            </a>
+        </li>
+        <li class="nav-item mb-1">
+            <a href="Product" class="nav-link text-dark">
+                <i class="fas fa-blender me-2"></i> Products
+            </a>
+        </li>
+        <li class="nav-item mb-1">
+            <a href="Feedback" class="nav-link text-dark">
+                <i class="fas fa-comments me-2"></i> Feedback
+            </a>
+        </li>
+        <li class="nav-item mt-3">
+            <a href="<%= request.getContextPath()%>/logout" class="nav-link text-danger">
+                <i class="fas fa-sign-out-alt me-2"></i> Logout
+            </a>
+        </li>
     </ul>
 </div>
 
+<!-- Style -->
 <style>
     body {
         margin: 0;
-        padding: 0;
+        padding-left: 0;
+        background-color: #f9f9f9;
+        font-family: 'Segoe UI', sans-serif;
     }
+
     .sidebar .nav-link {
-        padding: 10px 15px;
-        border-radius: 6px;
-        transition: background-color 0.2s ease-in-out;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        font-size: 15px;
     }
+
     .sidebar .nav-link:hover {
-        background-color: #3a3b5a;
+        background-color: #e7e7e7;
+    }
+
+    .sidebar .nav-link i {
+        width: 20px;
+        text-align: center;
     }
 </style>
-
-
