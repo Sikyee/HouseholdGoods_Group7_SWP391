@@ -19,8 +19,9 @@ import java.io.IOException;
 import java.sql.Date;
 import java.util.List;
 
-@WebServlet("/PromotionController")
+@WebServlet("/Promotion")
 public class PromotionController extends HttpServlet {
+
     private PromotionDAO dao;
 
     @Override
@@ -60,12 +61,20 @@ public class PromotionController extends HttpServlet {
             } else if (action.equals("delete")) {
                 int id = Integer.parseInt(request.getParameter("id"));
                 dao.softDeletePromotion(id);
-                response.sendRedirect("PromotionController?action=list");
+                response.sendRedirect("Promotion?action=list");
             } else if (action.equals("reactivate")) {
                 int id = Integer.parseInt(request.getParameter("id"));
                 dao.reactivatePromotion(id);
-                response.sendRedirect("PromotionController?action=list");
+                response.sendRedirect("Promotion?action=list");
+            } else if (action.equals("prepareAdd")) {
+                // Reset promotion form and open modal
+                request.setAttribute("promotion", null); // Đảm bảo không giữ dữ liệu edit
+                request.setAttribute("showModal", true); // Cho phép JSP mở modal
+                request.setAttribute("list", dao.getAllPromotions());
+                request.setAttribute("deletedList", dao.getDeletedPromotions());
+                request.getRequestDispatcher("/managePromotion.jsp").forward(request, response);
             }
+
         } catch (Exception e) {
             request.setAttribute("error", "Error: " + e.getMessage());
             request.getRequestDispatcher("/managePromotion.jsp").forward(request, response);
@@ -118,7 +127,7 @@ public class PromotionController extends HttpServlet {
                 dao.updatePromotion(p);
             }
 
-            response.sendRedirect("PromotionController?action=list");
+            response.sendRedirect("Promotion?action=list");
         } catch (Exception e) {
             request.setAttribute("error", "Invalid input: " + e.getMessage());
             try {

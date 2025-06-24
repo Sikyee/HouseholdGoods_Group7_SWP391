@@ -115,14 +115,14 @@
                 position: fixed;
                 z-index: 999;
                 left: 0;
-                top: 0;
+                top: 50px;
                 width: 100%;
                 height: 100%;
                 background-color: rgba(0,0,0,0.4);
             }
 
             .modal-content {
-                background-color: #fff;
+                background-color: #cccccc;
                 position: absolute;
                 top: 50%;
                 left: 50%;
@@ -165,7 +165,7 @@
                 padding: 10px;
                 border: 1px solid #ff0000;
                 position: fixed;
-                top: 20px;
+                top: 60px;
                 left: 50%;
                 transform: translateX(-50%);
                 z-index: 1000;
@@ -181,6 +181,16 @@
             .zebra:nth-child(even) {
                 background-color: #e6f7ff;
             }
+
+            .disabled-button {
+                background-color: #a0c4ff !important;  /* Xanh dương nhạt */
+                color: white !important;
+                cursor: not-allowed !important;
+                pointer-events: none;
+                border: 1px solid #90b8f0;
+                opacity: 1 !important; /* Giữ rõ */
+            }
+
         </style>
     </head>
 
@@ -195,8 +205,12 @@
                 <h2>Promotion List</h2>
 
                 <input type="text" id="searchInput" placeholder="Search by code..." onkeyup="filterPromotions()" />
+                <form action="Promotion" method="get" style="display:inline;">
+                    <input type="hidden" name="action" value="prepareAdd" />
+                    <button type="submit" class="add-button">Add Promotion</button>
+                </form>
 
-                <button class="add-button" onclick="openModal()">Add Promotion</button>
+
                 <button class="deleted-button" onclick="openDeletedModal()">View Deleted Promotions</button>
             </div>
 
@@ -223,8 +237,10 @@
                             <td><%= p.getUsedCount()%></td>
                             <td><%= Utils.getStatus(p.getEndDate())%></td>
                             <td>
-                                <a class="btn-action edit" href="PromotionController?action=edit&id=<%= p.getPromotionID()%>">Edit</a>
-                                <a class="btn-action delete" href="PromotionController?action=delete&id=<%= p.getPromotionID()%>" onclick="return confirm('Are you sure?');">Delete</a>
+                                <a class="btn-action edit" href="Promotion?action=edit&id=<%= p.getPromotionID()%>">Edit</a>
+                                <a class="btn-action delete" href="Promotion?action=delete&id=<%= p.getPromotionID()%>" onclick="return confirm('Are you sure?');">Delete</a>
+
+                                <a c
                             </td>
                         </tr>
                         <% }%>
@@ -238,7 +254,9 @@
                 <div class="modal-content">
                     <span class="close" onclick="closeModal()">×</span>
                     <h2><%= (edit != null) ? "Edit Promotion" : "Create Promotion"%></h2>
-                    <form action="PromotionController" method="post">
+
+                    <form id="promotionForm" action="Promotion" method="post">
+
                         <% if (edit != null) {%>
                         <input type="hidden" name="promotionID" value="<%= edit.getPromotionID()%>" />
                         <% }%>
@@ -281,15 +299,22 @@
                             <label>Used Count:</label>
                             <input type="number" name="usedCount" value="<%= (edit != null) ? edit.getUsedCount() : "0"%>" required />
                         </div>
+                        <% if (edit == null) { %>
+                        <!-- Trường hợp tạo mới -->
                         <div class="form-row">
                             <label>Is Active:</label>
                             <select name="isActive">
-                                <option value="true" <%= (edit != null && edit.isIsActive()) ? "selected" : ""%>>True</option>
-                                <option value="false" <%= (edit != null && !edit.isIsActive()) ? "selected" : ""%>>False</option>
+                                <option value="true">True</option>
+                                <option value="false">False</option>
                             </select>
                         </div>
+                        <% } else { %>
+                        <!-- Trường hợp sửa, luôn giữ active -->
+                        <input type="hidden" name="isActive" value="true" />
+                        <% }%>
+
                         <div class="form-row submit-row">
-                            <input type="submit" value="<%= (edit != null) ? "Update" : "Add"%> Promotion" />
+                            <input id="submitBtn" type="submit" value="<%= (edit != null) ? "Update" : "Add"%> Promotion" />
                         </div>
                     </form>
                 </div>
@@ -311,7 +336,8 @@
                                 <td><%= d.getCode()%></td>
                                 <td><%= d.getDescription()%></td>
                                 <td>
-                                    <a class="btn-action reactivate" href="PromotionController?action=reactivate&id=<%= d.getPromotionID()%>">Reactivate</a>
+
+                                    <a class="btn-action reactivate" href="Promotion?action=reactivate&id=<%= d.getPromotionID()%>">Reactivate</a>
                                 </td>
                             </tr>
                             <% } %>
@@ -355,18 +381,13 @@
                     let code = row.cells[1].textContent.toLowerCase();
                     if (code.includes(input)) {
                         row.style.display = "";
-                        row.classList.remove("zebra");
-                        if (visibleIndex % 2 === 1) {
-                            row.classList.add("zebra");
-                        }
+                        row.style.backgroundColor = (visibleIndex % 2 === 0) ? "#ffffff" : "#e6f7ff";
                         visibleIndex++;
                     } else {
                         row.style.display = "none";
-                        row.classList.remove("zebra");
                     }
                 });
             }
-
             <%-- Handle alerts and auto modal open --%>
             <% if (request.getAttribute("codeExists") != null) { %>
             window.onload = function () {
@@ -390,7 +411,39 @@
             }
             <% }%>
         </script>
+        <script>
+            const form = document.querySelector("#addPromotionModal form");
+            const submitBtn = form.querySelector("input[type=submit]");
+            let originalData = new FormData(form);
 
+            function checkFormChanges() {
+                const currentData = new FormData(form);
+                let changed = false;
+                for (let [key, value] of currentData.entries()) {
+                    if (value !== originalData.get(key)) {
+                        changed = true;
+                        break;
+                    }
+                }
+
+                if (changed) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove("disabled-button");
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add("disabled-button");
+                }
+            }
+
+            form.querySelectorAll("input, select, textarea").forEach(field => {
+                field.addEventListener("input", checkFormChanges);
+            });
+
+            window.addEventListener("load", () => {
+                checkFormChanges();
+            });
+
+        </script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
         <%@ include file="footer.jsp" %>
