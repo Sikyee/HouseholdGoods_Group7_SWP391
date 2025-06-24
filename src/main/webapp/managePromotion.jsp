@@ -205,7 +205,6 @@
                 <h2>Promotion List</h2>
 
                 <input type="text" id="searchInput" placeholder="Search by code..." onkeyup="filterPromotions()" />
-
                 <form action="Promotion" method="get" style="display:inline;">
                     <input type="hidden" name="action" value="prepareAdd" />
                     <button type="submit" class="add-button">Add Promotion</button>
@@ -240,6 +239,8 @@
                             <td>
                                 <a class="btn-action edit" href="Promotion?action=edit&id=<%= p.getPromotionID()%>">Edit</a>
                                 <a class="btn-action delete" href="Promotion?action=delete&id=<%= p.getPromotionID()%>" onclick="return confirm('Are you sure?');">Delete</a>
+
+                                <a c
                             </td>
                         </tr>
                         <% }%>
@@ -253,7 +254,9 @@
                 <div class="modal-content">
                     <span class="close" onclick="closeModal()">×</span>
                     <h2><%= (edit != null) ? "Edit Promotion" : "Create Promotion"%></h2>
+
                     <form id="promotionForm" action="Promotion" method="post">
+
                         <% if (edit != null) {%>
                         <input type="hidden" name="promotionID" value="<%= edit.getPromotionID()%>" />
                         <% }%>
@@ -333,6 +336,7 @@
                                 <td><%= d.getCode()%></td>
                                 <td><%= d.getDescription()%></td>
                                 <td>
+
                                     <a class="btn-action reactivate" href="Promotion?action=reactivate&id=<%= d.getPromotionID()%>">Reactivate</a>
                                 </td>
                             </tr>
@@ -384,8 +388,6 @@
                     }
                 });
             }
-
-
             <%-- Handle alerts and auto modal open --%>
             <% if (request.getAttribute("codeExists") != null) { %>
             window.onload = function () {
@@ -409,7 +411,6 @@
             }
             <% }%>
         </script>
-
         <script>
             const form = document.querySelector("#addPromotionModal form");
             const submitBtn = form.querySelector("input[type=submit]");
@@ -443,7 +444,6 @@
             });
 
         </script>
-
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
         <%@ include file="footer.jsp" %>
