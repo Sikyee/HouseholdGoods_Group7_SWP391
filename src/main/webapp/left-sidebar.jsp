@@ -24,13 +24,13 @@
             </a>
         </li>
         <li class="nav-item mb-1">
-            <a href="#!" class="nav-link text-white" id="categoryToggle">
+            <a href="#!" class="nav-link text-black" id="categoryToggle">
                 <i class="fas fa-list"></i> Category
                 <i class="fas fa-caret-down float-end"></i>
             </a>
             <ul class="nav flex-column ms-3 collapse" id="categorySubMenu">
-                <li><a href="Category" class="nav-link text-white"><i class="fas fa-tags"></i> Category List</a></li>
-                <li><a href="MainCategory" class="nav-link text-white"><i class="fas fa-list-alt"></i> Main Category</a></li>
+                <li><a href="Category" class="nav-link text-black"><i class="fas fa-tags"></i> Category List</a></li>
+                <li><a href="MainCategory" class="nav-link text-black"><i class="fas fa-list-alt"></i> Main Category</a></li>
             </ul>
         </li>
         <li class="nav-item mb-1">
