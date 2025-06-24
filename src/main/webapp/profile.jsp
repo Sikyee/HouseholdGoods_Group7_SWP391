@@ -211,9 +211,10 @@
         </style>
     </head>
     <body>
+        <%@ include file="header.jsp" %>
+
         <div class="container">
             <div class="header">
-                <a href="home" class="home-btn">← Back to Home</a>
                 <h1>User Profile</h1>
             </div>
 
