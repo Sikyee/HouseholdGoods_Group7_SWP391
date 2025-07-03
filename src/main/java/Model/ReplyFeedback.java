@@ -7,7 +7,7 @@ package Model;
 import java.sql.Timestamp;
 /**
  *
- * @author thach
+ * @author TriTN
  */
 
 

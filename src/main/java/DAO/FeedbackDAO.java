@@ -10,7 +10,10 @@ import Model.Feedback;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ *
+ * @author TriTN
+ */
 public class FeedbackDAO {
 
     // Lấy feedback theo trang
