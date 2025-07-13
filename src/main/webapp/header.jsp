@@ -276,7 +276,7 @@
                             </a>
                         </li>
                         <li class="nav-item me-3">
-                            <a class="nav-link" href="<%= request.getContextPath()%>/CartController?action=view" title="Cart">
+                            <a class="nav-link" href="<%= request.getContextPath()%>/Cart" title="">
                                 <i class="fas fa-shopping-cart"></i>
                             </a>
                         </li>
