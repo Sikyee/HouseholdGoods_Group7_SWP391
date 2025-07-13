@@ -137,20 +137,20 @@
                 for (Product p : products) {%>
                 <div class="col-lg-3 col-md-6 p-2">
                     <div class="card product-card h-100">
-                        <img src="images/<%= p.getImage()%>" class="card-img-top" alt="<%= p.getProductName()%>">
+                        <img src="/HouseholdGoods_Group7_SWP391/images/<%= p.getImage()%>" class="card-img-top" alt="<%= p.getProductName()%>">
                         <div class="card-body">
                             <h5 class="card-title"><%= p.getProductName()%></h5>
                             <p class="card-text"><%= p.getDescription()%></p>
                             <p class="price"><%= String.format("%,d", p.getPrice())%>₫</p>
                         </div>
                         <div class="btn-layout">
-                            <form action="<%= context%>/Cart" method="get">
+                            <form action="<%= context%>/Cart" method="get" class="d-inline">
                                 <input type="hidden" name="action" value="add">
                                 <input type="hidden" name="productID" value="<%= p.getProductID()%>">
                                 <input type="hidden" name="quantity" value="1">
                                 <button type="submit" class="btn-add">Add to cart</button>
                             </form>
-                            <form action="<%= context%>/Cart" method="get">
+                            <form action="<%= context%>/Checkout" method="get" class="d-inline">
                                 <input type="hidden" name="action" value="add">
                                 <input type="hidden" name="productID" value="<%= p.getProductID()%>">
                                 <input type="hidden" name="quantity" value="1">
