@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 /**
  *
- * @author thach
+ * @author TriTN
  */
 public class ReplyFeedbackDAO {
 

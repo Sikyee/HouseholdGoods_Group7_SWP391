@@ -1,8 +1,16 @@
 <%@page import="Model.Product"%>
 <%@page import="java.util.List"%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%
+    List<Product> products = (List<Product>) request.getAttribute("productList");
+    if (products == null) {
+        products = (List<Product>) request.getAttribute("products");
+    }
+    String search = request.getParameter("search");
+    String context = request.getContextPath();
+%>
 <!DOCTYPE html>
-<html lang="en">
+<html>
     <head>
         <meta charset="UTF-8">
         <title>Household Goods - Premium Home Essentials</title>
@@ -13,44 +21,35 @@
                 font-family: 'Arial', sans-serif;
                 background-color: #f8f9fa;
             }
-
             .hero-section {
                 background-color: #6c757d;
                 color: white;
                 padding: 100px 0;
                 text-align: center;
             }
-
             .hero-title {
                 font-size: 3rem;
-                margin-bottom: 1rem;
             }
-
             .hero-subtitle {
                 font-size: 1.25rem;
-                margin-bottom: 2rem;
             }
-
-            .products-section {
-                padding: 60px 0;
-            }
-
             .section-title {
                 text-align: center;
-                margin-bottom: 3rem;
-                font-size: 2.5rem;
+                margin-top: 3rem;
+                margin-bottom: 2rem;
+                font-size: 2rem;
+                font-weight: bold;
             }
-
             .product-card {
                 border: 1px solid #dee2e6;
-                padding: 10px
+                padding: 10px;
+                border-radius: 10px;
+                background-color: #ffffff;
             }
-
             .product-card img {
                 height: 250px;
                 object-fit: cover;
             }
-
             .price {
                 font-size: 1.25rem;
                 font-weight: bold;
@@ -62,71 +61,56 @@
                 padding: 10px 15px;
                 justify-content: center;
             }
-
-            .btn-layout form {
-                flex: 1;
-            }
-
             .btn-layout button {
                 width: 100%;
                 padding: 10px;
                 font-weight: bold;
                 border: none;
                 border-radius: 8px;
-                cursor: pointer;
-                transition: background-color 0.2s ease;
             }
-
-            .btn-layout button.btn-add {
-                background-color: #198754; /* green - bootstrap success */
+            .btn-add {
+                background-color: #198754;
                 color: white;
             }
-
-            .btn-layout button.btn-add:hover {
+            .btn-add:hover {
                 background-color: #157347;
             }
-
-            .btn-layout button.btn-buy {
-                background-color: red; /* bootstrap primary */
+            .btn-buy {
+                background-color: #dc3545;
                 color: white;
             }
-
-            .btn-layout button.btn-buy:hover {
-                background-color: #cc0033;
+            .btn-buy:hover {
+                background-color: #bb2d3b;
             }
-
         </style>
     </head>
     <body>
+
         <%@ include file="header.jsp" %>
-        <!-- Hero Section -->
+
+        <!-- Hero -->
         <section class="hero-section">
             <div class="container">
                 <h1 class="hero-title">Premium Household Goods</h1>
                 <p class="hero-subtitle">Discover quality, comfort, and style for your home</p>
-                <button class="btn btn-primary btn-lg">
+                <a href="#products" class="btn btn-light btn-lg">
                     <i class="fas fa-shopping-bag me-2"></i>Shop Now
-                </button>
+                </a>
             </div>
         </section>
 
         <!-- Carousel -->
         <div class="container my-5">
             <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
-                <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
-                    <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
-                    <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
-                </div>
                 <div class="carousel-inner">
                     <div class="carousel-item active">
-                        <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" class="d-block w-100" alt="Modern Kitchen" style="height: 400px; object-fit: cover;">
+                        <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7" class="d-block w-100" style="height: 400px; object-fit: cover;" alt="Kitchen">
                     </div>
                     <div class="carousel-item">
-                        <img src="https://images.unsplash.com/photo-1484154218962-a197022b5858?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" class="d-block w-100" alt="Living Room" style="height: 400px; object-fit: cover;">
+                        <img src="https://images.unsplash.com/photo-1484154218962-a197022b5858" class="d-block w-100" style="height: 400px; object-fit: cover;" alt="Living Room">
                     </div>
                     <div class="carousel-item">
-                        <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" class="d-block w-100" alt="Bedroom" style="height: 400px; object-fit: cover;">
+                        <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace" class="d-block w-100" style="height: 400px; object-fit: cover;" alt="Bedroom">
                     </div>
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
@@ -137,75 +121,55 @@
                 </button>
             </div>
         </div>
-        <%
-            List<Product> products = (List<Product>) request.getAttribute("productList");
-            String context = request.getContextPath();
-        %>
+
+        <!-- Search form -->
+        <form action="search" method="get" class="input-group mb-4 w-50 mx-auto">
+            <input type="text" name="search" class="form-control" placeholder="Search products..." value="<%= (search != null) ? search : ""%>">
+            <button type="submit" class="btn btn-outline-dark">Search</button>
+        </form>
+
+
         <!-- Products Section -->
-        <div class="container">
-            <section class="products-section">
-                <h2 class="section-title">Featured Products</h2>
-                <div class="row">
-                    <% if (products != null && !products.isEmpty()) { %>
-                    <%for (Product p : products) {%>
-                    <!-- 4 sản phẩm mẫu -->
-                    <div class="col-lg-3 col-md-6 p-2">
-                        <div class="card product-card h-100">
-                            <img src="images/<%= p.getImage()%>" class="card-img-top" alt="<%= p.getProductName()%>">
-                            <div class="card-body">
-                                <h5 class="card-title"><%= p.getProductName()%></h5>
-                                <p class="card-text"><%= p.getDescription()%></p>
-                                <p class="price"><%= String.format("%,d", p.getPrice())%>₫</p>
-                            </div>
-                            <div class="btn-layout">
-                                <form action="<%= request.getContextPath()%>/Cart" method="get" class="d-inline">
-                                    <input type="hidden" name="action" value="add">
-                                    <input type="hidden" name="productID" value="<%= p.getProductID()%>">
-                                    <input type="hidden" name="quantity" value="1"> <!-- luôn thêm 1 -->
-                                    <button type="submit" class="btn-add">Add to cart</button>
-                                </form>
-                                <form action="<%= request.getContextPath()%>/Cart" method="get" class="d-inline">
-                                    <input type="hidden" name="action" value="add">
-                                    <input type="hidden" name="productID" value="<%= p.getProductID()%>">
-                                    <input type="hidden" name="quantity" value="1"> <!-- luôn thêm 1 -->
-                                    <button type="submit" class="btn-buy">Buy now</button>
-                                </form>
-                            </div>
+        <div class="container" id="products">
+            <h2 class="section-title">Featured Products</h2>
+            <div class="row">
+                <% if (products != null && !products.isEmpty()) {
+                for (Product p : products) {%>
+                <div class="col-lg-3 col-md-6 p-2">
+                    <div class="card product-card h-100">
+                        <img src="/HouseholdGoods_Group7_SWP391/images/<%= p.getImage()%>" class="card-img-top" alt="<%= p.getProductName()%>">
+                        <div class="card-body">
+                            <h5 class="card-title"><%= p.getProductName()%></h5>
+                            <p class="card-text"><%= p.getDescription()%></p>
+                            <p class="price"><%= String.format("%,d", p.getPrice())%>₫</p>
+                        </div>
+                        <div class="btn-layout">
+                            <form action="<%= context%>/Cart" method="get" class="d-inline">
+                                <input type="hidden" name="action" value="add">
+                                <input type="hidden" name="productID" value="<%= p.getProductID()%>">
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="btn-add">Add to cart</button>
+                            </form>
+                            <form action="<%= context%>/Checkout" method="get" class="d-inline">
+                                <input type="hidden" name="action" value="add">
+                                <input type="hidden" name="productID" value="<%= p.getProductID()%>">
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="btn-buy">Buy now</button>
+                            </form>
                         </div>
                     </div>
-                    <% } %>
-                    <%} else { %>
-                    <tr>
-                        <td colspan="7" class="text-center">No product found.</td>
-                    </tr>
-                    <% }%>
                 </div>
-            </section>
+                <% }
+        } else { %>
+                <div class="text-center mt-5">
+                    <p class="text-danger fs-5">No products found.</p>
+                </div>
+                <% }%>
+            </div>
         </div>
 
         <%@ include file="footer.jsp" %>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-        <script>
-            // Basic search functionality
-            const searchInput = document.querySelector('input[type="search"]');
-            if (searchInput) {
-                searchInput.addEventListener('input', function () {
-                    const searchTerm = this.value.toLowerCase();
-                    const productCards = document.querySelectorAll('.product-card');
-
-                    productCards.forEach(card => {
-                        const title = card.querySelector('.card-title').textContent.toLowerCase();
-                        const description = card.querySelector('.card-text').textContent.toLowerCase();
-
-                        if (title.includes(searchTerm) || description.includes(searchTerm) || searchTerm === '') {
-                            card.style.display = 'block';
-                        } else {
-                            card.style.display = 'none';
-                        }
-                    });
-                });
-            }
-        </script>
     </body>
 </html>

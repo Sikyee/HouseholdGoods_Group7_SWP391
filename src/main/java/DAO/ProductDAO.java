@@ -172,4 +172,85 @@ public class ProductDAO {
         }
         return -1;
     }
+
+    public List<Product> searchProducts(String keyword) throws Exception {
+        List<Product> list = new ArrayList<>();
+        Connection conn = DBConnection.getConnection();
+        String sql = "SELECT * FROM Product WHERE productName LIKE ? OR description LIKE ?";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setString(1, "%" + keyword + "%");
+        ps.setString(2, "%" + keyword + "%");
+        ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+            Product p = new Product();
+            p.setProductID(rs.getInt("productID"));
+            p.setProductName(rs.getString("productName"));
+            p.setDescription(rs.getString("description"));
+            p.setSubCategory(rs.getInt("subCategory"));
+            p.setPrice(rs.getLong("price"));
+            p.setStonkQuantity(rs.getInt("stonk_Quantity"));
+            p.setBrandID(rs.getInt("brandID"));
+            p.setImage(rs.getString("image"));
+            list.add(p);
+        }
+
+        return list;
+    }
+
+    public List<Product> filterProducts(Integer brandID, Integer categoryID, Long minPrice, Long maxPrice) throws Exception {
+        List<Product> filtered = new ArrayList<>();
+        Connection conn = DBConnection.getConnection();
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT DISTINCT p.* FROM Product p "
+                + "JOIN SubCategory sc ON p.subCategory = sc.subCategoryID "
+                + "JOIN Category c ON sc.categoryID = c.categoryID "
+                + "WHERE p.status = 1");
+
+        if (brandID != null) {
+            sql.append(" AND p.brandID = ?");
+        }
+        if (categoryID != null) {
+            sql.append(" AND c.categoryID = ?");
+        }
+        if (minPrice != null) {
+            sql.append(" AND p.price >= ?");
+        }
+        if (maxPrice != null) {
+            sql.append(" AND p.price <= ?");
+        }
+
+        PreparedStatement ps = conn.prepareStatement(sql.toString());
+        int index = 1;
+        if (brandID != null) {
+            ps.setInt(index++, brandID);
+        }
+        if (categoryID != null) {
+            ps.setInt(index++, categoryID);
+        }
+        if (minPrice != null) {
+            ps.setLong(index++, minPrice);
+        }
+        if (maxPrice != null) {
+            ps.setLong(index++, maxPrice);
+        }
+
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            Product p = new Product();
+            p.setProductID(rs.getInt("productID"));
+            p.setProductName(rs.getString("productName"));
+            p.setDescription(rs.getString("description"));
+            p.setSubCategory(rs.getInt("subCategory"));
+            p.setPrice(rs.getLong("price"));
+            p.setStonkQuantity(rs.getInt("stonk_Quantity"));
+            p.setBrandID(rs.getInt("brandID"));
+            p.setImage(rs.getString("image"));
+            filtered.add(p);
+        }
+
+        return filtered;
+    }
+
 }

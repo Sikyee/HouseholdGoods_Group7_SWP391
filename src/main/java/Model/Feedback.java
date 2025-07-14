@@ -5,7 +5,7 @@
 
 /**
  *
- * @author thach
+ * @author TriTN
  */
 package Model;
 
