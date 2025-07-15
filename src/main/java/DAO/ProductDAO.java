@@ -198,42 +198,37 @@ public class ProductDAO {
         return list;
     }
 
-    public List<Product> filterProducts(Integer brandID, Integer categoryID, Long minPrice, Long maxPrice) throws Exception {
-        List<Product> filtered = new ArrayList<>();
+    public List<Product> filterProducts(Integer subCategory, Integer brandID, Long minPrice, Long maxPrice) throws Exception {
+        List<Product> list = new ArrayList<>();
         Connection conn = DBConnection.getConnection();
 
-        StringBuilder sql = new StringBuilder(
-                "SELECT DISTINCT p.* FROM Product p "
-                + "JOIN SubCategory sc ON p.subCategory = sc.subCategoryID "
-                + "JOIN Category c ON sc.categoryID = c.categoryID "
-                + "WHERE p.status = 1");
+        StringBuilder sql = new StringBuilder("SELECT * FROM Product WHERE status != 0");
+        List<Object> params = new ArrayList<>();
+
+        if (subCategory != null) {
+            sql.append(" AND subCategory = ?");
+            params.add(subCategory);
+        }
 
         if (brandID != null) {
-            sql.append(" AND p.brandID = ?");
+            sql.append(" AND brandID = ?");
+            params.add(brandID);
         }
-        if (categoryID != null) {
-            sql.append(" AND c.categoryID = ?");
-        }
+
         if (minPrice != null) {
-            sql.append(" AND p.price >= ?");
+            sql.append(" AND price >= ?");
+            params.add(minPrice);
         }
+
         if (maxPrice != null) {
-            sql.append(" AND p.price <= ?");
+            sql.append(" AND price <= ?");
+            params.add(maxPrice);
         }
 
         PreparedStatement ps = conn.prepareStatement(sql.toString());
-        int index = 1;
-        if (brandID != null) {
-            ps.setInt(index++, brandID);
-        }
-        if (categoryID != null) {
-            ps.setInt(index++, categoryID);
-        }
-        if (minPrice != null) {
-            ps.setLong(index++, minPrice);
-        }
-        if (maxPrice != null) {
-            ps.setLong(index++, maxPrice);
+
+        for (int i = 0; i < params.size(); i++) {
+            ps.setObject(i + 1, params.get(i));
         }
 
         ResultSet rs = ps.executeQuery();
@@ -247,10 +242,11 @@ public class ProductDAO {
             p.setStonkQuantity(rs.getInt("stonk_Quantity"));
             p.setBrandID(rs.getInt("brandID"));
             p.setImage(rs.getString("image"));
-            filtered.add(p);
+            p.setAttributes(getAttributesByProductId(p.getProductID())); // nếu có
+            list.add(p);
         }
 
-        return filtered;
+        return list;
     }
 
 }
