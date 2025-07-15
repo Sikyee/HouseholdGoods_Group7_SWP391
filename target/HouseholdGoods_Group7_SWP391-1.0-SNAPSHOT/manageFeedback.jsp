@@ -1,7 +1,7 @@
 <%-- 
     Document   : manageFeedback
     Created on : Jun 16, 2025, 10:41:04 PM
-    Author     : thach
+    Author     : TriTN
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.*, Model.Feedback, Model.ReplyFeedback, DAO.ReplyFeedbackDAO" %>
@@ -99,7 +99,11 @@
 
                     <!-- Action -->
                     <td>
-                        <a href="<%= context%>/Feedback?action=delete&id=<%= fb.getFeedbackID()%>" class="btn btn-danger btn-sm">Delete</a>
+                        <a href="<%= context%>/Feedback?action=delete&id=<%= fb.getFeedbackID()%>"
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Are you sure you want to delete this feedback?');">
+                            Delete
+                        </a>
 
                         <% if (fb.getComment().split("\\s+").length > 10) {%>
                         <button class="btn btn-info btn-sm mt-1" data-bs-toggle="modal"
@@ -161,7 +165,7 @@
                                 <% }%>
                             </div>
 
-                            <!-- Form gửi mới -->
+                            <!-- Form gửi -->
                             <form method="post" action="<%= context%>/ReplyFeedback">
                                 <input type="hidden" name="feedbackID" value="<%= fb.getFeedbackID()%>">
                                 <textarea name="replyText" class="form-control" rows="3" required placeholder="Enter reply..."></textarea>

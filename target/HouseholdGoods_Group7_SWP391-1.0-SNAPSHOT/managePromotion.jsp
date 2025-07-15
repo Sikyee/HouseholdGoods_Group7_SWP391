@@ -8,6 +8,7 @@
 <%@ page import="Model.Utils" %>
 <%@ page import="java.util.List" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ include file="left-sidebar.jsp" %>
 
 <%
     List<Promotion> list = (List<Promotion>) request.getAttribute("list");
@@ -24,7 +25,6 @@
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
         <style>
             body {
-                padding-top: 80px;
                 font-family: Arial, sans-serif;
             }
 
@@ -97,11 +97,13 @@
 
             .btn-action.edit {
                 background-color: #4CAF50;
+                padding: 8px 18px;
                 color: white;
             }
 
             .btn-action.delete {
                 background-color: #f44336;
+                padding: 8px 10px;
                 color: white;
             }
 
@@ -191,21 +193,31 @@
                 opacity: 1 !important; /* Giữ rõ */
             }
 
+            .description-cell {
+                max-width: 200px;         /* hoặc điều chỉnh theo mong muốn */
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            footer {
+                padding-left: 260px !important;
+            }
+
+
         </style>
     </head>
 
     <body>
-        <%@ include file="header.jsp" %>
 
-        <div class="main-content" style="padding-left: 20px; padding-right: 20px;">
+        <div class="main-content" style="padding-left: 260px; padding-right: 20px; padding-top: 20px ">
             <div class="content-top">
                 <!-- Alert -->
                 <div id="alertPopup">Voucher with this code already exists and is active. Please edit or delete it first.</div>
 
-                <h2>Promotion List</h2>
+                <h4><i class="fa-solid fa-tags"></i> Promotion List</h4>
 
                 <input type="text" id="searchInput" placeholder="Search by code..." onkeyup="filterPromotions()" />
-
                 <form action="Promotion" method="get" style="display:inline;">
                     <input type="hidden" name="action" value="prepareAdd" />
                     <button type="submit" class="add-button">Add Promotion</button>
@@ -228,7 +240,9 @@
                         <tr>
                             <td><%= p.getPromotionID()%></td>
                             <td><%= p.getCode()%></td>
-                            <td><%= p.getDescription()%></td>
+                            <td class="description-cell" title="<%= p.getDescription()%>">
+                                <%= p.getDescription()%>
+                            </td>
                             <td><%= p.getDiscountType()%></td>
                             <td><%= p.getDiscountValue()%></td>
                             <td><%= p.getStartDate()%></td>
@@ -240,7 +254,9 @@
                             <td>
                                 <a class="btn-action edit" href="Promotion?action=edit&id=<%= p.getPromotionID()%>">Edit</a>
                                 <a class="btn-action delete" href="Promotion?action=delete&id=<%= p.getPromotionID()%>" onclick="return confirm('Are you sure?');">Delete</a>
-                            </td>
+
+                                <a c
+                                   </td>
                         </tr>
                         <% }%>
                     </tbody>
@@ -253,7 +269,9 @@
                 <div class="modal-content">
                     <span class="close" onclick="closeModal()">×</span>
                     <h2><%= (edit != null) ? "Edit Promotion" : "Create Promotion"%></h2>
+
                     <form id="promotionForm" action="Promotion" method="post">
+
                         <% if (edit != null) {%>
                         <input type="hidden" name="promotionID" value="<%= edit.getPromotionID()%>" />
                         <% }%>
@@ -333,6 +351,7 @@
                                 <td><%= d.getCode()%></td>
                                 <td><%= d.getDescription()%></td>
                                 <td>
+
                                     <a class="btn-action reactivate" href="Promotion?action=reactivate&id=<%= d.getPromotionID()%>">Reactivate</a>
                                 </td>
                             </tr>
@@ -384,8 +403,6 @@
                     }
                 });
             }
-
-
             <%-- Handle alerts and auto modal open --%>
             <% if (request.getAttribute("codeExists") != null) { %>
             window.onload = function () {
@@ -409,7 +426,6 @@
             }
             <% }%>
         </script>
-
         <script>
             const form = document.querySelector("#addPromotionModal form");
             const submitBtn = form.querySelector("input[type=submit]");
@@ -443,7 +459,6 @@
             });
 
         </script>
-
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
         <%@ include file="footer.jsp" %>
