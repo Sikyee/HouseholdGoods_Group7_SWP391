@@ -46,6 +46,7 @@ public class LoginController extends HttpServlet {
 
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
+            session.setAttribute("userID", user.getUserID());
             session.setMaxInactiveInterval(30 * 60); // 🕒 Timeout sau 30 phút (tính bằng giây)
 
             int role = user.getRoleID();

@@ -27,6 +27,11 @@
                 padding: 100px 0;
                 text-align: center;
             }
+            .card-body a {
+                text-decoration: none;
+                font-weight: bold;
+                font-size: 18px;
+            }
             .hero-title {
                 font-size: 3rem;
             }
@@ -168,7 +173,7 @@
                     <div class="card product-card h-100">
                         <img src="/HouseholdGoods_Group7_SWP391/images/<%= p.getImage()%>" class="card-img-top" alt="<%= p.getProductName()%>">
                         <div class="card-body">
-                            <h5 class="card-title"><%= p.getProductName()%></h5>
+                            <a class="card-title" href="<%= context%>/Product?action=productDetail&id=<%= p.getProductID()%>"><%= p.getProductName()%></a>
                             <p class="card-text"><%= p.getDescription()%></p>
                             <p class="price"><%= String.format("%,d", p.getPrice())%>₫</p>
                         </div>

@@ -191,7 +191,7 @@ public class AddressDAO {
     // Gets the default address for a user
     // Returns the first address where isDefault = true
     public Address getDefaultAddress(int userID) {
-        String sql = "SELECT * FROM address WHERE userID = ? AND isDefault = 1 LIMIT 1";
+        String sql = "SELECT * FROM address WHERE userID = ? AND isDefault = 1";
 
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 

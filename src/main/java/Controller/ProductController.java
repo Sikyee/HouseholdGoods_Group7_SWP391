@@ -43,6 +43,13 @@ public class ProductController extends HttpServlet {
                 int id = Integer.parseInt(request.getParameter("id"));
                 dao.softDeleteProduct(id); // ✅ Soft delete
                 response.sendRedirect(request.getContextPath() + "/Product");
+            } else if ("productDetail".equals(action)) {
+                int id = Integer.parseInt(request.getParameter("id"));
+                Product productDetail = dao.getProductById(id);
+                List<Attribute> attributes = dao.getAttributesByProductId(id);
+                productDetail.setAttributes(attributes);
+                request.setAttribute("productDetail", productDetail);
+                request.getRequestDispatcher("productDetail.jsp").forward(request, response);
             } else {
                 List<Product> list = dao.getAllProducts();
                 request.setAttribute("products", list);
