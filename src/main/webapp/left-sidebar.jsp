@@ -1,7 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page import="Model.User" %>
+
+<%
+    User loggedInUser = (User) session.getAttribute("user");
+    int roleID = (loggedInUser != null) ? loggedInUser.getRoleID() : -1;
+%>
+
 <!-- Bootstrap 5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<!-- FontAwesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <!-- Sidebar -->
@@ -18,11 +24,24 @@
                 <i class="fas fa-chart-line me-2"></i> Dashboard
             </a>
         </li>
+
+        <!-- ✅ Quản lý Người Dùng -->
+        <% if (roleID == 1) { %> <!-- Admin -->
         <li class="nav-item mb-1">
-            <a href="User" class="nav-link text-dark">
-                <i class="fas fa-user-friends me-2"></i> User Accounts
+            <a href="User?type=staff" class="nav-link text-dark">
+                <i class="fas fa-user-tie me-2"></i> Manage Staff
             </a>
         </li>
+        <% } %>
+        <% if (roleID == 1 || roleID == 2) { %> <!-- Admin & Staff -->
+        <li class="nav-item mb-1">
+            <a href="User?type=customer" class="nav-link text-dark">
+                <i class="fas fa-user me-2"></i> Manage Customer
+            </a>
+        </li>
+        <% }%>
+
+        <!-- Danh mục -->
         <li class="nav-item mb-1">
             <a href="#!" class="nav-link text-black" id="categoryToggle">
                 <i class="fas fa-list"></i> Category
@@ -33,14 +52,10 @@
                 <li><a href="MainCategory" class="nav-link text-black"><i class="fas fa-list-alt"></i> Main Category</a></li>
             </ul>
         </li>
+
         <li class="nav-item mb-1">
             <a href="Product" class="nav-link text-dark">
                 <i class="fas fa-blender me-2"></i> Products
-            </a>
-        </li>
-        <li class="nav-item mb-1">
-            <a href="Order" class="nav-link text-dark">
-                <i class="fas fa-receipt me-2"></i> Order View
             </a>
         </li>
         <li class="nav-item mb-1">
@@ -84,12 +99,14 @@
         width: 20px;
         text-align: center;
     }
+
     #categorySubMenu li a {
         padding-left: 30px;
         font-size: 0.9rem;
     }
 </style>
 
+<!-- JS Toggle Submenu -->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const toggle = document.getElementById("categoryToggle");
@@ -101,3 +118,4 @@
         });
     });
 </script>
+
