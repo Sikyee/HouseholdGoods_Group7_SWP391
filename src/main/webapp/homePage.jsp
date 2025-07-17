@@ -132,7 +132,36 @@
             <input type="text" name="search" class="form-control" placeholder="Search products..." value="<%= (search != null) ? search : ""%>">
             <button type="submit" class="btn btn-outline-dark">Search</button>
         </form>
-
+        <!-- Filter form -->
+        <form action="filter" method="get" class="row g-2 mb-4 justify-content-center">
+            <div class="col-auto">
+                <input type="number" name="min" class="form-control form-control-sm" style="width: 140px;" placeholder="Min price">
+            </div>
+            <div class="col-auto">
+                <input type="number" name="max" class="form-control form-control-sm" style="width: 140px;" placeholder="Max price">
+            </div>
+            <div class="col-auto">
+                <select name="brand" class="form-select form-select-sm" style="width: 160px;">
+                    <option value="">All Brands</option>
+                    <option value="1">Panasonic</option>
+                    <option value="2">Samsung</option>
+                    <option value="3">LG</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="category" class="form-select form-select-sm" style="width: 180px;">
+                    <option value="">All Categories</option>
+                    <option value="1">Refrigeration</option>
+                    <option value="2">Kitchen Appliances</option>
+                    <option value="3">Bedroom Appliances</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fa fa-filter me-1"></i>Filter
+                </button>
+            </div>
+        </form>
 
         <!-- Products Section -->
         <div class="container" id="products">

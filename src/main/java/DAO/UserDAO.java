@@ -23,7 +23,6 @@ public class UserDAO {
                 user.setPassword(rs.getString("password"));
                 user.setUserName(rs.getString("userName"));
                 user.setRoleID(rs.getInt("roleID"));
-                user.setRegistrationDate(rs.getTimestamp("registrationDate"));
                 user.setPhone(rs.getString("phone"));
                 user.setStatus(rs.getInt("status"));
                 user.setDob(rs.getDate("dob"));
@@ -31,6 +30,7 @@ public class UserDAO {
                 return user;
             }
         } catch (Exception e) {
+            System.err.println("Error in getUserByUsername: " + e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -56,11 +56,11 @@ public class UserDAO {
 
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
+            System.err.println("Error in updateUser: " + e.getMessage());
             e.printStackTrace();
         }
         return false;
     }
-
 
     public User getUserByEmail(String email) {
         String sql = "SELECT * FROM users WHERE email = ?";
@@ -77,7 +77,6 @@ public class UserDAO {
                 user.setPassword(rs.getString("password"));
                 user.setUserName(rs.getString("userName"));
                 user.setRoleID(rs.getInt("roleID"));
-                user.setRegistrationDate(rs.getTimestamp("registrationDate"));
                 user.setPhone(rs.getString("phone"));
                 user.setStatus(rs.getInt("status"));
                 user.setDob(rs.getDate("dob"));
@@ -85,6 +84,7 @@ public class UserDAO {
                 return user;
             }
         } catch (Exception e) {
+            System.err.println("Error in getUserByEmail: " + e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -99,6 +99,7 @@ public class UserDAO {
             ps.setInt(2, userID);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
+            System.err.println("Error in setUserStatus: " + e.getMessage());
             e.printStackTrace();
         }
         return false;
@@ -119,7 +120,6 @@ public class UserDAO {
                 user.setPassword(rs.getString("password"));
                 user.setUserName(rs.getString("userName"));
                 user.setRoleID(rs.getInt("roleID"));
-                user.setRegistrationDate(rs.getTimestamp("registrationDate"));
                 user.setPhone(rs.getString("phone"));
                 user.setStatus(rs.getInt("status"));
                 user.setDob(rs.getDate("dob"));
@@ -127,36 +127,41 @@ public class UserDAO {
                 list.add(user);
             }
         } catch (Exception e) {
+            System.err.println("Error in getAllUsers: " + e.getMessage());
             e.printStackTrace();
         }
         return list;
     }
 
     public User login(String username, String password) throws Exception {
-        Connection conn = DBConnection.getConnection();
         String sql = "SELECT * FROM users WHERE userName = ? AND password = ?";
-        PreparedStatement ps = conn.prepareStatement(sql);
-        ps.setString(1, username);
-        ps.setString(2, password);
-        ResultSet rs = ps.executeQuery();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setString(1, username);
+            ps.setString(2, password);
+            ResultSet rs = ps.executeQuery();
 
-        if (rs.next()) {
-            User user = new User();
-            user.setUserID(rs.getInt("userID"));
-            user.setUserName(rs.getString("userName"));
-            user.setPassword(rs.getString("password"));
-            user.setFullName(rs.getString("fullName"));
-            user.setEmail(rs.getString("email"));
-            user.setRoleID(rs.getInt("roleID"));
-            user.setPhone(rs.getString("phone"));
-            user.setStatus(rs.getInt("status"));
-            user.setDob(rs.getDate("dob"));
-            user.setGender(rs.getString("gender"));
-            return user;
+            if (rs.next()) {
+                User user = new User();
+                user.setUserID(rs.getInt("userID"));
+                user.setUserName(rs.getString("userName"));
+                user.setPassword(rs.getString("password"));
+                user.setFullName(rs.getString("fullName"));
+                user.setEmail(rs.getString("email"));
+                user.setRoleID(rs.getInt("roleID"));
+                user.setPhone(rs.getString("phone"));
+                user.setStatus(rs.getInt("status"));
+                user.setDob(rs.getDate("dob"));
+                user.setGender(rs.getString("gender"));
+                return user;
+            }
+        } catch (Exception e) {
+            System.err.println("Error in login: " + e.getMessage());
+            throw e;
         }
         return null;
     }
-
 
     public User getUserByID(int id) {
         String sql = "SELECT * FROM users WHERE userID = ?";
@@ -177,10 +182,10 @@ public class UserDAO {
                 user.setStatus(rs.getInt("status"));
                 user.setRoleID(rs.getInt("roleID"));
                 user.setPassword(rs.getString("password"));
-                user.setRegistrationDate(rs.getTimestamp("registrationDate"));
                 return user;
             }
         } catch (Exception e) {
+            System.err.println("Error in getUserByID: " + e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -194,6 +199,7 @@ public class UserDAO {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
+            System.err.println("Error in deleteUser: " + e.getMessage());
             e.printStackTrace();
         }
         return false;
@@ -212,26 +218,72 @@ public class UserDAO {
                 while (rs.next()) list.add(mapResultSet(rs));
             }
         } catch (Exception e) {
+            System.err.println("Error in searchUsers: " + e.getMessage());
             e.printStackTrace();
         }
         return list;
     }
 
-
     public boolean changePassword(int userID, String newPassword) {
         String sql = "UPDATE users SET password = ? WHERE userID = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        Connection conn = null;
+        PreparedStatement ps = null;
+        
+        try {
+            conn = DBConnection.getConnection();
+            
+            // Disable auto-commit to handle transaction manually
+            conn.setAutoCommit(false);
+            
+            ps = conn.prepareStatement(sql);
             ps.setString(1, newPassword);
             ps.setInt(2, userID);
-            return ps.executeUpdate() > 0;
+            
+            // Add debug logging
+            System.out.println("Executing password update query for userID: " + userID);
+            System.out.println("SQL: " + sql);
+            
+            int rowsAffected = ps.executeUpdate();
+            
+            System.out.println("Rows affected: " + rowsAffected);
+            
+            if (rowsAffected > 0) {
+                conn.commit(); // Commit the transaction
+                System.out.println("Password update committed successfully");
+                return true;
+            } else {
+                conn.rollback(); // Rollback if no rows were affected
+                System.out.println("No rows affected, rolling back");
+                return false;
+            }
+            
         } catch (Exception e) {
+            System.err.println("Error in changePassword: " + e.getMessage());
             e.printStackTrace();
+            
+            // Rollback transaction on error
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                    System.out.println("Transaction rolled back due to error");
+                } catch (SQLException rollbackEx) {
+                    System.err.println("Error during rollback: " + rollbackEx.getMessage());
+                }
+            }
+            return false;
+        } finally {
+            // Close resources
+            try {
+                if (ps != null) ps.close();
+                if (conn != null) {
+                    conn.setAutoCommit(true); // Reset auto-commit
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.err.println("Error closing resources: " + e.getMessage());
+            }
         }
-        return false;
     }
-
 
     private User mapResultSet(ResultSet rs) throws SQLException {
         User user = new User();
@@ -241,7 +293,6 @@ public class UserDAO {
         user.setPassword(rs.getString("password"));
         user.setUserName(rs.getString("userName"));
         user.setRoleID(rs.getInt("roleID"));
-        user.setRegistrationDate(rs.getTimestamp("registrationDate"));
         user.setPhone(rs.getString("phone"));
         user.setStatus(rs.getInt("status"));
         user.setDob(rs.getDate("dob"));
