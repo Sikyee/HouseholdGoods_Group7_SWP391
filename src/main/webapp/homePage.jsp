@@ -27,6 +27,11 @@
                 padding: 100px 0;
                 text-align: center;
             }
+            .card-body a {
+                text-decoration: none;
+                font-weight: bold;
+                font-size: 18px;
+            }
             .hero-title {
                 font-size: 3rem;
             }
@@ -134,12 +139,12 @@
             <h2 class="section-title">Featured Products</h2>
             <div class="row">
                 <% if (products != null && !products.isEmpty()) {
-                for (Product p : products) {%>
+                        for (Product p : products) {%>
                 <div class="col-lg-3 col-md-6 p-2">
                     <div class="card product-card h-100">
                         <img src="/HouseholdGoods_Group7_SWP391/images/<%= p.getImage()%>" class="card-img-top" alt="<%= p.getProductName()%>">
                         <div class="card-body">
-                            <h5 class="card-title"><%= p.getProductName()%></h5>
+                            <a class="card-title" href="<%= context%>/Product?action=productDetail&id=<%= p.getProductID()%>"><%= p.getProductName()%></a>
                             <p class="card-text"><%= p.getDescription()%></p>
                             <p class="price"><%= String.format("%,d", p.getPrice())%>₫</p>
                         </div>
@@ -160,7 +165,7 @@
                     </div>
                 </div>
                 <% }
-        } else { %>
+                } else { %>
                 <div class="text-center mt-5">
                     <p class="text-danger fs-5">No products found.</p>
                 </div>

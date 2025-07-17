@@ -114,18 +114,18 @@
                 <div class="col-md-4">
                     <div class="summary-box" id="summary-box">
                         <div class="summary-box" id="summary-box">
-                            <h5 class="mb-3">Summary</h5>
+                            <h4 class="mb-3">Summary</h4>
                             <p>ITEMS <span class="float-end"><%= String.format("%,d", totalAll)%>₫</span></p>
 
-                            <label for="code">COUPON CODE</label>
-                            <input type="text" id="code" class="form-control mb-3" placeholder="Enter your code">
+                            <!--                            <label for="code">COUPON CODE</label>
+                                                        <input type="text" id="code" class="form-control mb-3" placeholder="Enter your code">-->
 
                             <div class="total-line">
                                 <strong>TOTAL PRICE</strong>
                                 <span class="float-end"><%= String.format("%,d", totalAll)%>₫</span>
                             </div>
 
-                            <button class="btn btn-dark w-100 mt-3">CHECKOUT</button>
+                            <a class="btn btn-dark w-100 mt-3" href="<%= request.getContextPath() %>/Checkout">CHECKOUT</a>
                         </div>
                     </div>
                 </div>
