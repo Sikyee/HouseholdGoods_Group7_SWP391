@@ -15,8 +15,8 @@ import java.util.List;
  *
  * @author TriTN
  */
-
 public class OrderDetailDAO {
+
     private Connection conn;
 
     public OrderDetailDAO() throws Exception {
@@ -26,7 +26,7 @@ public class OrderDetailDAO {
     public List<OrderDetail> getDetailsByOrderID(int orderID) throws SQLException {
         List<OrderDetail> list = new ArrayList<>();
         String sql = "SELECT * FROM OrderDetail WHERE orderID = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, orderID);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -41,5 +41,20 @@ public class OrderDetailDAO {
             }
         }
         return list;
+    }
+
+    public void insertOrderDetails(List<OrderDetail> details) throws SQLException {
+        String sql = "INSERT INTO OrderDetail (orderID, productID, orderName, quantity, totalPrice) VALUES (?, ?, ?, ?, ?)";
+        try ( PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (OrderDetail detail : details) {
+                ps.setInt(1, detail.getOrderID());
+                ps.setInt(2, detail.getProductID());
+                ps.setString(3, detail.getOrderName());
+                ps.setInt(4, detail.getQuantity());
+                ps.setDouble(5, detail.getTotalPrice());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
     }
 }

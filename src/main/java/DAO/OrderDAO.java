@@ -30,23 +30,30 @@ public class OrderDAO {
             e.printStackTrace();
         }
     }
-  
-    public void createOrder(Order order) throws Exception {
-        Connection conn = DBConnection.getConnection();
-        String sql = "INSERT INTO OrderInfo (userID, orderStatusID, orderDate, paymentMethodID, voucherID, totalPrice, finalPrice, fullName, deliveryAddress, phone) VALUES (?, ?, ?, 1, NULL, ?, ?, ?, ?, ?, ?, ?);";
-        PreparedStatement ps = conn.prepareStatement(sql);
-        ps.setInt(1, order.getUserID());
-        ps.setInt(2, order.getOrderStatusID());
-        ps.setDate(3, (Date) order.getOrderDate());
-        ps.setInt(4, order.getPaymentMethodID());
-        ps.setInt(5, order.getOrderStatusID());
-        ps.setInt(6, order.getVoucherID());
-        ps.setFloat(7, order.getTotalPrice());
-        ps.setFloat(8, order.getFinalPrice());
-        ps.setString(9, order.getFullName());
-        ps.setString(10, order.getDeliveryAddress());
-        ps.setString(11, order.getPhone());
-        ps.executeUpdate();
+
+    public int createOrder(Order order) throws Exception {
+        String sql = "INSERT INTO OrderInfo (userID, orderStatusID, orderDate, paymentMethodID, voucherID, totalPrice, finalPrice, fullName, deliveryAddress, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try ( PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, order.getUserID());
+            ps.setInt(2, order.getOrderStatusID());
+            ps.setDate(3, (Date) order.getOrderDate());
+            ps.setInt(4, order.getPaymentMethodID());
+            ps.setObject(5, order.getVoucherID() == 0 ? null : order.getVoucherID());
+            ps.setFloat(6, order.getTotalPrice());
+            ps.setFloat(7, order.getFinalPrice());
+            ps.setString(8, order.getFullName());
+            ps.setString(9, order.getDeliveryAddress());
+            ps.setString(10, order.getPhone());
+
+            ps.executeUpdate();
+
+            try ( ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1); // Lấy orderID vừa tạo
+                }
+            }
+        }
+        return 0;
     }
 
     public List<OrderInfo> getAllOrders() throws SQLException {
@@ -136,11 +143,11 @@ public class OrderDAO {
     }
 
     public void restoreOrder(int orderID) throws SQLException {
-    String sql = "UPDATE OrderInfo SET isDeleted = 0 WHERE orderID = ?";
-    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-        ps.setInt(1, orderID);
-        ps.executeUpdate();
+        String sql = "UPDATE OrderInfo SET isDeleted = 0 WHERE orderID = ?";
+        try ( PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderID);
+            ps.executeUpdate();
+        }
     }
-}
 
 }

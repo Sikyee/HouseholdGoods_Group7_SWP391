@@ -154,5 +154,12 @@ public class CartDAO {
         checkPs.close();
         conn.close();
     }
-
+    
+    public void clearCartByUser(int userID) throws Exception {
+        Connection conn = DBConnection.getConnection();
+        String sql = "DELETE Cart where userID = ?";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setInt(1, userID);
+        ps.executeUpdate();
+    }
 }

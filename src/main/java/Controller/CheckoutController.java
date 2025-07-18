@@ -80,9 +80,11 @@ import DAO.ProductDAO;
 import DAO.UserDAO;
 import DAO.AddressDAO;
 import DAO.OrderDAO;
+import DAO.OrderDetailDAO;
 import Model.Address;
 import Model.Cart;
 import Model.Order;
+import Model.OrderDetail;
 import Model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -93,9 +95,8 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-
-
 
 @WebServlet("/Checkout")
 public class CheckoutController extends HttpServlet {
@@ -122,7 +123,7 @@ public class CheckoutController extends HttpServlet {
             } else {
                 HttpSession session = request.getSession();
                 User user = (User) session.getAttribute("user");
-                
+
                 System.out.println("User in session: " + user);
 
                 if (user == null) {
@@ -160,54 +161,58 @@ public class CheckoutController extends HttpServlet {
             String phone = request.getParameter("userPhone");
             String address = request.getParameter("userAddress");
             float total = Float.parseFloat(request.getParameter("total"));
+            int paymentMethodID = Integer.parseInt(request.getParameter("paymentMethod"));
 
-            // Cập nhật lại thông tin user
-//            user.setUserPhone(phone);
-//            user.setUserAddress(address);
-//            userDAO.Update(user);
-            // Tạo Order
             LocalDate now = LocalDate.now();
             Date orderDate = Date.valueOf(now);
 
+            // Tạo Order
             Order order = new Order();
             order.setUserID(user.getUserID());
+            order.setOrderStatusID(1); // Pending
             order.setOrderDate(orderDate);
-            order.setOrderStatusID(1); // 1 = Pending
+            order.setPaymentMethodID(paymentMethodID);
+            order.setVoucherID(0); // Nếu có voucher thì set ID
             order.setTotalPrice(total);
-            order.setFinalPrice(total); // có thể trừ voucher sau
+            order.setFinalPrice(total);
             order.setFullName(user.getFullName());
             order.setDeliveryAddress(address);
             order.setPhone(phone);
 
-            orderDAO.createOrder(order);
+            int orderID = orderDAO.createOrder(order);
+            System.out.println("Order created with ID: " + orderID);
 
-//            // Tạo OrderDetails
-//            List<Cart> cartList = cartDAO.getProductInCart(user.getUserID());
-//            List<OrderDetail> orderDetails = new ArrayList<>();
-//
-//            for (Cart c : cartList) {
-//                Product p = productDAO.getProductById(c.getProductID());
-//                OrderDetail detail = new OrderDetail();
-//                detail.setOrderID(orderID);
-//                detail.setProductID(c.getProductID());
-//                detail.setQuantity(c.getQuantity());
-//                detail.setProductPrice(p.getPrice() * c.getQuantity());
-//                detail.setSize(c.getSize());
-//                orderDetails.add(detail);
-//
-//                // Giảm số lượng tồn kho (nếu cần)
-////                productDAO.updateStockAfterPurchase(c.getProductID(), c.getQuantity());
-//            }
-//
-//            orderDetailDAO.insertOrderDetails(orderDetails);
+            List<Cart> cartList = cartDAO.getProductInCart(user.getUserID());
+            List<OrderDetail> orderDetails = new ArrayList<>();
+
+            for (Cart c : cartList) {
+                OrderDetail detail = new OrderDetail();
+                detail.setOrderID(orderID);
+                detail.setProductID(c.getProductID());
+                detail.setOrderName(c.getProduct().getProductName());
+                detail.setQuantity(c.getQuantity());
+                detail.setTotalPrice(c.getProduct().getPrice() * c.getQuantity());
+                orderDetails.add(detail);
+
+                // Nếu có cập nhật tồn kho:
+                // productDAO.updateStockAfterPurchase(c.getProductID(), c.getQuantity());
+            }
+
+            OrderDetailDAO orderDetailDAO = new OrderDetailDAO();
+            orderDetailDAO.insertOrderDetails(orderDetails);
+
             // Xóa giỏ hàng sau khi mua
-//            cartDAO.clearCartByUser(user.getUserID());
-            // Điều hướng sang trang cảm ơn
-            response.sendRedirect("thankyou.jsp");
+            cartDAO.clearCartByUser(user.getUserID());
+
+            // Điều hướng sang trang home và thông báo
+            session.setAttribute("successMessage", "Your order has been successfully submited!");
+            response.sendRedirect(request.getContextPath() + "/");
+
         } catch (Exception e) {
             e.printStackTrace();
-            request.setAttribute("error", "Có lỗi xảy ra khi đặt hàng.");
+            request.setAttribute("error", "Error order.");
             request.getRequestDispatcher("checkout.jsp").forward(request, response);
         }
     }
+
 }

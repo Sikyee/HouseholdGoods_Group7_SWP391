@@ -59,7 +59,7 @@ public class CartController extends HttpServlet {
                     cartItem.setQuantity(quantity);
 
                     dao.addProductToCart(cartItem);
-                    response.sendRedirect(request.getContextPath() + "/Cart"); // reload trang cart
+                    response.sendRedirect(request.getContextPath() + "/"); // reload trang cart
                 } catch (Exception e) {
                     e.printStackTrace();
                     response.sendRedirect("error.jsp");

@@ -205,5 +205,17 @@
         <%@ include file="footer.jsp" %>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <%
+            String successMessage = (String) session.getAttribute("successMessage");
+            if (successMessage != null) {
+        %>
+        <script>
+            window.alert("<%= successMessage %>");
+        </script>
+        <%
+                session.removeAttribute("successMessage"); // Xóa để không lặp lại
+            }
+        %>
+
     </body>
 </html>
