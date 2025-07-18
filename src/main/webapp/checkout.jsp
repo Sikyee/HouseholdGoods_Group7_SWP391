@@ -116,8 +116,35 @@
                 System.out.println("Address:" + address);
                 int totalAll = 0;
             %>
-
             <div class="row">
+                <!-- Cart -->       
+                <div class="col-md-5">
+                    <div class="cart-box">
+                        <h5 class="cart-title">Your Cart</h5>
+                        <ul class="list-group mb-3">
+                            <% if (cart != null) {
+                                    for (Cart c : cart) {
+                                        Product p = c.getProduct();
+                                        long total = (long) (p.getPrice() * c.getQuantity());
+                                        totalAll += total;
+                            %>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <%= p.getProductName()%> 
+                                    <small class="text-muted">x <%= c.getQuantity()%></small>
+                                </div>
+                                <span><%= String.format("%,d", total)%>₫</span>
+                            </li>
+                            <% }
+                                }%>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <strong>Total</strong>
+                                <span class="total-price"><%= String.format("%,d", totalAll)%>₫</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                            
                 <!-- Information -->
                 <div class="col-md-7">
                     <div class="mb-3">
@@ -149,7 +176,7 @@
                             <input type="text" class="form-control" name="userAddress"
                                    value="<%= address != null ? address.getAddressDetail() : ""%>" required>
                         </div>
-                        
+
                         <div class="form-group payment-options">
                             <label><strong>Payment Method</strong></label><br>
                             <label>
@@ -168,34 +195,6 @@
                             <a href="Cart" class="btn btn-secondary">Back to Cart</a>
                         </div>
                     </form>
-                </div>
-
-                <!-- Cart -->       
-                <div class="col-md-5">
-                    <div class="cart-box">
-                        <h5 class="cart-title">Your Cart</h5>
-                        <ul class="list-group mb-3">
-                            <% if (cart != null) {
-                                    for (Cart c : cart) {
-                                        Product p = c.getProduct();
-                                        long total = (long) (p.getPrice() * c.getQuantity());
-                                        totalAll += total;
-                            %>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <%= p.getProductName()%> 
-                                    <small class="text-muted">x <%= c.getQuantity()%></small>
-                                </div>
-                                <span><%= String.format("%,d", total)%>₫</span>
-                            </li>
-                            <% }
-                                }%>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <strong>Total</strong>
-                                <span class="total-price"><%= String.format("%,d", totalAll)%>₫</span>
-                            </li>
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>
