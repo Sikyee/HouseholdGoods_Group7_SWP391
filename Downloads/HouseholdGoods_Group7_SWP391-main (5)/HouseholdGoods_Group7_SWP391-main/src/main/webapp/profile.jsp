@@ -579,7 +579,7 @@
                     <div class="profile-card password-section">
                         <h2 class="card-title">Change Password</h2>
                         <form method="post" action="change-password" onsubmit="showToast('Changing password...', 'info');">
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                            <div style="display: flex; flex-direction: column; gap: 20px;">
                                 <div class="form-group">
                                     <label>Current Password <span class="required">*</span></label>
                                     <input type="password" name="currentPassword" required>
@@ -842,29 +842,29 @@
 
             // Display server messages - COMPLETELY FIXED VERSION
             <%
-    // Server-side validation before sending to JavaScript
-    String cleanMessage = null;
-    String cleanMessageType = "success";
+                // Server-side validation before sending to JavaScript
+                String cleanMessage = null;
+                String cleanMessageType = "success";
 
-    if (message != null) {
-        String msgStr = message.toString().trim();
-        if (!msgStr.isEmpty()
-                && !msgStr.equals("null")
-                && !msgStr.equals("undefined")
-                && !msgStr.equals("false")
-                && !msgStr.equals("true")) {
-            cleanMessage = msgStr;
-        }
-    }
+                if (message != null) {
+                    String msgStr = message.toString().trim();
+                    if (!msgStr.isEmpty()
+                            && !msgStr.equals("null")
+                            && !msgStr.equals("undefined")
+                            && !msgStr.equals("false")
+                            && !msgStr.equals("true")) {
+                        cleanMessage = msgStr;
+                    }
+                }
 
-    if (messageType != null) {
-        String typeStr = messageType.toString().trim();
-        if (!typeStr.isEmpty()
-                && !typeStr.equals("null")
-                && !typeStr.equals("undefined")) {
-            cleanMessageType = typeStr;
-        }
-    }
+                if (messageType != null) {
+                    String typeStr = messageType.toString().trim();
+                    if (!typeStr.isEmpty()
+                            && !typeStr.equals("null")
+                            && !typeStr.equals("undefined")) {
+                        cleanMessageType = typeStr;
+                    }
+                }
             %>
 
             <% if (cleanMessage != null) {%>
