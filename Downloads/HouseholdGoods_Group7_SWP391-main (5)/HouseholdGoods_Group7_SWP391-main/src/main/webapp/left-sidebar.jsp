@@ -64,6 +64,11 @@
             </a>
         </li>
         <li class="nav-item mb-1">
+            <a href="Order" class="nav-link text-dark">
+                <i class="fas fa-comments me-2"></i> Order View
+            </a>
+        </li>
+        <li class="nav-item mb-1">
             <a href="Feedback" class="nav-link text-dark">
                 <i class="fas fa-comments me-2"></i> Feedback
             </a>
