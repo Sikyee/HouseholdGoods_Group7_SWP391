@@ -8,8 +8,8 @@ package Controller;
  *
  * @author TriTM
  */
-import DAO.PromotionDAO;
-import Model.Promotion;
+import DAO.VoucherDAO;
+import Model.Voucher;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -19,17 +19,17 @@ import java.io.IOException;
 import java.sql.Date;
 import java.util.List;
 
-@WebServlet("/Promotion")
-public class PromotionController extends HttpServlet {
+@WebServlet("/Voucher")
+public class VoucherController extends HttpServlet {
 
-    private PromotionDAO dao;
+    private VoucherDAO dao;
 
     @Override
     public void init() throws ServletException {
         try {
-            dao = new PromotionDAO();
+            dao = new VoucherDAO();
         } catch (Exception e) {
-            throw new ServletException("Failed to initialize PromotionDAO", e);
+            throw new ServletException("Failed to initialize VoucherDAO", e);
         }
     }
 
@@ -40,44 +40,44 @@ public class PromotionController extends HttpServlet {
 
         try {
             if (action == null || action.equals("list")) {
-                List<Promotion> all = dao.getAllPromotions();
-                List<Promotion> deleted = dao.getDeletedPromotions();
+                List<Voucher> all = dao.getAllVouchers();
+                List<Voucher> deleted = dao.getDeletedVouchers();
                 request.setAttribute("list", all);
                 request.setAttribute("deletedList", deleted);
-                request.setAttribute("promotion", null);
-                request.getRequestDispatcher("/managePromotion.jsp").forward(request, response);
+                request.setAttribute("voucher", null);
+                request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
             } else if (action.equals("edit")) {
                 int id = Integer.parseInt(request.getParameter("id"));
-                Promotion promo = dao.getPromotionById(id);
+                Voucher promo = dao.getVoucherById(id);
                 if (promo != null) {
-                    request.setAttribute("promotion", promo);
+                    request.setAttribute("voucher", promo);
                     request.setAttribute("showModal", true);
                 } else {
-                    request.setAttribute("error", "Promotion not found!");
+                    request.setAttribute("error", "Voucher not found!");
                 }
-                request.setAttribute("list", dao.getAllPromotions());
-                request.setAttribute("deletedList", dao.getDeletedPromotions());
-                request.getRequestDispatcher("/managePromotion.jsp").forward(request, response);
+                request.setAttribute("list", dao.getAllVouchers());
+                request.setAttribute("deletedList", dao.getDeletedVouchers());
+                request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
             } else if (action.equals("delete")) {
                 int id = Integer.parseInt(request.getParameter("id"));
-                dao.softDeletePromotion(id);
-                response.sendRedirect("Promotion?action=list");
+                dao.softDeleteVoucher(id);
+                response.sendRedirect("Voucher?action=list");
             } else if (action.equals("reactivate")) {
                 int id = Integer.parseInt(request.getParameter("id"));
-                dao.reactivatePromotion(id);
-                response.sendRedirect("Promotion?action=list");
+                dao.reactivateVoucher(id);
+                response.sendRedirect("Voucher?action=list");
             } else if (action.equals("prepareAdd")) {
-                // Reset promotion form and open modal
-                request.setAttribute("promotion", null); // Đảm bảo không giữ dữ liệu edit
+                // Reset voucher form and open modal
+                request.setAttribute("voucher", null); // Đảm bảo không giữ dữ liệu edit
                 request.setAttribute("showModal", true); // Cho phép JSP mở modal
-                request.setAttribute("list", dao.getAllPromotions());
-                request.setAttribute("deletedList", dao.getDeletedPromotions());
-                request.getRequestDispatcher("/managePromotion.jsp").forward(request, response);
+                request.setAttribute("list", dao.getAllVouchers());
+                request.setAttribute("deletedList", dao.getDeletedVouchers());
+                request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
             }
 
         } catch (Exception e) {
             request.setAttribute("error", "Error: " + e.getMessage());
-            request.getRequestDispatcher("/managePromotion.jsp").forward(request, response);
+            request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
         }
     }
 
@@ -85,11 +85,11 @@ public class PromotionController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            Promotion p = new Promotion();
+            Voucher p = new Voucher();
 
-            String idStr = request.getParameter("promotionID");
+            String idStr = request.getParameter("voucherID");
             if (idStr != null && !idStr.isEmpty()) {
-                p.setPromotionID(Integer.parseInt(idStr));
+                p.setVoucherID(Integer.parseInt(idStr));
             }
 
             p.setCode(request.getParameter("code"));
@@ -103,40 +103,40 @@ public class PromotionController extends HttpServlet {
             p.setUsedCount(Integer.parseInt(request.getParameter("usedCount")));
             p.setIsActive(Boolean.parseBoolean(request.getParameter("isActive")));
 
-            Promotion existing = dao.getPromotionByCode(p.getCode());
-            if (p.getPromotionID() == 0 && existing != null) {
+            Voucher existing = dao.getVoucherByCode(p.getCode());
+            if (p.getVoucherID() == 0 && existing != null) {
                 if (existing.isIsActive()) {
                     request.setAttribute("codeExists", true);
-                    request.setAttribute("list", dao.getAllPromotions());
-                    request.setAttribute("deletedList", dao.getDeletedPromotions());
-                    request.getRequestDispatcher("/managePromotion.jsp").forward(request, response);
+                    request.setAttribute("list", dao.getAllVouchers());
+                    request.setAttribute("deletedList", dao.getDeletedVouchers());
+                    request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
                     return;
                 } else {
-                    request.setAttribute("promotion", existing);
+                    request.setAttribute("voucher", existing);
                     request.setAttribute("reactivate", true);
-                    request.setAttribute("list", dao.getAllPromotions());
-                    request.setAttribute("deletedList", dao.getDeletedPromotions());
-                    request.getRequestDispatcher("/managePromotion.jsp").forward(request, response);
+                    request.setAttribute("list", dao.getAllVouchers());
+                    request.setAttribute("deletedList", dao.getDeletedVouchers());
+                    request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
                     return;
                 }
             }
 
-            if (p.getPromotionID() == 0) {
-                dao.addPromotion(p);
+            if (p.getVoucherID() == 0) {
+                dao.addVoucher(p);
             } else {
-                dao.updatePromotion(p);
+                dao.updateVoucher(p);
             }
 
-            response.sendRedirect("Promotion?action=list");
+            response.sendRedirect("Voucher?action=list");
         } catch (Exception e) {
             request.setAttribute("error", "Invalid input: " + e.getMessage());
             try {
-                request.setAttribute("list", dao.getAllPromotions());
-                request.setAttribute("deletedList", dao.getDeletedPromotions());
+                request.setAttribute("list", dao.getAllVouchers());
+                request.setAttribute("deletedList", dao.getDeletedVouchers());
             } catch (Exception ex) {
                 request.setAttribute("error", "DB Error: " + ex.getMessage());
             }
-            request.getRequestDispatcher("/managePromotion.jsp").forward(request, response);
+            request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
         }
     }
 }

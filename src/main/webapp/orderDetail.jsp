@@ -1,123 +1,153 @@
-<%-- 
-    Document   : orderDetail
-    Created on : Jul 12, 2025, 8:14:51 PM
-    Author     : TriTM
---%>
-<%@ page import="Model.OrderInfo, Model.OrderDetail" %>
-<%@ page import="java.util.List" %>
-<%@ include file="header.jsp" %>
-
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="java.util.*, java.text.SimpleDateFormat, Model.*" %>
+<%@include file="left-sidebar.jsp"  %>
 <%
-    OrderInfo o = (OrderInfo) request.getAttribute("order");
-    List<OrderDetail> details = (List<OrderDetail>) request.getAttribute("details");
-    String context = request.getContextPath();
+    OrderInfo order = (OrderInfo) request.getAttribute("order");
+    List<OrderDetail> orderDetailList = (List<OrderDetail>) request.getAttribute("orderDetailList");
+    CancelReason cancelReason = (CancelReason) request.getAttribute("cancelReason");
+    List<OrderStatus> orderStatusList = (List<OrderStatus>) request.getAttribute("orderStatusList");
+    User user = (User) session.getAttribute("user");
+
+    int userRole = user != null ? user.getRoleID() : 4;
+    int statusID = order.getOrderStatusID();
+    boolean isPending = (statusID == 1);
+    boolean isProcessing = (statusID == 2);
+    boolean isDelivering = (statusID == 3);
+    boolean isCanceled = (statusID == 6);
 %>
+
+<div class="content" style="margin-left: 220px; padding: 2rem;">
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Order Detail</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Order Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
 </head>
-<body class="bg-light">
-<div class="container my-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary">Order Detail</h2>
-        <a href="Order?action=list" class="btn btn-secondary">? Back</a>
-    </div>
+<body>
+<div class="container mt-5">
+    <h2 class="mb-4">Order Detail - #<%= order.getOrderID() %></h2>
 
-    <% if (o != null) { %>
     <div class="card mb-4">
         <div class="card-body">
-            <h5 class="card-title">Order Information</h5>
-            <p><strong>Order ID:</strong> <%= o.getOrderID() %></p>
-            <p><strong>Date:</strong> <%= o.getOrderDate() %></p>
-            <p><strong>Total Price:</strong> $<%= String.format("%.2f", o.getTotalPrice()) %></p>
-            <p><strong>Final Price:</strong> $<%= String.format("%.2f", o.getFinalPrice()) %></p>
-            <p><strong>Shipping Address:</strong> <%= o.getDeliveryAddress() %></p>
-            <p><strong>Full Name:</strong> <%= o.getFullName() %></p>
-            <p><strong>Phone:</strong> <%= o.getPhone() %></p>
-            <p><strong>Status:</strong>
-                <span class="badge bg-info text-dark">
-                   <%
-    int status = o.getOrderStatusID();
-    String statusText = "Unknown";
-    switch (status) {
-        case 1:
-            statusText = "Pending";
-            break;
-        case 2:
-            statusText = "Processing";
-            break;
-        case 3:
-            statusText = "Shipped";
-            break;
-        case 4:
-            statusText = "Completed";
-            break;
-        case 5:
-            statusText = "Canceled";
-            break;
-    }
-%>
-
-                    <%= statusText %>
-                </span>
+            <p><strong>Order Date:</strong> <%= order.getOrderDate() %></p>
+            <p><strong>Full Name:</strong> <%= order.getFullName() %></p>
+            <p><strong>Phone:</strong> <%= order.getPhone() %></p>
+            <p><strong>Address:</strong> <%= order.getDeliveryAddress() %></p>
+            <p><strong>Order Status:</strong>
+                <%
+                    for (OrderStatus status : orderStatusList) {
+                        if (status.getOrderStatusID() == order.getOrderStatusID()) {
+                            out.print(status.getStatusName());
+                            break;
+                        }
+                    }
+                %>
             </p>
 
-            <form action="Order" method="get" class="row g-2 align-items-center">
-                <input type="hidden" name="action" value="updateStatus">
-                <input type="hidden" name="id" value="<%= o.getOrderID() %>">
-                <div class="col-auto">
-                    <label for="status" class="form-label mb-0">Change Status:</label>
+            <% if (isCanceled && cancelReason != null) { %>
+                <div class="alert alert-danger mt-3">
+                    <strong>Cancel Reason:</strong> <%= cancelReason.getReason() %>
                 </div>
-                <div class="col-auto">
-                    <select name="status" id="status" class="form-select">
-                        <option value="1">Pending</option>
-                        <option value="2">Processing</option>
-                        <option value="3">Shipped</option>
-                        <option value="4">Completed</option>
-                        <option value="5">Canceled</option>
-                    </select>
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-primary">Update</button>
-                </div>
-            </form>
+            <% } %>
+
+            <% if (isPending && userRole == 3) { %>
+                <form action="cancelOrder.jsp" method="get">
+                    <input type="hidden" name="orderID" value="<%= order.getOrderID() %>"/>
+                    <button type="submit" class="btn btn-danger">Cancel Order</button>
+                </form>
+            <% } %>
+
+            <% if (userRole == 1 || userRole == 2) {
+                boolean allowUpdate = isPending || isProcessing || isDelivering;
+                if (allowUpdate) {
+            %>
+                <form action="update-order-status" method="post" class="mt-3">
+                    <input type="hidden" name="orderID" value="<%= order.getOrderID() %>"/>
+                    <div class="mb-3">
+                        <label for="orderStatus" class="form-label">Update Status:</label>
+                        <select name="orderStatusID" id="orderStatus" class="form-select" onchange="handleStatusChange()">
+                            <%
+                                for (OrderStatus status : orderStatusList) {
+                                    int id = status.getOrderStatusID();
+                                    boolean show = false;
+                                    String label = status.getStatusName();
+
+                                    if (isPending && (id == 2 || id == 6)) {
+                                        show = true;
+                                        if (id == 2) label = "Order confirmed (Moved to processing)";
+                                        if (id == 6) label = "Order cancelled (Out of stock)";
+                                    } else if (isProcessing && (id == 3 || id == 6)) {
+                                        show = true;
+                                        if (id == 3) label = "Moved to delivery";
+                                        if (id == 6) label = "Order cancelled (Processing error)";
+                                    } else if (isDelivering && (id == 4 || id == 5)) {
+                                        show = true;
+                                        if (id == 4) label = "Delivered successfully.";
+                                        if (id == 5) label = "Customer returned the item.";
+                                    }
+
+                                    if (show) {
+                            %>
+                                <option value="<%= id %>" <%= (id == statusID) ? "selected" : "" %>><%= label %></option>
+                            <%
+                                    }
+                                }
+                            %>
+                        </select>
+                    </div>
+
+                    <div class="mt-3" id="cancel-reason-box" style="display: none;">
+                        <input type="hidden" name="cancelReason" value="Đã hết hàng"/>
+                        <div class="alert alert-warning">Cancellation reason: Out of stock.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">Update</button>
+                </form>
+            <% } else { %>
+                <div class="mt-3 text-muted">Unable to update the status of this order.</div>
+            <% }} %>
         </div>
     </div>
 
-    <h4>Order Items</h4>
-    <table class="table table-bordered table-hover bg-white">
-        <thead class="table-primary">
-        <tr>
-            <th>OrderDetail ID</th>
-            <th>Product ID</th>
-            <th>Order Name</th>
-            <th>Quantity</th>
-            <th>Total Price</th>
-        </tr>
-        </thead>
-        <tbody>
-        <% if (details != null && !details.isEmpty()) {
-            for (OrderDetail d : details) { %>
+    <h4>Products</h4>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped mt-3">
+            <thead class="table-light">
                 <tr>
-                    <td><%= d.getOrderDetailID() %></td>
-                    <td><%= d.getProductID() %></td>
-                    <td><%= d.getOrderName() %></td>
-                    <td><%= d.getQuantity() %></td>
-                    <td>$<%= String.format("%.2f", d.getTotalPrice()) %></td>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
                 </tr>
-        <%  } 
-           } else { %>
-            <tr><td colspan="5" class="text-center text-muted">No order details found.</td></tr>
-        <% } %>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <% for (OrderDetail od : orderDetailList) { %>
+                    <tr>
+                        <td><%= od.getOrderName() %></td>
+                        <td><%= od.getQuantity() %></td>
+                        <td><%= od.getTotalPrice() %></td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
 
-    <% } else { %>
-        <div class="alert alert-danger">Order not found!</div>
-    <% } %>
+    <div class="mt-4">
+        <h5>Total Price: <%= order.getTotalPrice() %></h5>
+        <h5>Final Price (after discount): <%= order.getFinalPrice() %></h5>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function handleStatusChange() {
+        const statusSelect = document.getElementById('orderStatus');
+        const cancelBox = document.getElementById('cancel-reason-box');
+        if (statusSelect && cancelBox) {
+            cancelBox.style.display = (statusSelect.value === '6') ? 'block' : 'none';
+        }
+    }
+    window.onload = handleStatusChange;
+</script>
 </body>
 </html>
