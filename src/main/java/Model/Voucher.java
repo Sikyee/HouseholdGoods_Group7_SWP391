@@ -11,7 +11,7 @@ package Model;
 
 import java.sql.Date;
 
-public class Promotion {
+public class Voucher {
     private int voucherID;
     private String code;
     private String description;
@@ -24,13 +24,13 @@ public class Promotion {
     private int usedCount;
     private boolean isActive;
 
-    public Promotion() {}
+    public Voucher() {}
 
-    public int getPromotionID() {
+    public int getVoucherID() {
         return voucherID;
     }
 
-    public void setPromotionID(int voucherID) {
+    public void setVoucherID(int voucherID) {
         this.voucherID = voucherID;
     }
 

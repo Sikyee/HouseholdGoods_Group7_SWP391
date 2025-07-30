@@ -37,7 +37,7 @@ public class WriteFeedbackDAO {
                 od.setOrderID(rs.getInt("orderID"));
                 od.setOrderName(rs.getString("orderName"));
                 od.setQuantity(rs.getInt("quantity"));
-                od.setTotalPrice(rs.getDouble("totalPrice"));
+                od.setTotalPrice((long) rs.getDouble("totalPrice"));
                 list.add(od);
             }
 

@@ -83,7 +83,7 @@ import DAO.OrderDAO;
 import DAO.OrderDetailDAO;
 import Model.Address;
 import Model.Cart;
-import Model.Order;
+import Model.OrderInfo;
 import Model.OrderDetail;
 import Model.User;
 import jakarta.servlet.ServletException;
@@ -93,6 +93,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -167,14 +168,14 @@ public class CheckoutController extends HttpServlet {
             Date orderDate = Date.valueOf(now);
 
             // Tạo Order
-            Order order = new Order();
+            OrderInfo order = new OrderInfo();
             order.setUserID(user.getUserID());
-            order.setOrderStatusID(1); // Pending
-            order.setOrderDate(orderDate);
+            order.setOrderStatusID(1);
+            order.setOrderDate(new java.sql.Timestamp(System.currentTimeMillis()));
             order.setPaymentMethodID(paymentMethodID);
-            order.setVoucherID(0); // Nếu có voucher thì set ID
-            order.setTotalPrice(total);
-            order.setFinalPrice(total);
+            order.setVoucherID(0); // hoặc null
+            order.setTotalPrice(BigDecimal.valueOf(total));
+            order.setFinalPrice(BigDecimal.valueOf(total));
             order.setFullName(user.getFullName());
             order.setDeliveryAddress(address);
             order.setPhone(phone);

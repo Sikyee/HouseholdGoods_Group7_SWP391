@@ -1,31 +1,44 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package Model;
 
-import java.sql.Date;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 
-/**
- *
- * @author thach
- */
 public class OrderInfo {
 
     private int orderID;
     private int userID;
     private int orderStatusID;
-    private Date orderDate;
+    private Timestamp orderDate;
     private int paymentMethodID;
-    private int voucherID;
-    private double totalPrice;
-    private double finalPrice;
+    private Integer voucherID;
+    private BigDecimal totalPrice;
+    private BigDecimal finalPrice;
     private String fullName;
     private String deliveryAddress;
     private String phone;
-    private boolean isDeleted;
 
-    // Getters and Setters
+
+    public OrderInfo() {
+    }
+
+    public OrderInfo(int orderID, int userID, int orderStatusID, Timestamp orderDate,
+            int paymentMethodID, Integer voucherID, BigDecimal totalPrice,
+            BigDecimal finalPrice, String fullName, String deliveryAddress,
+            String phone) {
+        this.orderID = orderID;
+        this.userID = userID;
+        this.orderStatusID = orderStatusID;
+        this.orderDate = orderDate;
+        this.paymentMethodID = paymentMethodID;
+        this.voucherID = voucherID;
+        this.totalPrice = totalPrice;
+        this.finalPrice = finalPrice;
+        this.fullName = fullName;
+        this.deliveryAddress = deliveryAddress;
+        this.phone = phone;
+    }
+
+    // Getter & Setter đầy đủ
     public int getOrderID() {
         return orderID;
     }
@@ -50,11 +63,11 @@ public class OrderInfo {
         this.orderStatusID = orderStatusID;
     }
 
-    public Date getOrderDate() {
+    public Timestamp getOrderDate() {
         return orderDate;
     }
 
-    public void setOrderDate(Date orderDate) {
+    public void setOrderDate(Timestamp orderDate) {
         this.orderDate = orderDate;
     }
 
@@ -66,27 +79,27 @@ public class OrderInfo {
         this.paymentMethodID = paymentMethodID;
     }
 
-    public int getVoucherID() {
+    public Integer getVoucherID() {
         return voucherID;
     }
 
-    public void setVoucherID(int voucherID) {
+    public void setVoucherID(Integer voucherID) {
         this.voucherID = voucherID;
     }
 
-    public double getTotalPrice() {
+    public BigDecimal getTotalPrice() {
         return totalPrice;
     }
 
-    public void setTotalPrice(double totalPrice) {
+    public void setTotalPrice(BigDecimal totalPrice) {
         this.totalPrice = totalPrice;
     }
 
-    public double getFinalPrice() {
+    public BigDecimal getFinalPrice() {
         return finalPrice;
     }
 
-    public void setFinalPrice(double finalPrice) {
+    public void setFinalPrice(BigDecimal finalPrice) {
         this.finalPrice = finalPrice;
     }
 
@@ -112,14 +125,6 @@ public class OrderInfo {
 
     public void setPhone(String phone) {
         this.phone = phone;
-    }
-
-    public boolean isIsDeleted() {
-        return isDeleted;
-    }
-
-    public void setIsDeleted(boolean isDeleted) {
-        this.isDeleted = isDeleted;
     }
 
 }
