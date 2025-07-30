@@ -1,8 +1,10 @@
 package Controller;
 
 import DAO.CartDAO;
+import DAO.PromotionDAO;
 import Model.Cart;
 import Model.Product;
+import Model.Promotion;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -21,6 +23,14 @@ import java.util.*;
 public class CartController extends HttpServlet {
 
     CartDAO dao = new CartDAO();
+    PromotionDAO promotionDAO;
+
+    public CartController() {
+        try {
+            this.promotionDAO = new PromotionDAO();
+        } catch (Exception e) {
+        }
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -69,6 +79,7 @@ public class CartController extends HttpServlet {
                 dao.deleteProductInCart(id);
                 response.sendRedirect(request.getContextPath() + "/Cart");
             } else {
+                HttpSession session = request.getSession();
                 Object userObj = request.getSession().getAttribute("userID");
                 if (userObj == null) {
                     // Chưa đăng nhập, chuyển hướng về login hoặc báo lỗi
@@ -76,10 +87,20 @@ public class CartController extends HttpServlet {
                     return;
                 }
 
+                List<Promotion> allPromotions = promotionDAO.getAllPromotions(); // bạn đã có DAO sẵn
+                List<Promotion> availablePromotions = new ArrayList<>();
+                for (Promotion promo : allPromotions) {
+                    if (promo.isIsActive() && promo.getUsedCount() < promo.getMaxUsage()) {
+                        availablePromotions.add(promo);
+                    }
+                }
+
                 int userID = (int) userObj; // An toàn vì đã kiểm tra null
                 System.out.println("UserID: " + userID);
                 List<Cart> cartList = dao.getProductInCart(userID);
+                request.setAttribute("promotions", availablePromotions);
                 request.setAttribute("cart", cartList);
+                session.setAttribute("cartQuantity", cartList.size());
                 request.getRequestDispatcher("cart.jsp").forward(request, response);
             }
         } catch (Exception e) {
@@ -103,13 +124,36 @@ public class CartController extends HttpServlet {
                 dao.decreaseQuantityByCartID(cartID);
             }
 
-            // Lấy lại giỏ hàng và forward sang JSP fragment (hoặc toàn bộ trang)
             HttpSession session = request.getSession(false);
             Model.User user = (Model.User) session.getAttribute("user");
 
             if (user != null) {
                 List<Cart> cartList = dao.getProductInCart(user.getUserID());
                 request.setAttribute("cart", cartList);
+                session.setAttribute("cartQuantity", cartList.size());
+
+                String promoIDStr = request.getParameter("promotionID");
+                if (promoIDStr != null) {
+                    try {
+                        int promoID = Integer.parseInt(promoIDStr);
+                        Promotion selected = promotionDAO.getPromotionById(promoID);
+                        if (selected != null && selected.isIsActive()) {
+                            request.setAttribute("selectedPromotion", selected);
+                            request.setAttribute("selectedPromotionID", promoID); // để đánh dấu lại <option selected>
+                        }
+                    } catch (NumberFormatException ex) {
+                        // optional: log lỗi
+                    }
+                }
+
+                List<Promotion> allPromotions = promotionDAO.getAllPromotions();
+                List<Promotion> availablePromotions = new ArrayList<>();
+                for (Promotion promo : allPromotions) {
+                    if (promo.isIsActive() && promo.getUsedCount() < promo.getMaxUsage()) {
+                        availablePromotions.add(promo);
+                    }
+                }
+                request.setAttribute("promotions", availablePromotions);
             }
 
             request.getRequestDispatcher("cart.jsp").forward(request, response);

@@ -1,8 +1,10 @@
 package Controller;
 
+import DAO.CartDAO;
 import DAO.ProductDAO;
 import Model.Product;
 import Model.Attribute;
+import Model.Cart;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -23,6 +25,7 @@ import java.util.*;
 public class ProductController extends HttpServlet {
 
     private ProductDAO dao = new ProductDAO();
+    private CartDAO cartDAO = new CartDAO();
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -48,6 +51,20 @@ public class ProductController extends HttpServlet {
                 Product productDetail = dao.getProductById(id);
                 List<Attribute> attributes = dao.getAttributesByProductId(id);
                 productDetail.setAttributes(attributes);
+
+                HttpSession session = request.getSession();
+                Object userObj = request.getSession().getAttribute("userID");
+                if (userObj == null) {
+                    // Chưa đăng nhập, chuyển hướng về login hoặc báo lỗi
+                    response.sendRedirect("login.jsp"); // hoặc custom thông báo
+                    return;
+                }
+
+                int userID = (int) userObj; // An toàn vì đã kiểm tra null
+                System.out.println("UserID: " + userID);
+                List<Cart> cartList = cartDAO.getProductInCart(userID);
+                session.setAttribute("cartQuantity", cartList.size());
+
                 request.setAttribute("productDetail", productDetail);
                 request.getRequestDispatcher("productDetail.jsp").forward(request, response);
             } else {

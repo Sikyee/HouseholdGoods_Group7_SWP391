@@ -113,6 +113,21 @@ public class OrderDAO {
         }
     }
 
+    public boolean updateOrderStatus(Order order) {
+        String sql = "UPDATE [dbo].[OrderInfo]\n"
+                + "   SET [statusID] = ?\n"
+                + " WHERE orderId = ?";
+        try {
+            PreparedStatement st = conn.prepareStatement(sql);
+            st.setInt(1, order.getOrderStatusID());
+            st.setInt(2, order.getOrderID());
+            return st.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            System.out.println(ex);
+        }
+        return false;
+    }
+
     public void cancelOrder(int orderID) throws SQLException {
         updateStatus(orderID, 5); // Canceled
     }

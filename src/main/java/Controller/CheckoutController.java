@@ -1,78 +1,3 @@
-///*
-// * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
-// * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
-// */
-//package Controller;
-//
-//import DAO.AddressDAO;
-//import DAO.CartDAO;
-//import DAO.UserDAO;
-//import Model.Address;
-//import Model.Cart;
-//import Model.User;
-//import java.io.IOException;
-//import java.io.PrintWriter;
-//import java.util.List;
-//import javax.servlet.ServletException;
-//import javax.servlet.annotation.WebServlet;
-//import javax.servlet.http.HttpServlet;
-//import javax.servlet.http.HttpServletRequest;
-//import javax.servlet.http.HttpServletResponse;
-//import javax.servlet.http.HttpSession;
-//
-///**
-// *
-// * @author Admin
-// */
-//@WebServlet("/Checkout")
-//public class CheckoutController extends HttpServlet {
-//
-//    CartDAO cartdao = new CartDAO();
-//    AddressDAO addressdao = new AddressDAO();
-//
-//    @Override
-//    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-//            throws ServletException, IOException {
-//        try {
-//            HttpSession session = request.getSession(false);
-//            Model.User user = (Model.User) session.getAttribute("user");
-//
-//            if (user == null) {
-//                response.sendRedirect("login.jsp");
-//                return;
-//            }
-//
-//            int userID = user.getUserID();
-//            List<Cart> cartList = cartdao.getProductInCart(userID);
-//            Address address = addressdao.getAddressByID(userID);
-//            request.setAttribute("cart", cartList);
-//            request.setAttribute("address", address);
-//            request.setAttribute("user", user);
-//            System.out.println("Cart: " + cartList);
-//            System.out.println("Address: " + address);
-//            System.out.println("User: " + user);
-//            request.getRequestDispatcher("checkout.jsp").forward(request, response);
-//        } catch (Exception e) {
-//            System.out.println("Error:" + e);
-//        }
-//    }
-//
-//    @Override
-//    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-//            throws ServletException, IOException {
-//        String name = request.getParameter("userName");
-//        String email = request.getParameter("userEmail");
-//        String phone = request.getParameter("userPhone");
-//        String address = request.getParameter("userAddress");
-//        String totalStr = request.getParameter("total");
-//
-//        // Ghi log test thử
-//        System.out.println("Checkout: " + name + ", " + email + ", " + totalStr);
-//
-//        // Tạm redirect về trang cảm ơn
-//        response.sendRedirect("thankyou.jsp");
-//    }
-//}
 package Controller;
 
 import DAO.CartDAO;
@@ -85,6 +10,7 @@ import Model.Address;
 import Model.Cart;
 import Model.Order;
 import Model.OrderDetail;
+import Model.Product;
 import Model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -93,10 +19,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 @WebServlet("/Checkout")
 public class CheckoutController extends HttpServlet {
@@ -106,35 +41,61 @@ public class CheckoutController extends HttpServlet {
     UserDAO userDAO = new UserDAO();
     ProductDAO productDAO = new ProductDAO();
     OrderDAO orderDAO = new OrderDAO();
-//    OrderDetailDAO orderDetailDAO = new OrderDetailDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
             String action = request.getParameter("action");
+            HttpSession session = request.getSession();
+            User user = (User) session.getAttribute("user");
 
-            if ("edit".equals(action)) {
+            if (user == null) {
+                response.sendRedirect("login.jsp");
+                return;
+            }
 
-            } else if ("add".equals(action)) {
+            String finalTotalParam = request.getParameter("finalTotal");
+            String discountValueParam = request.getParameter("discountValue");
 
-            } else if ("delete".equals(action)) {
+            if (finalTotalParam != null) {
+                float finalTotal = Float.parseFloat(finalTotalParam);
+                request.setAttribute("finalTotal", finalTotal);
+            }
+            if (discountValueParam != null) {
+                float discountValue = Float.parseFloat(discountValueParam);
+                request.setAttribute("discountValue", discountValue);
+            }
 
-            } else {
-                HttpSession session = request.getSession();
-                User user = (User) session.getAttribute("user");
+            if ("add".equals(action)) {
+                int productID = Integer.parseInt(request.getParameter("productID"));
+                int quantity = Integer.parseInt(request.getParameter("quantity"));
+                Product product = productDAO.getProductById(productID);
 
-                System.out.println("User in session: " + user);
-
-                if (user == null) {
-                    response.sendRedirect("login.jsp");
+                if (product == null) {
+                    response.sendRedirect("Cart");
                     return;
                 }
 
+                List<Cart> cartList = new ArrayList<>();
+                Cart temp = new Cart();
+                temp.setProductID(productID);
+                temp.setQuantity(quantity);
+                temp.setProduct(product);
+                cartList.add(temp);
+
+                Address address = addressDAO.getDefaultAddress(user.getUserID());
+
+                request.setAttribute("cart", cartList);
+                request.setAttribute("address", address);
+                request.setAttribute("user", user);
+                request.setAttribute("isBuyNow", true); // FLAG để phân biệt
+                request.getRequestDispatcher("checkout.jsp").forward(request, response);
+
+            } else {
                 int userID = user.getUserID();
                 List<Cart> cartList = cartDAO.getProductInCart(userID);
                 Address address = addressDAO.getDefaultAddress(userID);
-                System.out.println("Address from controller:" + address);
 
                 request.setAttribute("cart", cartList);
                 request.setAttribute("address", address);
@@ -142,7 +103,7 @@ public class CheckoutController extends HttpServlet {
                 request.getRequestDispatcher("checkout.jsp").forward(request, response);
             }
         } catch (Exception e) {
-            System.out.println("Khong hien thi checkout");
+            System.out.println("Lỗi khi hiển thị trang Checkout: " + e.getMessage());
         }
     }
 
@@ -160,19 +121,41 @@ public class CheckoutController extends HttpServlet {
         try {
             String phone = request.getParameter("userPhone");
             String address = request.getParameter("userAddress");
-            float total = Float.parseFloat(request.getParameter("total"));
             int paymentMethodID = Integer.parseInt(request.getParameter("paymentMethod"));
-
+            float total = Float.parseFloat(request.getParameter("total"));
             LocalDate now = LocalDate.now();
             Date orderDate = Date.valueOf(now);
+
+            boolean isBuyNow = request.getParameter("isBuyNow") != null;
+
+            List<Cart> cartList;
+            if (isBuyNow) {
+                int productID = Integer.parseInt(request.getParameter("productID"));
+                int quantity = Integer.parseInt(request.getParameter("quantity"));
+                Product p = productDAO.getProductById(productID);
+                if (p.getStonkQuantity() < quantity) {
+                    request.setAttribute("error", "Sản phẩm '" + p.getProductName() + "' không đủ số lượng trong kho.");
+                    request.getRequestDispatcher("checkout.jsp").forward(request, response);
+                    return;
+                }
+                Cart c = new Cart();
+                c.setProductID(productID);
+                c.setQuantity(quantity);
+                c.setProduct(p);
+
+                cartList = new ArrayList<>();
+                cartList.add(c);
+            } else {
+                cartList = cartDAO.getProductInCart(user.getUserID());
+            }
 
             // Tạo Order
             Order order = new Order();
             order.setUserID(user.getUserID());
-            order.setOrderStatusID(1); // Pending
+            order.setOrderStatusID(1);
             order.setOrderDate(orderDate);
             order.setPaymentMethodID(paymentMethodID);
-            order.setVoucherID(0); // Nếu có voucher thì set ID
+            order.setVoucherID(0);
             order.setTotalPrice(total);
             order.setFinalPrice(total);
             order.setFullName(user.getFullName());
@@ -180,39 +163,44 @@ public class CheckoutController extends HttpServlet {
             order.setPhone(phone);
 
             int orderID = orderDAO.createOrder(order);
-            System.out.println("Order created with ID: " + orderID);
+            if (orderID < 1) {
+                request.setAttribute("error", "Không thể tạo đơn hàng.");
+                request.getRequestDispatcher("checkout.jsp").forward(request, response);
+                return;
+            }
 
-            List<Cart> cartList = cartDAO.getProductInCart(user.getUserID());
             List<OrderDetail> orderDetails = new ArrayList<>();
-
             for (Cart c : cartList) {
+                Product p = productDAO.getProductById(c.getProductID());
+                if (p.getStonkQuantity() < c.getQuantity()) {
+                    request.setAttribute("error", "Sản phẩm '" + p.getProductName() + "' không đủ số lượng.");
+                    request.getRequestDispatcher("checkout.jsp").forward(request, response);
+                    return;
+                }
+
                 OrderDetail detail = new OrderDetail();
                 detail.setOrderID(orderID);
                 detail.setProductID(c.getProductID());
-                detail.setOrderName(c.getProduct().getProductName());
+                detail.setOrderName(p.getProductName());
                 detail.setQuantity(c.getQuantity());
-                detail.setTotalPrice(c.getProduct().getPrice() * c.getQuantity());
+                detail.setTotalPrice(p.getPrice() * c.getQuantity());
                 orderDetails.add(detail);
 
-                // Nếu có cập nhật tồn kho:
-                // productDAO.updateStockAfterPurchase(c.getProductID(), c.getQuantity());
+                productDAO.updateStockAfterPurchase(c.getProductID(), c.getQuantity());
             }
 
-            OrderDetailDAO orderDetailDAO = new OrderDetailDAO();
-            orderDetailDAO.insertOrderDetails(orderDetails);
+            new OrderDetailDAO().insertOrderDetails(orderDetails);
 
-            // Xóa giỏ hàng sau khi mua
-            cartDAO.clearCartByUser(user.getUserID());
+            if (!isBuyNow) {
+                cartDAO.clearCartByUser(user.getUserID());
+            }
 
-            // Điều hướng sang trang home và thông báo
-            session.setAttribute("successMessage", "Your order has been successfully submited!");
+            session.setAttribute("successMessage", "Đơn hàng đã được đặt thành công!");
             response.sendRedirect(request.getContextPath() + "/");
-
         } catch (Exception e) {
             e.printStackTrace();
-            request.setAttribute("error", "Error order.");
+            request.setAttribute("error", "Lỗi xử lý đơn hàng.");
             request.getRequestDispatcher("checkout.jsp").forward(request, response);
         }
     }
-
 }

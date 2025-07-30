@@ -1,3 +1,5 @@
+<%@page import="Model.Cart"%>
+<%@page import="java.util.List"%>
 <!DOCTYPE html>
 <html>
     <head>
@@ -130,9 +132,28 @@
             .navbar-brand:hover {
                 color: #007bff !important;
             }
+
+            .nav-link {
+                position: relative;
+            }
+
+            .product-quantity {
+                color: white;
+                border-radius: 100px;
+                bottom: 33px;
+                right: 220px;
+                background-color: red;
+                padding: 0px 5px;
+                font-size: 10px;
+                text-align: center;
+                position: absolute;
+            }
         </style>
     </head>
     <body>
+        <%
+            Integer cartQuantity = (Integer) session.getAttribute("cartQuantity");
+        %>
         <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
             <div class="container-fluid">
                 <a class="navbar-brand" href="<%= request.getContextPath()%>/">
@@ -155,10 +176,13 @@
                     <!-- Navigation Links -->
                     <ul class="navbar-nav d-flex flex-row align-items-center">
                         <!-- Cart -->
-                        <li class="nav-item me-3">
+                        <li class="nav-item me-3 cart">
                             <a class="nav-link" href="<%= request.getContextPath()%>/Cart" title="">
                                 <i class="fas fa-shopping-cart"></i>
                             </a>
+                            <span class="product-quantity">
+                                <%= (cartQuantity != null) ? cartQuantity : 0%>
+                            </span>
                         </li>
 
                         <!-- Profile -->
