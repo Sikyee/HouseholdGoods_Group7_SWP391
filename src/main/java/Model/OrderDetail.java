@@ -1,13 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package Model;
-
-/**
- *
- * @author TriTN
- */
 
 public class OrderDetail {
     private int orderDetailID;
@@ -15,24 +6,65 @@ public class OrderDetail {
     private int orderID;
     private String orderName;
     private int quantity;
-    private double totalPrice;
+    private long totalPrice;
 
-    // Getters and Setters
-    public int getOrderDetailID() { return orderDetailID; }
-    public void setOrderDetailID(int orderDetailID) { this.orderDetailID = orderDetailID; }
+    public OrderDetail() {}
 
-    public int getProductID() { return productID; }
-    public void setProductID(int productID) { this.productID = productID; }
+    public OrderDetail(int orderDetailID, int productID, int orderID, String orderName, int quantity, long totalPrice) {
+        this.orderDetailID = orderDetailID;
+        this.productID = productID;
+        this.orderID = orderID;
+        this.orderName = orderName;
+        this.quantity = quantity;
+        this.totalPrice = totalPrice;
+    }
 
-    public int getOrderID() { return orderID; }
-    public void setOrderID(int orderID) { this.orderID = orderID; }
+    
+    public int getOrderDetailID() {
+        return orderDetailID;
+    }
 
-    public String getOrderName() { return orderName; }
-    public void setOrderName(String orderName) { this.orderName = orderName; }
+    public void setOrderDetailID(int orderDetailID) {
+        this.orderDetailID = orderDetailID;
+    }
 
-    public int getQuantity() { return quantity; }
-    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public int getProductID() {
+        return productID;
+    }
 
-    public double getTotalPrice() { return totalPrice; }
-    public void setTotalPrice(double totalPrice) { this.totalPrice = totalPrice; }
+    public void setProductID(int productID) {
+        this.productID = productID;
+    }
+
+    public int getOrderID() {
+        return orderID;
+    }
+
+    public void setOrderID(int orderID) {
+        this.orderID = orderID;
+    }
+
+    public String getOrderName() {
+        return orderName;
+    }
+
+    public void setOrderName(String orderName) {
+        this.orderName = orderName;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public long getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(long totalPrice) {
+        this.totalPrice = totalPrice;
+    }
 }

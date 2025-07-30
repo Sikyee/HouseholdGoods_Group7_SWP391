@@ -4,57 +4,63 @@
  */
 package DAO;
 
-import DB.DBConnection;
 import Model.OrderDetail;
+import DB.DBConnection;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  *
- * @author TriTN
+ * @author TriTM
  */
 public class OrderDetailDAO {
 
-    private Connection conn;
-
-    public OrderDetailDAO() throws Exception {
-        conn = DBConnection.getConnection();
-    }
-
-    public List<OrderDetail> getDetailsByOrderID(int orderID) throws SQLException {
+    // Lấy danh sách chi tiết đơn hàng theo orderID
+    public List<OrderDetail> getOrderDetailsByOrderID(int orderID) {
         List<OrderDetail> list = new ArrayList<>();
         String sql = "SELECT * FROM OrderDetail WHERE orderID = ?";
-        try ( PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (
+                 Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, orderID);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                OrderDetail detail = new OrderDetail();
-                detail.setOrderDetailID(rs.getInt("orderDetailID"));
-                detail.setProductID(rs.getInt("productID"));
-                detail.setOrderID(rs.getInt("orderID"));
-                detail.setOrderName(rs.getString("orderName"));
-                detail.setQuantity(rs.getInt("quantity"));
-                detail.setTotalPrice(rs.getDouble("totalPrice"));
-                list.add(detail);
+                OrderDetail od = new OrderDetail();
+                od.setOrderDetailID(rs.getInt("orderDetailID"));
+                od.setProductID(rs.getInt("productID"));
+                od.setOrderID(rs.getInt("orderID"));
+                od.setOrderName(rs.getString("orderName"));
+                od.setQuantity(rs.getInt("quantity"));
+                od.setTotalPrice(rs.getLong("totalPrice"));
+                list.add(od);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return list;
     }
 
-    public void insertOrderDetails(List<OrderDetail> details) throws SQLException {
-        String sql = "INSERT INTO OrderDetail (orderID, productID, orderName, quantity, totalPrice) VALUES (?, ?, ?, ?, ?)";
-        try ( PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (OrderDetail detail : details) {
-                ps.setInt(1, detail.getOrderID());
-                ps.setInt(2, detail.getProductID());
-                ps.setString(3, detail.getOrderName());
-                ps.setInt(4, detail.getQuantity());
-                ps.setDouble(5, detail.getTotalPrice());
+    // Thêm chi tiết đơn hàng (nếu cần dùng insert)
+    public void insertOrderDetails(List<OrderDetail> details) {
+        String sql = "INSERT INTO OrderDetail (productID, orderID, orderName, quantity, totalPrice) VALUES (?, ?, ?, ?, ?)";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            for (OrderDetail od : details) {
+                ps.setInt(1, od.getProductID());
+                ps.setInt(2, od.getOrderID());
+                ps.setString(3, od.getOrderName());
+                ps.setInt(4, od.getQuantity());
+                ps.setLong(5, od.getTotalPrice());
                 ps.addBatch();
             }
+
             ps.executeBatch();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
+
 }

@@ -8,7 +8,7 @@ import DAO.OrderDAO;
 import DAO.OrderDetailDAO;
 import Model.Address;
 import Model.Cart;
-import Model.Order;
+import Model.OrderInfo;
 import Model.OrderDetail;
 import Model.Product;
 import Model.User;
@@ -150,14 +150,16 @@ public class CheckoutController extends HttpServlet {
             }
 
             // Tạo Order
-            Order order = new Order();
+            OrderInfo order = new OrderInfo();
             order.setUserID(user.getUserID());
             order.setOrderStatusID(1);
+
             order.setOrderDate(orderDate);
             order.setPaymentMethodID(paymentMethodID);
             order.setVoucherID(0);
             order.setTotalPrice(total);
             order.setFinalPrice(total);
+
             order.setFullName(user.getFullName());
             order.setDeliveryAddress(address);
             order.setPhone(phone);
