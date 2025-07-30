@@ -249,4 +249,12 @@ public class ProductDAO {
         return list;
     }
 
+    public void updateStockAfterPurchase(int productId, int quantityPurchased) throws Exception {
+        Connection conn = DBConnection.getConnection();
+        String sql = "UPDATE Product SET stonk_Quantity = stonk_Quantity - ? WHERE productID = ?";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setInt(1, quantityPurchased);
+        ps.setInt(2, productId);
+        ps.executeUpdate();
+    }
 }

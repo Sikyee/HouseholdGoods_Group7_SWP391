@@ -114,6 +114,9 @@
                 User user = (User) request.getAttribute("user");
                 Address address = (Address) request.getAttribute("address");
                 System.out.println("Address:" + address);
+                Float finalTotal = (Float) request.getAttribute("finalTotal");
+                Float discountValue = (Float) request.getAttribute("discountValue");
+                System.out.println("discount value:" + discountValue);
                 int totalAll = 0;
             %>
             <div class="row">
@@ -122,7 +125,8 @@
                     <div class="cart-box">
                         <h5 class="cart-title">Your Cart</h5>
                         <ul class="list-group mb-3">
-                            <% if (cart != null) {
+                            <%
+                                if (cart != null) {
                                     for (Cart c : cart) {
                                         Product p = c.getProduct();
                                         long total = (long) (p.getPrice() * c.getQuantity());
@@ -135,8 +139,21 @@
                                 </div>
                                 <span><%= String.format("%,d", total)%>₫</span>
                             </li>
-                            <% }
-                                }%>
+                            <%
+                                    } // end for
+                                } // end if
+                            %>
+
+                            <% if (discountValue != null && discountValue > 0) {%>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>Discount</div>
+                                <span><%= String.format("%,.0f", discountValue)%>₫</span>
+                            </li>
+                            <%
+                                    totalAll -= discountValue.intValue();
+                                }
+                            %>
+
                             <li class="list-group-item d-flex justify-content-between">
                                 <strong>Total</strong>
                                 <span class="total-price"><%= String.format("%,d", totalAll)%>₫</span>
@@ -144,13 +161,19 @@
                         </ul>
                     </div>
                 </div>
-                            
+
                 <!-- Information -->
                 <div class="col-md-7">
                     <div class="mb-3">
                         <h5 class="cart-title">Your Information</h5>
                     </div>
                     <form action="Checkout" method="post">
+                        <% Boolean isBuyNow = (Boolean) request.getAttribute("isBuyNow"); %>
+                        <% if (isBuyNow != null && isBuyNow) {%>
+                        <input type="hidden" name="isBuyNow" value="true" />
+                        <input type="hidden" name="productID" value="<%= cart.get(0).getProductID()%>" />
+                        <input type="hidden" name="quantity" value="<%= cart.get(0).getQuantity()%>" />
+                        <% }%>
                         <input type="hidden" name="total" value="<%= totalAll%>">
 
                         <div class="form-group">
