@@ -11,8 +11,8 @@ public class OrderInfo {
     private Timestamp orderDate;
     private int paymentMethodID;
     private Integer voucherID;
-    private BigDecimal totalPrice;
-    private BigDecimal finalPrice;
+    private double totalPrice;
+    private double finalPrice;
     private String fullName;
     private String deliveryAddress;
     private String phone;
@@ -21,10 +21,7 @@ public class OrderInfo {
     public OrderInfo() {
     }
 
-    public OrderInfo(int orderID, int userID, int orderStatusID, Timestamp orderDate,
-            int paymentMethodID, Integer voucherID, BigDecimal totalPrice,
-            BigDecimal finalPrice, String fullName, String deliveryAddress,
-            String phone) {
+    public OrderInfo(int orderID, int userID, int orderStatusID, Timestamp orderDate, int paymentMethodID, Integer voucherID, double totalPrice, double finalPrice, String fullName, String deliveryAddress, String phone) {
         this.orderID = orderID;
         this.userID = userID;
         this.orderStatusID = orderStatusID;
@@ -38,7 +35,6 @@ public class OrderInfo {
         this.phone = phone;
     }
 
-    // Getter & Setter đầy đủ
     public int getOrderID() {
         return orderID;
     }
@@ -87,19 +83,19 @@ public class OrderInfo {
         this.voucherID = voucherID;
     }
 
-    public BigDecimal getTotalPrice() {
+    public double getTotalPrice() {
         return totalPrice;
     }
 
-    public void setTotalPrice(BigDecimal totalPrice) {
+    public void setTotalPrice(double totalPrice) {
         this.totalPrice = totalPrice;
     }
 
-    public BigDecimal getFinalPrice() {
+    public double getFinalPrice() {
         return finalPrice;
     }
 
-    public void setFinalPrice(BigDecimal finalPrice) {
+    public void setFinalPrice(double finalPrice) {
         this.finalPrice = finalPrice;
     }
 

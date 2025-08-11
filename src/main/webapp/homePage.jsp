@@ -201,6 +201,44 @@
                 <% }%>
             </div>
         </div>
+        <div class="d-flex justify-content-center mt-4">
+            <nav>
+                <ul class="pagination">
+                    <%
+                        int currentPage = (int) request.getAttribute("currentPage");
+                        int totalPages = (int) request.getAttribute("totalPages");
+
+                        // Nút Previous
+                        if (currentPage > 1) {%>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<%= currentPage - 1%>">Previous</a>
+                    </li>
+                    <% } else { %>
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                        <% }
+
+                            // Các số trang
+                            for (int i = 1; i <= totalPages; i++) {
+                                if (i == currentPage) {%>
+                    <li class="page-item active"><span class="page-link"><%= i%></span></li>
+                        <%      } else {%>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<%= i%>"><%= i%></a>
+                    </li>
+                    <%      }
+                        }
+
+                        // Nút Next
+                        if (currentPage < totalPages) {%>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<%= currentPage + 1%>">Next</a>
+                    </li>
+                    <% } else { %>
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                        <% } %>
+                </ul>
+            </nav>
+        </div>
 
         <%@ include file="footer.jsp" %>
 
@@ -210,7 +248,7 @@
             if (successMessage != null) {
         %>
         <script>
-            window.alert("<%= successMessage %>");
+            window.alert("<%= successMessage%>");
         </script>
         <%
                 session.removeAttribute("successMessage"); // Xóa để không lặp lại
