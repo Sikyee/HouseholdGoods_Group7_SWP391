@@ -10,6 +10,7 @@ import DAO.ProductDAO;
 import DAO.UserDAO;
 import Model.Cart;
 import Model.Order;
+import Model.OrderInfo;
 import Model.User;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -77,7 +78,7 @@ public class VnpayReturn extends HttpServlet {
 
                 String orderId = request.getParameter("vnp_TxnRef");
 
-                Order order = new Order();
+                OrderInfo order = new OrderInfo();
                 order.setOrderID(Integer.parseInt(orderId));
 
                 boolean transSuccess = false;

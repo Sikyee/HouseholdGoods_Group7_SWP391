@@ -1,10 +1,10 @@
 package Controller;
 
 import DAO.CartDAO;
-import DAO.PromotionDAO;
+import DAO.VoucherDAO;
 import Model.Cart;
 import Model.Product;
-import Model.Promotion;
+import Model.Voucher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -23,11 +23,11 @@ import java.util.*;
 public class CartController extends HttpServlet {
 
     CartDAO dao = new CartDAO();
-    PromotionDAO promotionDAO;
+    VoucherDAO voucherDAO;
 
     public CartController() {
         try {
-            this.promotionDAO = new PromotionDAO();
+            this.voucherDAO = new VoucherDAO();
         } catch (Exception e) {
         }
     }
@@ -87,18 +87,9 @@ public class CartController extends HttpServlet {
                     return;
                 }
 
-                List<Promotion> allPromotions = promotionDAO.getAllPromotions(); // bạn đã có DAO sẵn
-                List<Promotion> availablePromotions = new ArrayList<>();
-                for (Promotion promo : allPromotions) {
-                    if (promo.isIsActive() && promo.getUsedCount() < promo.getMaxUsage()) {
-                        availablePromotions.add(promo);
-                    }
-                }
-
-                int userID = (int) userObj; // An toàn vì đã kiểm tra null
+                int userID = (int) userObj;
                 System.out.println("UserID: " + userID);
                 List<Cart> cartList = dao.getProductInCart(userID);
-                request.setAttribute("promotions", availablePromotions);
                 request.setAttribute("cart", cartList);
                 session.setAttribute("cartQuantity", cartList.size());
                 request.getRequestDispatcher("cart.jsp").forward(request, response);
@@ -136,7 +127,7 @@ public class CartController extends HttpServlet {
                 if (promoIDStr != null) {
                     try {
                         int promoID = Integer.parseInt(promoIDStr);
-                        Promotion selected = promotionDAO.getPromotionById(promoID);
+                        Voucher selected = voucherDAO.getVoucherById(promoID);
                         if (selected != null && selected.isIsActive()) {
                             request.setAttribute("selectedPromotion", selected);
                             request.setAttribute("selectedPromotionID", promoID); // để đánh dấu lại <option selected>
@@ -146,11 +137,11 @@ public class CartController extends HttpServlet {
                     }
                 }
 
-                List<Promotion> allPromotions = promotionDAO.getAllPromotions();
-                List<Promotion> availablePromotions = new ArrayList<>();
-                for (Promotion promo : allPromotions) {
-                    if (promo.isIsActive() && promo.getUsedCount() < promo.getMaxUsage()) {
-                        availablePromotions.add(promo);
+                List<Voucher> allPromotions = voucherDAO.getAllVouchers();
+                List<Voucher> availablePromotions = new ArrayList<>();
+                for (Voucher voucher : allPromotions) {
+                    if (voucher.isIsActive() && voucher.getUsedCount() < voucher.getMaxUsage()) {
+                        availablePromotions.add(voucher);
                     }
                 }
                 request.setAttribute("promotions", availablePromotions);

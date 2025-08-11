@@ -1,6 +1,7 @@
 package DAO;
 
 import DB.DBConnection;
+import Model.Order;
 import Model.OrderInfo;
 
 import java.sql.*;
@@ -64,7 +65,6 @@ public class OrderDAO {
         }
     }
 
-
     public List<OrderInfo> getAllOrdersByStatus(int statusID) {
         List<OrderInfo> list = new ArrayList<>();
         String sql = "SELECT * FROM OrderInfo WHERE orderStatusID = ?";
@@ -86,12 +86,9 @@ public class OrderDAO {
         return list;
     }
 
-    public int createOrder(OrderInfo order) {
-        String sql = "INSERT INTO OrderInfo (userID, orderStatusID, orderDate, paymentMethodID, voucherID, totalPrice, finalPrice, fullName, deliveryAddress, phone) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
-
+    public int createOrder(OrderInfo order) throws Exception {
+        String sql = "INSERT INTO OrderInfo (userID, orderStatusID, orderDate, paymentMethodID, voucherID, totalPrice, finalPrice, fullName, deliveryAddress, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
             ps.setInt(1, order.getUserID());
             ps.setInt(2, order.getOrderStatusID());
             ps.setTimestamp(3, new Timestamp(order.getOrderDate().getTime()));
@@ -103,19 +100,29 @@ public class OrderDAO {
                 ps.setInt(5, order.getVoucherID());
             }
 
-            ps.setBigDecimal(6, order.getTotalPrice());
-            ps.setBigDecimal(7, order.getFinalPrice());
+            ps.setDouble(6, order.getTotalPrice());
+            ps.setDouble(7, order.getFinalPrice());
             ps.setString(8, order.getFullName());
             ps.setString(9, order.getDeliveryAddress());
             ps.setString(10, order.getPhone());
 
             ps.executeUpdate();
 
-    public boolean updateOrderStatus(Order order) {
+            try ( ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1); // Lấy orderID vừa tạo
+                }
+            }
+        }
+        return 0;
+    }
+
+    public boolean updateOrderStatus(OrderInfo order) throws Exception {
         String sql = "UPDATE [dbo].[OrderInfo]\n"
                 + "   SET [statusID] = ?\n"
                 + " WHERE orderId = ?";
         try {
+            Connection conn = DBConnection.getConnection();
             PreparedStatement st = conn.prepareStatement(sql);
             st.setInt(1, order.getOrderStatusID());
             st.setInt(2, order.getOrderID());
@@ -127,13 +134,12 @@ public class OrderDAO {
     }
 
     public void cancelOrder(int orderID) throws SQLException {
-        updateStatus(orderID, 5); // Canceled
-    }
+        try {
+
+            updateOrderStatus(orderID, 5); // Canceled
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return -1; // Lỗi khi tạo
     }
 
     private OrderInfo extractOrderFromResultSet(ResultSet rs) throws SQLException {
@@ -144,8 +150,8 @@ public class OrderDAO {
         order.setOrderDate(rs.getTimestamp("orderDate"));
         order.setPaymentMethodID(rs.getInt("paymentMethodID"));
         order.setVoucherID(rs.getObject("voucherID") != null ? rs.getInt("voucherID") : null);
-        order.setTotalPrice(rs.getBigDecimal("totalPrice"));
-        order.setFinalPrice(rs.getBigDecimal("finalPrice"));
+        order.setTotalPrice(rs.getDouble("totalPrice"));
+        order.setFinalPrice(rs.getDouble("finalPrice"));
         order.setFullName(rs.getString("fullName"));
         order.setDeliveryAddress(rs.getString("deliveryAddress"));
         order.setPhone(rs.getString("phone"));

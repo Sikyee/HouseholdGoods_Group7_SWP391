@@ -1,3 +1,4 @@
+<%@page import="Model.Voucher"%>
 <%@page import="Model.User"%>
 <%@page import="Model.Address"%>
 <%@page import="Model.Cart"%>
@@ -24,6 +25,7 @@
                 background: linear-gradient(to right, #f0f2f5, #e9ecef);
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
+
             .checkout-wrapper {
                 max-width: 1200px;
                 margin: 40px auto;
@@ -32,22 +34,26 @@
                 box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
                 padding: 40px;
             }
+
             h2 {
                 font-weight: 700;
                 color: #343a40;
                 text-transform: uppercase;
                 letter-spacing: 1px;
             }
+
             .form-control {
                 border-radius: 10px;
                 padding: 12px;
                 border: 1px solid #ced4da;
                 transition: 0.3s;
             }
+
             .form-control:focus {
                 border-color: #007bff;
                 box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
             }
+
             .btn-primary {
                 background: #007bff;
                 border-radius: 10px;
@@ -55,51 +61,81 @@
                 padding: 10px 25px;
                 transition: 0.3s ease;
             }
+
             .btn-primary:hover {
                 background: #0056b3;
                 transform: translateY(-1px);
             }
+
             .btn-secondary {
                 border-radius: 10px;
                 font-weight: 600;
                 padding: 10px 25px;
             }
+
             .cart-box {
-                background: #f8f9fa;
-                border-radius: 12px;
-                padding: 20px;
-                box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+                background: #fff;
+                border-radius: 15px;
+                padding: 25px 30px;
             }
+
             .cart-title {
                 font-size: 20px;
                 font-weight: 700;
-                color: #495057;
-                border-bottom: 2px solid #dee2e6;
-                padding-bottom: 8px;
-                margin-bottom: 15px;
+                color: #343a40;
+                margin-bottom: 20px;
             }
+
             .list-group-item {
-                border: none;
-                border-bottom: 1px solid #e9ecef;
-                padding: 15px 10px;
+                border: none !important;
+                padding: 12px 0;
                 font-size: 15px;
                 background: transparent;
             }
-            .list-group-item:last-child {
-                border-bottom: none;
-            }
+
             .total-price {
                 font-size: 20px;
                 color: #e63946;
                 font-weight: bold;
             }
+
             .payment-options label {
                 margin-right: 15px;
                 font-weight: 500;
                 cursor: pointer;
             }
+
             .payment-options input[type="radio"] {
                 margin-right: 6px;
+            }
+
+            select.form-control:disabled {
+                background-color: #e9ecef;
+                color: #6c757d;
+            }
+
+            #promoSelect {
+                padding: 5px 12px;
+                border-radius: 8px;
+                border: 1px solid #ced4da;
+                font-size: 14px;
+                color: #495057;
+                background-color: #fff;
+                transition: border-color 0.3s, box-shadow 0.3s;
+            }
+            
+            #promoSelect option{
+                width: 10px;
+            }
+
+            #promoSelect:focus {
+                border-color: #007bff;
+                box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+            }
+
+            label[for="promoSelect"] {
+                font-size: 15px;
+                color: #343a40;
             }
         </style>
     </head>
@@ -113,10 +149,12 @@
                 List<Cart> cart = (List<Cart>) request.getAttribute("cart");
                 User user = (User) request.getAttribute("user");
                 Address address = (Address) request.getAttribute("address");
+                List<Voucher> vouchers = (List<Voucher>) request.getAttribute("vouchers");
+                Integer selectedPromotionID = (Integer) request.getAttribute("selectedPromotionID");
                 System.out.println("Address:" + address);
                 Float finalTotal = (Float) request.getAttribute("finalTotal");
                 Float discountValue = (Float) request.getAttribute("discountValue");
-                System.out.println("discount value:" + discountValue);
+                System.out.println("discount value:" + selectedPromotionID);
                 int totalAll = 0;
             %>
             <div class="row">
@@ -142,21 +180,59 @@
                             <%
                                     } // end for
                                 } // end if
+%>
+
+                            <li class="list-group-item">
+                                <label for="promoSelect" class="font-weight-bold mb-2 d-block">🎁 Apply Voucher</label>
+                                <select id="promoSelect" name="promotionID" class="form-control">
+                                    <option disabled <%= (selectedPromotionID == null) ? "selected" : ""%>>-- Select a voucher --</option>
+                                    <% if (vouchers != null) {
+                                            for (Voucher voucher : vouchers) {
+                                                boolean isValid = totalAll >= voucher.getMinOrderValue();
+                                                boolean isSelected = selectedPromotionID != null && selectedPromotionID == voucher.getVoucherID();
+                                    %>
+                                    <option value="<%= voucher.getVoucherID()%>"
+                                            data-discount="<%= voucher.getDiscountValue()%>"
+                                            data-discount-type="<%= voucher.getDiscountType()%>"
+                                            <%= !isValid ? "disabled style='color:gray;'" : ""%>
+                                            <%= isSelected ? "selected" : ""%>>
+                                        <%= voucher.getDescription()%>
+                                    </option>
+                                    <%
+                                            }
+                                        }
+                                    %>
+                                </select>
+                            </li>
+
+                            <!-- Add hr here -->
+                            <li class="list-group-item px-0">
+                                <hr class="my-3">
+                            </li>
+
+                            <%
+                                long discount = 0;
+                                if (discountValue
+                                        != null) {
+                                    discount = discountValue.longValue();
+                                } else {
+                                    discount = 0;
+                                }
+                                long finalAmount = totalAll - discount;
+                                if (finalAmount < 0)
+                                    finalAmount = 0;
                             %>
 
-                            <% if (discountValue != null && discountValue > 0) {%>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>Discount</div>
-                                <span><%= String.format("%,.0f", discountValue)%>₫</span>
+
+                            <li class="list-group-item d-flex justify-content-between">
+                                <strong class="text-success">Discount</strong>
+                                <span class="text-success">-<%= String.format("%,d", discount)%>₫</span>
                             </li>
-                            <%
-                                    totalAll -= discountValue.intValue();
-                                }
-                            %>
+
 
                             <li class="list-group-item d-flex justify-content-between">
                                 <strong>Total</strong>
-                                <span class="total-price"><%= String.format("%,d", totalAll)%>₫</span>
+                                <span class="total-price"><%= String.format("%,d", finalAmount)%>₫</span>
                             </li>
                         </ul>
                     </div>
@@ -173,7 +249,11 @@
                         <input type="hidden" name="isBuyNow" value="true" />
                         <input type="hidden" name="productID" value="<%= cart.get(0).getProductID()%>" />
                         <input type="hidden" name="quantity" value="<%= cart.get(0).getQuantity()%>" />
+
                         <% }%>
+                        <input type="hidden" id="selectedPromoInput" name="promotionID" value="<%= selectedPromotionID != null ? selectedPromotionID : ""%>">
+                        <input type="hidden" name="discountValue" value="<%= discount%>">
+                        <input type="hidden" name="finalTotal" id="finalTotal" value="<%= finalAmount%>">
                         <input type="hidden" name="total" value="<%= totalAll%>">
 
                         <div class="form-group">
@@ -224,4 +304,43 @@
 
         <%@ include file="footer.jsp" %>
     </body>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const promoSelect = document.getElementById("promoSelect");
+            const discountSpan = document.querySelector(".list-group-item .text-success:last-child");
+            const totalSpan = document.querySelector(".total-price");
+
+            let originalTotal = <%= totalAll%>;
+            console.log(originalTotal);
+
+
+
+            promoSelect.addEventListener("change", function () {
+                const selectedOption = this.options[this.selectedIndex];
+                const discountType = selectedOption.getAttribute("data-discount-type");
+                const discountID = selectedOption.getAttribute("value");
+                const discountValue = parseFloat(selectedOption.getAttribute("data-discount")) || 0;
+
+                let discount = 0;
+                if (discountType === "percentage") {
+                    discount = Math.floor(originalTotal * (discountValue / 100));
+                } else if (discountType === "fixed") {
+                    discount = Math.floor(discountValue);
+                }
+
+                let finalTotal = originalTotal - discount;
+                if (finalTotal < 0)
+                    finalTotal = 0;
+
+                // Update UI
+                discountSpan.textContent = "-" + discount.toLocaleString("vi-VN") + "₫";
+                totalSpan.textContent = finalTotal.toLocaleString("vi-VN") + "₫";
+
+                // Update hidden inputs
+                document.getElementById("finalTotal").value = finalTotal;
+                document.getElementById("selectedPromoInput").value = discountID;
+            });
+        });
+    </script>
 </html>

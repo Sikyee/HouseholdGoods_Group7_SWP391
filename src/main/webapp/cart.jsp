@@ -1,4 +1,3 @@
-<%@page import="Model.Promotion"%>
 <%@page import="Model.Cart"%>
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ page import="java.util.*, Model.Product" %>
@@ -52,27 +51,31 @@
                 text-align: right;
                 display: inline-block;
             }
+            
+            .fa-trash{
+                color: red;
+            }
         </style>
     </head>
     <body>
         <%@ include file="header.jsp" %>
         <div class="container-fluid mt-5">
+            <h4 class="mb-4">🛒 Your Shopping Cart</h4>
+            <%
+                List<Cart> cart = (List<Cart>) request.getAttribute("cart");
+                String context = request.getContextPath();
+                if (cart == null || cart.isEmpty()) {
+            %>
+            <div class="alert alert-info">Your cart is empty.</div>
+            <%
+            } else {
+                int totalAll = 0;
+            %>
             <div class="row">
                 <!-- Left side: Cart items -->
                 <div class="col-md-8">
-                    <h4 class="mb-4">🛒 Your Shopping Cart</h4>
-                    <%
-                        List<Cart> cart = (List<Cart>) request.getAttribute("cart");
-                        List<Promotion> promotions = (List<Promotion>) request.getAttribute("promotions");
-                        Integer selectedPromotionID = (Integer) request.getAttribute("selectedPromotionID");
-                        String context = request.getContextPath();
-                        if (cart == null || cart.isEmpty()) {
-                    %>
-                    <div class="alert alert-info">Your cart is empty.</div>
-                    <%
-                    } else {
-                        int totalAll = 0;
-                    %>
+
+
                     <div id="cart-container">
                         <ul class="list-group mb-3">
                             <%
@@ -102,9 +105,9 @@
                                         <%= String.format("%,d", total)%>₫
                                     </strong>
                                     <a href="<%= context%>/Cart?action=delete&id=<%= item.getCartID()%>" 
-                                       class="btn btn-danger btn-sm"
+                                       class=""
                                        onclick="return confirm('Are you sure you want to delete this product in cart?');">
-                                        <i class="fas fa-trash"></i> Delete
+                                        <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
                             </li>
@@ -119,45 +122,14 @@
                         <div class="summary-box" id="summary-box">
                             <h4 class="mb-3">Summary</h4>
                             <p>ITEMS <span class="float-end"><%= String.format("%,d", totalAll)%>₫</span></p>
-
-                            <label for="promoSelect">AVAILABLE PROMOTIONS</label>
-                            <select id="promoSelect" class="form-select mb-3">
-                                <option disabled <%= (selectedPromotionID == null) ? "selected" : ""%>>Select a voucher</option>
-                                <%
-                                    for (Promotion promo : promotions) {
-                                        boolean isValid = totalAll >= promo.getMinOrderValue();
-                                        boolean isSelected = selectedPromotionID != null && selectedPromotionID == promo.getPromotionID();
-                                %>
-                                <option value="<%= promo.getPromotionID()%>"
-                                        data-discount="<%= promo.getDiscountValue()%>"
-                                        data-discount-type="<%= promo.getDiscountType()%>"
-                                        <%= !isValid ? "disabled style='color:gray;'" : ""%>
-                                        <%= isSelected ? "selected" : ""%>>
-                                    <%= promo.getDescription()%>
-                                </option>
-                                <% }%>
-                            </select>
-
+<!--                            <label for="code">COUPON CODE</label>
+                            <input type="text" id="code" class="form-control mb-3" placeholder="Enter your code">-->
                             <div class="total-line">
-                                <strong>DISCOUNT</strong>
-                                <span class="float-end" id="discount-amount">0₫</span>
-                            </div>
-
-                            <div class="total-line">
-                                <strong>TOTAL AFTER DISCOUNT</strong>
-                                <span class="float-end" id="final-total"><%= String.format("%,d", totalAll)%>₫</span>
-                            </div>
-
-                            <div class="total-line" hidden="">
                                 <strong>TOTAL PRICE</strong>
-                                <span class="float-end" id="total-original"><%= String.format("%,d", totalAll)%>₫</span>
+                                <span class="float-end"><%= String.format("%,d", totalAll)%>₫</span>
                             </div>
 
-                            <form action="<%= request.getContextPath()%>/Checkout" method="get" id="checkout-form">
-                                <input type="hidden" name="finalTotal" id="finalTotalInput" value="<%= totalAll%>">
-                                <input type="hidden" name="discountValue" id="discountInput" value="">
-                                <button type="submit" class="btn btn-dark w-100 mt-3">CHECKOUT</button>
-                            </form>
+                            <a class="btn btn-dark w-100 mt-3" href="<%= request.getContextPath()%>/Checkout">CHECKOUT</a>
                         </div>
                     </div>
                 </div>
@@ -169,54 +141,25 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
-                                           function attachVoucherChangeHandler() {
-                                               $("#promoSelect").on("change", function () {
-                                                   const selected = $(this).find("option:selected");
-                                                   const discountValue = parseInt(selected.data("discount")) || 0;
-                                                   const discountType = selected.data("discount-type");
-                                                   const rawTotal = $("#summary-box").find("#total-original").text().replace(/[^\d]/g, "");
-                                                   const total = parseInt(rawTotal);
-
-                                                   let discountAmount = 0;
-                                                   if (discountType === "percentage") {
-                                                       discountAmount = Math.floor(total * discountValue / 100);
-                                                   } else if (discountType === "fixed") {
-                                                       discountAmount = discountValue;
-                                                   }
-
-                                                   const finalTotal = total - discountAmount;
-                                                   $("#discount-amount").text(discountAmount.toLocaleString("vi-VN") + "₫");
-                                                   $("#final-total").text(finalTotal.toLocaleString("vi-VN") + "₫");
-                                                   $("#finalTotalInput").val(finalTotal);
-                                                   $("#discountInput").val(discountAmount);
-                                               });
-                                           }
-
                                            $(document).ready(function () {
-                                               // Gắn sự kiện lần đầu
-                                               attachVoucherChangeHandler();
-
                                                $(document).on("click", ".quantity-btn", function () {
                                                    const button = $(this);
                                                    const action = button.data("action");
                                                    const cartId = button.data("cart-id");
-                                                   const selectedPromoID = $("#promoSelect").find("option:selected").val();
 
                                                    $.ajax({
                                                        url: "Cart",
                                                        method: "POST",
                                                        data: {
                                                            action: action,
-                                                           cartID: cartId,
-                                                           promotionID: selectedPromoID
+                                                           cartID: cartId
                                                        },
                                                        success: function (data) {
-                                                           // Cập nhật lại giao diện
+                                                           // Cập nhật phần giỏ hàng
                                                            $("#cart-container").html($(data).find("#cart-container").html());
-                                                           $("#summary-box").html($(data).find("#summary-box").html());
 
-                                                           // Gắn lại sự kiện cho #promoSelect sau khi bị render lại
-                                                           attachVoucherChangeHandler();
+                                                           // Cập nhật phần tóm tắt đơn hàng
+                                                           $("#summary-box").html($(data).find("#summary-box").html());
                                                        },
                                                        error: function () {
                                                            alert("Error updating cart.");
