@@ -27,6 +27,11 @@
                 padding: 100px 0;
                 text-align: center;
             }
+            .card-body a {
+                text-decoration: none;
+                font-weight: bold;
+                font-size: 18px;
+            }
             .hero-title {
                 font-size: 3rem;
             }
@@ -168,7 +173,7 @@
                     <div class="card product-card h-100">
                         <img src="/HouseholdGoods_Group7_SWP391/images/<%= p.getImage()%>" class="card-img-top" alt="<%= p.getProductName()%>">
                         <div class="card-body">
-                            <h5 class="card-title"><%= p.getProductName()%></h5>
+                            <a class="card-title" href="<%= context%>/Product?action=productDetail&id=<%= p.getProductID()%>"><%= p.getProductName()%></a>
                             <p class="card-text"><%= p.getDescription()%></p>
                             <p class="price"><%= String.format("%,d", p.getPrice())%>₫</p>
                         </div>
@@ -200,5 +205,17 @@
         <%@ include file="footer.jsp" %>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <%
+            String successMessage = (String) session.getAttribute("successMessage");
+            if (successMessage != null) {
+        %>
+        <script>
+            window.alert("<%= successMessage %>");
+        </script>
+        <%
+                session.removeAttribute("successMessage"); // Xóa để không lặp lại
+            }
+        %>
+
     </body>
 </html>

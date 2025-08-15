@@ -64,6 +64,11 @@
             </a>
         </li>
         <li class="nav-item mb-1">
+            <a href="Promotion" class="nav-link text-dark">
+                <i class="fas fa-tags me-2"></i> Promotion
+            </a>
+        </li>
+        <li class="nav-item mb-1">
             <a href="Voucher" class="nav-link text-dark">
                 <i class="fas fa-tags me-2"></i> Vouchers
             </a>
