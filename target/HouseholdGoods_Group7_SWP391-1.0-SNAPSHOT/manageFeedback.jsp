@@ -236,6 +236,7 @@ document.addEventListener("DOMContentLoaded", function() {
             } else {
                 shortText.classList.add("d-none");
                 fullText.classList.remove("d-none");
+
             }
         });
     });
