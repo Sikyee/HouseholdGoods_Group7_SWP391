@@ -277,6 +277,7 @@ public class FeedbackDAO {
             e.printStackTrace();
         }
         return list;
+        //ghi gì dó de commit lai
     }
     
 }

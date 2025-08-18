@@ -124,5 +124,6 @@ public class FeedbackController extends HttpServlet {
         }
         out.flush();
         out.close();
+        //ghi gì dó de commit lai
     }
 }

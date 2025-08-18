@@ -235,7 +235,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 fullText.classList.add("d-none");
             } else {
                 shortText.classList.add("d-none");
-                fullText.classList.remove("d-none");
+                fullText.classList.remove("d-none");/* ghi gi do de commit lai */
+
             }
         });
     });

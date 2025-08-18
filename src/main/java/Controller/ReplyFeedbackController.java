@@ -89,5 +89,6 @@ if (!hasActiveReplies) {
 
     private boolean isReplyValid(String text) {
         return text != null && text.length() >= 1 && text.length() <= 1000 && !text.toLowerCase().contains("<script");
+        //ghi gì dó de commit lai
     }
 }
