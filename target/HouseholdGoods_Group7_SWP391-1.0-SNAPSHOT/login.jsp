@@ -1,9 +1,3 @@
-<%-- 
-    Document   : login
-    Created on : Jun 17, 2025, 3:36:51 PM
-    Author     : thong
---%>
-
 <%@ page contentType="text/html;charset=UTF-8" %>
 <!DOCTYPE html>
 <html>
@@ -66,6 +60,19 @@
                 <div class="login-title">Household Goods Login</div>
             </div>
 
+            <%-- Display success message from session (e.g. after registration) --%>
+            <%
+                String successMsg = (String) session.getAttribute("success");
+                if (successMsg != null) {
+            %>
+            <div class="alert alert-success text-center">
+                <%= successMsg%>
+            </div>
+            <%
+                    session.removeAttribute("success");
+                }
+            %>
+
             <form action="login" method="post">
                 <div class="mb-3">
                     <label class="form-label">Username</label>
@@ -81,13 +88,18 @@
                     <button class="btn btn-login">Login</button>
                 </div>
 
-                <% String err = (String) request.getAttribute("error");
-                    if (err != null) {%>
+                <%-- Display login error if exists --%>
+                <%
+                    String err = (String) request.getAttribute("error");
+                    if (err != null) {
+                %>
                 <div class="alert alert-danger text-center"><%= err%></div>
-                <% }%>
+                <%
+                    }
+                %>
 
                 <div class="text-center mt-3">
-                    <small>Don't have an account? <a href="register.jsp">Register</a></small>
+                    <small>Don't have an account? <a href="${pageContext.request.contextPath}/register">Register</a></small>
                 </div>
 
                 <div class="text-center mt-3">

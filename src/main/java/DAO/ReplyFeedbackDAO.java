@@ -15,6 +15,8 @@ import java.util.List;
  *
  * @author TriTN
  */
+
+
 public class ReplyFeedbackDAO {
 
     public List<ReplyFeedback> getRepliesByFeedbackID(int feedbackID) {
@@ -33,6 +35,7 @@ public class ReplyFeedbackDAO {
                 r.setUserID(rs.getInt("userID"));
                 r.setReplyText(rs.getString("replyText"));
                 r.setCreatedAt(rs.getTimestamp("createdAt"));
+                r.setIsDeleted(rs.getBoolean("isDeleted"));
                 list.add(r);
             }
 
@@ -44,7 +47,8 @@ public class ReplyFeedbackDAO {
     }
 
     public boolean insertReply(ReplyFeedback reply) {
-        String sql = "INSERT INTO ReplyFeedback (feedbackID, userID, replyText, createdAt) VALUES (?, ?, ?, GETDATE())";
+        String sql = "INSERT INTO ReplyFeedback (feedbackID, userID, replyText, createdAt, isDeleted) " +
+                     "VALUES (?, ?, ?, GETDATE(), 0)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -62,7 +66,7 @@ public class ReplyFeedbackDAO {
     }
 
     public boolean updateReply(ReplyFeedback reply) {
-        String sql = "UPDATE ReplyFeedback SET replyText = ? WHERE replyID = ?";
+        String sql = "UPDATE ReplyFeedback SET replyText = ? WHERE replyID = ? AND isDeleted = 0";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -79,7 +83,7 @@ public class ReplyFeedbackDAO {
     }
 
     public boolean deleteReply(int replyID) {
-        String sql = "DELETE FROM ReplyFeedback WHERE replyID = ?";
+        String sql = "UPDATE ReplyFeedback SET isDeleted = 1 WHERE replyID = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

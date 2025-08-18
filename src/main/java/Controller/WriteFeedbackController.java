@@ -13,11 +13,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
-import java.util.List;
-/**
- *
- * @author TriTN
- */
 
 @WebServlet("/WriteFeedback")
 public class WriteFeedbackController extends HttpServlet {
@@ -27,7 +22,6 @@ public class WriteFeedbackController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
 
@@ -36,9 +30,22 @@ public class WriteFeedbackController extends HttpServlet {
             return;
         }
 
-        List<OrderDetail> orders = dao.getOrderDetailsByUser(user.getUserID());
-        request.setAttribute("orders", orders);
-        request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
+        String odid = request.getParameter("orderDetailID");
+        if (odid != null) {
+            int orderDetailID = Integer.parseInt(odid);
+            OrderDetail od = dao.getOrderDetailByID(orderDetailID);
+            request.setAttribute("orderDetail", od);
+
+            if (dao.hasFeedback(orderDetailID)) {
+                request.setAttribute("alreadyFeedback", true);
+                Feedback fb = dao.getFeedbackByOrderDetailID(orderDetailID);
+                request.setAttribute("existingFeedback", fb);
+            }
+
+            request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
+        } else {
+            response.sendRedirect("order");
+        }
     }
 
     @Override
@@ -46,7 +53,6 @@ public class WriteFeedbackController extends HttpServlet {
             throws ServletException, IOException {
 
         request.setCharacterEncoding("UTF-8");
-
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
 
@@ -56,17 +62,68 @@ public class WriteFeedbackController extends HttpServlet {
         }
 
         int orderDetailID = Integer.parseInt(request.getParameter("orderDetailID"));
-        int rating = Integer.parseInt(request.getParameter("rating"));
+        String ratingStr = request.getParameter("rating");
         String comment = request.getParameter("comment");
 
+        // Nếu đã có feedback thì chặn
+        if (dao.hasFeedback(orderDetailID)) {
+            request.setAttribute("error", "You have already submitted feedback for this item.");
+            request.setAttribute("alreadyFeedback", true);
+            Feedback fb = dao.getFeedbackByOrderDetailID(orderDetailID);
+            request.setAttribute("existingFeedback", fb);
+            OrderDetail od = dao.getOrderDetailByID(orderDetailID);
+            request.setAttribute("orderDetail", od);
+            request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
+            return;
+        }
+
+        // Validate rating
+        int rating = -1;
+        try {
+            rating = Integer.parseInt(ratingStr);
+        } catch (NumberFormatException e) {
+            request.setAttribute("error", "Rating must be between 1 and 5.");
+            OrderDetail od = dao.getOrderDetailByID(orderDetailID);
+            request.setAttribute("orderDetail", od);
+            request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
+            return;
+        }
+
+        if (rating < 1 || rating > 5) {
+            request.setAttribute("error", "Rating must be between 1 and 5.");
+            OrderDetail od = dao.getOrderDetailByID(orderDetailID);
+            request.setAttribute("orderDetail", od);
+            request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
+            return;
+        }
+
+        // Validate comment
+        if (comment == null || comment.trim().length() < 5 
+                || comment.trim().length() > 500 
+                || comment.toLowerCase().contains("<script")) {
+            request.setAttribute("error", "Comment must be 5–500 characters and safe.");
+            OrderDetail od = dao.getOrderDetailByID(orderDetailID);
+            request.setAttribute("orderDetail", od);
+            request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
+            return;
+        }
+
+        // Save feedback
         Feedback fb = new Feedback();
         fb.setUserID(user.getUserID());
         fb.setOrderDetailID(orderDetailID);
         fb.setRating(rating);
-        fb.setComment(comment);
+        fb.setComment(comment.trim());
 
-        dao.insertFeedback(fb);
+        boolean success = dao.insertFeedback(fb);
+        if (success) {
+            request.setAttribute("success", "Your feedback has been submitted successfully!");
+        } else {
+            request.setAttribute("error", "Failed to submit feedback. Please try again.");
+        }
 
-        response.sendRedirect("WriteFeedback");
+        OrderDetail od = dao.getOrderDetailByID(orderDetailID);
+        request.setAttribute("orderDetail", od);
+        request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
     }
 }

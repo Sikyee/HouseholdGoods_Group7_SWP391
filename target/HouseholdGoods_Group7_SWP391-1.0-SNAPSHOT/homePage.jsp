@@ -27,6 +27,11 @@
                 padding: 100px 0;
                 text-align: center;
             }
+            .card-body a {
+                text-decoration: none;
+                font-weight: bold;
+                font-size: 18px;
+            }
             .hero-title {
                 font-size: 3rem;
             }
@@ -168,7 +173,7 @@
                     <div class="card product-card h-100">
                         <img src="/HouseholdGoods_Group7_SWP391/images/<%= p.getImage()%>" class="card-img-top" alt="<%= p.getProductName()%>">
                         <div class="card-body">
-                            <h5 class="card-title"><%= p.getProductName()%></h5>
+                            <a class="card-title" href="<%= context%>/Product?action=productDetail&id=<%= p.getProductID()%>"><%= p.getProductName()%></a>
                             <p class="card-text"><%= p.getDescription()%></p>
                             <p class="price"><%= String.format("%,d", p.getPrice())%>₫</p>
                         </div>
@@ -196,9 +201,59 @@
                 <% }%>
             </div>
         </div>
+        <div class="d-flex justify-content-center mt-4">
+            <nav>
+                <ul class="pagination">
+                    <%
+                        int currentPage = (int) request.getAttribute("currentPage");
+                        int totalPages = (int) request.getAttribute("totalPages");
+
+                        // Nút Previous
+                        if (currentPage > 1) {%>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<%= currentPage - 1%>">Previous</a>
+                    </li>
+                    <% } else { %>
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                        <% }
+
+                            // Các số trang
+                            for (int i = 1; i <= totalPages; i++) {
+                                if (i == currentPage) {%>
+                    <li class="page-item active"><span class="page-link"><%= i%></span></li>
+                        <%      } else {%>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<%= i%>"><%= i%></a>
+                    </li>
+                    <%      }
+                        }
+
+                        // Nút Next
+                        if (currentPage < totalPages) {%>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<%= currentPage + 1%>">Next</a>
+                    </li>
+                    <% } else { %>
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                        <% } %>
+                </ul>
+            </nav>
+        </div>
 
         <%@ include file="footer.jsp" %>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <%
+            String successMessage = (String) session.getAttribute("successMessage");
+            if (successMessage != null) {
+        %>
+        <script>
+            window.alert("<%= successMessage%>");
+        </script>
+        <%
+                session.removeAttribute("successMessage"); // Xóa để không lặp lại
+            }
+        %>
+
     </body>
 </html>

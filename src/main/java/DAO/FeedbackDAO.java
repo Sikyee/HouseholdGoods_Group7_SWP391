@@ -6,14 +6,12 @@ package DAO;
 
 import DB.DBConnection;
 import Model.Feedback;
+import Model.OrderDetail;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-/**
- *
- * @author TriTN
- */
+
 public class FeedbackDAO {
 
     // Lấy feedback theo trang
@@ -35,6 +33,26 @@ public class FeedbackDAO {
                 list.add(mapResultToFeedback(rs));
             }
 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // Lấy tất cả feedback (dùng cho Export Excel)
+    public List<Feedback> getAllFeedback() {
+        List<Feedback> list = new ArrayList<>();
+        String sql = "SELECT f.*, u.fullName AS userName " +
+                     "FROM Feedback f JOIN Users u ON f.userID = u.userID " +
+                     "WHERE f.isDeleted = 0 " +
+                     "ORDER BY f.feedbackID DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapResultToFeedback(rs));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -187,4 +205,78 @@ public class FeedbackDAO {
         fb.setDeleted(rs.getBoolean("isDeleted"));
         return fb;
     }
+
+    // Insert Feedback
+    public boolean insertFeedback(Feedback fb) {
+        String sql = "INSERT INTO Feedback (userID, orderDetailID, rating, comment, status, isDeleted, createdAt) " +
+                     "VALUES (?, ?, ?, ?, 'Pending', 0, GETDATE())";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, fb.getUserID());
+            ps.setInt(2, fb.getOrderDetailID());
+            ps.setInt(3, fb.getRating());
+            ps.setString(4, fb.getComment());
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    
+    
+    
+    public List<OrderDetail> getOrdersWithoutFeedback(int userID) {
+        List<OrderDetail> list = new ArrayList<>();
+        String sql = "SELECT od.* FROM OrderDetail od "
+                   + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
+                   + "WHERE oi.userID = ? "
+                   + "AND od.orderDetailID NOT IN (SELECT orderDetailID FROM Feedback)";
+
+        try (Connection conn = new DBConnection().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userID);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                OrderDetail od = new OrderDetail();
+                od.setOrderDetailID(rs.getInt("orderDetailID"));
+                od.setProductID(rs.getInt("productID"));
+                od.setOrderID(rs.getInt("orderID"));
+                od.setOrderName(rs.getString("orderName"));
+                od.setQuantity(rs.getInt("quantity"));
+                od.setTotalPrice(rs.getLong("totalPrice"));
+                list.add(od);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<OrderDetail> getOrdersWithFeedback(int userID) {
+        List<OrderDetail> list = new ArrayList<>();
+        String sql = "SELECT od.* FROM OrderDetail od "
+                   + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
+                   + "WHERE oi.userID = ? "
+                   + "AND od.orderDetailID IN (SELECT orderDetailID FROM Feedback)";
+
+        try (Connection conn = new DBConnection().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userID);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                OrderDetail od = new OrderDetail();
+                od.setOrderDetailID(rs.getInt("orderDetailID"));
+                od.setProductID(rs.getInt("productID"));
+                od.setOrderID(rs.getInt("orderID"));
+                od.setOrderName(rs.getString("orderName"));
+                od.setQuantity(rs.getInt("quantity"));
+                od.setTotalPrice(rs.getLong("totalPrice"));
+                list.add(od);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+    
 }
