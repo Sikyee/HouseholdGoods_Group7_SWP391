@@ -13,7 +13,7 @@
 <%
     List<Voucher> list = (List<Voucher>) request.getAttribute("list");
     List<Voucher> deletedList = (List<Voucher>) request.getAttribute("deletedList");
-    Voucher edit = (Voucher) request.getAttribute("Voucher");
+    Voucher edit = (Voucher) request.getAttribute("voucher");
 %>
 
 <!DOCTYPE html>
@@ -235,9 +235,9 @@
                             <th>Min Order</th><th>Max Use</th><th>Used</th><th>Status</th><th>Action</th>
                         </tr>
                     </thead>
-                    <tbody id="VoucherTable">
+                    <tbody id="voucherTable">
                         <% for (Voucher p : list) {%>
-                        <tr>
+                        <tr class="zebra">
                             <td><%= p.getVoucherID()%></td>
                             <td><%= p.getCode()%></td>
                             <td class="description-cell" title="<%= p.getDescription()%>">
@@ -270,10 +270,10 @@
                     <span class="close" onclick="closeModal()">×</span>
                     <h2><%= (edit != null) ? "Edit Voucher" : "Create Voucher"%></h2>
 
-                    <form id="VoucherForm" action="Voucher" method="post">
+                    <form id="voucherForm" action="Voucher" method="post">
 
                         <% if (edit != null) {%>
-                        <input type="hidden" name="VoucherID" value="<%= edit.getVoucherID()%>" />
+                        <input type="hidden" name="voucherID" value="<%= edit.getVoucherID()%>" />
                         <% }%>
                         <div class="form-row">
                             <label>Code:</label>
@@ -389,7 +389,7 @@
 
             function filterVouchers() {
                 let input = document.getElementById("searchInput").value.toLowerCase();
-                let rows = document.querySelectorAll("#VoucherTable tr");
+                let rows = document.querySelectorAll("#voucherTable tr");
 
                 let visibleIndex = 0;
                 rows.forEach(row => {
