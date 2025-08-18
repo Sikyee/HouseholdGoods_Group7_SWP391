@@ -37,6 +37,6 @@ public class ViewFeedbackOrdersController extends HttpServlet {
 
         RequestDispatcher rd = request.getRequestDispatcher("viewFeedbackOrders.jsp");
         rd.forward(request, response);
-        //ghi gì dó de commit lai
+       
     }
 }

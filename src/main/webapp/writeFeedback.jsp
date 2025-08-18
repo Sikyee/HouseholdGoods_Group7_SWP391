@@ -8,7 +8,7 @@
 <%@ include file="left-sidebar.jsp" %>
 
 <%
-    /* ghi gi do de commit lai */
+    
 
     OrderDetail od = (OrderDetail) request.getAttribute("orderDetail");
     String context = request.getContextPath();
