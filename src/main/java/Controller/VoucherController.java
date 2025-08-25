@@ -103,32 +103,42 @@ public class VoucherController extends HttpServlet {
             p.setUsedCount(Integer.parseInt(request.getParameter("usedCount")));
             p.setIsActive(Boolean.parseBoolean(request.getParameter("isActive")));
 
-            Voucher existing = dao.getVoucherByCode(p.getCode());
-            if (p.getVoucherID() == 0 && existing != null) {
-                if (existing.isIsActive()) {
-                    request.setAttribute("codeExists", true);
-                    request.setAttribute("list", dao.getAllVouchers());
-                    request.setAttribute("deletedList", dao.getDeletedVouchers());
-                    request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
-                    return;
-                } else {
-                    request.setAttribute("voucher", existing);
-                    request.setAttribute("reactivate", true);
-                    request.setAttribute("list", dao.getAllVouchers());
-                    request.setAttribute("deletedList", dao.getDeletedVouchers());
-                    request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
-                    return;
+            if (p.getEndDate().before(p.getStartDate())) {
+                request.setAttribute("error", "End date must be after start date.");
+                request.setAttribute("voucher", p); // giữ lại dữ liệu vừa nhập
+                request.setAttribute("showModal", true);
+                request.setAttribute("list", dao.getAllVouchers());
+                request.setAttribute("deletedList", dao.getDeletedVouchers());
+                request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
+                return; // dừng, không add/update nữa
+            }
+
+                Voucher existing = dao.getVoucherByCode(p.getCode());
+                if (p.getVoucherID() == 0 && existing != null) {
+                    if (existing.isIsActive()) {
+                        request.setAttribute("codeExists", true);
+                        request.setAttribute("list", dao.getAllVouchers());
+                        request.setAttribute("deletedList", dao.getDeletedVouchers());
+                        request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
+                        return;
+                    } else {
+                        request.setAttribute("voucher", existing);
+                        request.setAttribute("reactivate", true);
+                        request.setAttribute("list", dao.getAllVouchers());
+                        request.setAttribute("deletedList", dao.getDeletedVouchers());
+                        request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
+                        return;
+                    }
                 }
-            }
 
-            if (p.getVoucherID() == 0) {
-                dao.addVoucher(p);
-            } else {
-                dao.updateVoucher(p);
-            }
+                if (p.getVoucherID() == 0) {
+                    dao.addVoucher(p);
+                } else {
+                    dao.updateVoucher(p);
+                }
 
-            response.sendRedirect("Voucher?action=list");
-        } catch (Exception e) {
+                response.sendRedirect("Voucher?action=list");
+            }catch (Exception e) {
             request.setAttribute("error", "Invalid input: " + e.getMessage());
             try {
                 request.setAttribute("list", dao.getAllVouchers());
@@ -138,5 +148,5 @@ public class VoucherController extends HttpServlet {
             }
             request.getRequestDispatcher("/manageVoucher.jsp").forward(request, response);
         }
+        }
     }
-}
