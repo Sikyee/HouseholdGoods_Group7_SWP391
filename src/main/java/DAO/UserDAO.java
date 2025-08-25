@@ -313,7 +313,7 @@ public class UserDAO {
 
     public void insert(User user) throws Exception {
         Connection conn = DBConnection.getConnection();
-        String sql = "INSERT INTO users (fullName, email, password, userName, roleID, phone, status, dob, gender) "
+        String sql = "INSERT INTO Users (fullName, email, password, userName, roleID, phone, status, dob, gender) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setString(1, user.getFullName());
@@ -331,5 +331,33 @@ public class UserDAO {
         ps.setString(9, user.getGender());
         ps.executeUpdate();
     }
+    public void insert1(User user) throws Exception {
+    Connection conn = DBConnection.getConnection();
+    String sql = "INSERT INTO users (fullName, email, password, userName, roleID, phone, status, dob, gender) "
+               + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    PreparedStatement ps = conn.prepareStatement(sql);
+    ps.setString(1, user.getFullName());
+    ps.setString(2, user.getEmail());
+    ps.setString(3, user.getPassword());
+    ps.setString(4, user.getUserName());
+    ps.setInt(5, user.getRoleID());
+    ps.setString(6, user.getPhone());
+    ps.setInt(7, user.getStatus());
+
+    if (user.getDob() != null) {
+        ps.setDate(8, new java.sql.Date(user.getDob().getTime()));
+    } else {
+        ps.setNull(8, Types.DATE);
+    }
+
+    ps.setString(9, user.getGender());
+
+    System.out.println("Executing SQL: " + ps.toString()); // log câu query
+    int rows = ps.executeUpdate();
+    System.out.println("Rows inserted: " + rows);
+
+    ps.close();
+    conn.close();
+}
 
 }
