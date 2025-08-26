@@ -3,35 +3,45 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package Model;
+
 /**
  *
  * @author TriTM
  */
 
-
 import java.sql.Date;
 
 public class Promotion {
-    private int PromotionID;
+
+    private int promotionID;
     private String code;
+    private String title;        // thêm mới
     private String description;
     private String discountType;
     private long discountValue;
     private Date startDate;
     private Date endDate;
     private long minOrderValue;
-    private int maxUsage;
-    private int usedCount;
     private boolean isActive;
+    private Integer brandID;     // thêm mới
 
-    public Promotion() {}
+    private String brandName;
 
-    public int getPromotionID() {
-        return PromotionID;
+    public String getBrandName() {
+        return brandName;
     }
 
-    public void setPromotionID(int PromotionID) {
-        this.PromotionID = PromotionID;
+    public void setBrandName(String brandName) {
+        this.brandName = brandName;
+    }
+
+    // Getter & Setter
+    public int getPromotionID() {
+        return promotionID;
+    }
+
+    public void setPromotionID(int promotionID) {
+        this.promotionID = promotionID;
     }
 
     public String getCode() {
@@ -40,6 +50,14 @@ public class Promotion {
 
     public void setCode(String code) {
         this.code = code;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getDescription() {
@@ -90,27 +108,19 @@ public class Promotion {
         this.minOrderValue = minOrderValue;
     }
 
-    public int getMaxUsage() {
-        return maxUsage;
-    }
-
-    public void setMaxUsage(int maxUsage) {
-        this.maxUsage = maxUsage;
-    }
-
-    public int getUsedCount() {
-        return usedCount;
-    }
-
-    public void setUsedCount(int usedCount) {
-        this.usedCount = usedCount;
-    }
-
     public boolean isIsActive() {
         return isActive;
     }
 
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public Integer getBrandID() {
+        return brandID;
+    }
+
+    public void setBrandID(Integer brandID) {
+        this.brandID = brandID;
     }
 }

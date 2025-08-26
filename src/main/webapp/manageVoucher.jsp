@@ -14,6 +14,13 @@
     List<Voucher> list = (List<Voucher>) request.getAttribute("list");
     List<Voucher> deletedList = (List<Voucher>) request.getAttribute("deletedList");
     Voucher edit = (Voucher) request.getAttribute("voucher");
+
+    // ĐỔI TÊN: tránh trùng với implicit object 'page'
+    Integer currentPage = (Integer) request.getAttribute("page");
+    Integer totalPages = (Integer) request.getAttribute("totalPages");
+    Integer totalItems = (Integer) request.getAttribute("totalItems");
+    if (currentPage == null) currentPage = 1;
+    if (totalPages == null) totalPages = 1;
 %>
 
 <!DOCTYPE html>
@@ -24,193 +31,127 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
         <style>
-            body {
-                font-family: Arial, sans-serif;
+            :root{
+                --bg:#0b1220; --card:#ffffff; --muted:#64748b; --ring:#2563eb;
+                --danger:#b00020; --brand:#0ea5e9; --brand-2:#22c55e;
             }
 
-            /*            .content-top, .content-bottom {
-                            width: 100%;
-                            
-                        }
-            
-                        .content-top {
-                            background-color: #666666;  Trắng 
-                            min-height: 10vh;
-                        }
-            
-                        .content-bottom {
-                            background-color: #f2f2f2;  Xám nhạt 
-                            min-height: 50vh;
-                        }*/
+            body { font-family: Inter, system-ui, Arial, sans-serif; }
 
+            /* Table */
+            table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+            th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: center; }
+            th { background: #f8fafc; font-weight: 600; color: #334155; }
 
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 20px;
-            }
-
-            th, td {
-                border: 1px solid #ccc;
-                padding: 8px;
-                text-align: center;
-            }
-
-            th {
-                background-color: #f2f2f2;
-            }
-
+            /* Top actions */
             .add-button, .deleted-button {
-                margin: 10px 10px 10px 0;
-                padding: 8px 16px;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                color: white;
+                margin: 10px 10px 10px 0; padding: 10px 16px; border: none; border-radius: 10px;
+                cursor: pointer; color: white; font-weight: 700; box-shadow: 0 6px 18px rgba(2,6,23,.08);
             }
-
-            .add-button {
-                background-color: #4CAF50;
-            }
-
-            .add-button:hover {
-                background-color: #45a049;
-            }
-
-            .deleted-button {
-                background-color: #f57c00;
-            }
-
-            .deleted-button:hover {
-                background-color: #ef6c00;
-            }
+            .add-button { background: linear-gradient(135deg,var(--brand),#38bdf8); }
+            .add-button:hover { filter: brightness(1.05); }
+            .deleted-button { background: linear-gradient(135deg,#f59e0b,#f97316); }
+            .deleted-button:hover { filter: brightness(1.05); }
 
             .btn-action {
-                padding: 6px 12px;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-                margin: 2px;
-                text-decoration: none;
-                display: inline-block;
+                padding: 8px 12px; border-radius: 10px; font-size: 14px; font-weight: 700; margin: 2px;
+                text-decoration: none; display: inline-block; box-shadow: 0 3px 10px rgba(2,6,23,.06);
+            }
+            .btn-action.edit { background: #22c55e; color: #fff; }
+            .btn-action.delete { background: #ef4444; color: #fff; }
+            .btn-action.reactivate { background: #3b82f6; color: #fff; }
+
+            /* ===== Modal polish ===== */
+            .modal{
+                display:none; position:fixed; z-index:999; inset:0;
+                background: rgba(2,6,23,.55); backdrop-filter: blur(3px);
+            }
+            .modal-content{
+                background: var(--card); position:absolute; top:50%; left:50%;
+                transform: translate(-50%, -50%) scale(.96);
+                padding: 24px; border-radius: 16px; width: 92%; max-width: 720px;
+                border: 1px solid #e5e7eb; box-shadow: 0 24px 60px rgba(2,6,23,.18);
+                animation: modalIn .18s ease-out forwards;
+            }
+            @keyframes modalIn { to{ transform: translate(-50%, -50%) scale(1); } }
+
+            .close{
+                float:right; font-size:24px; font-weight:800; color:#94a3b8; line-height:1;
+                padding:2px 8px; border-radius:8px;
+            }
+            .close:hover{ color:#0f172a; background:#f1f5f9; cursor:pointer; }
+
+            /* Form layout inside modal: tidy grid */
+            .form-row{ display:grid; grid-template-columns: 170px 1fr; gap:12px; align-items:center; margin:12px 0; }
+            .form-row label{ font-weight:600; color:#334155; text-align:right; }
+            @media (max-width: 640px){ .form-row{ grid-template-columns:1fr; } .form-row label{ text-align:left; } }
+
+            .form-row input[type="text"],
+            .form-row input[type="number"],
+            .form-row input[type="date"],
+            .form-row select, .form-row textarea{
+                width:100%; padding:10px 12px; border-radius:10px; border:1px solid #d0d7de;
+                background:#fff; color:#0f172a; outline:none;
+                transition:border-color .15s, box-shadow .15s, background .15s;
+            }
+            .form-row input:hover, .form-row select:hover{ border-color:#bac3cc; }
+            .form-row input:focus, .form-row select:focus{
+                border-color: var(--ring);
+                box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+            }
+            input.is-invalid{
+                border-color:#b00020 !important;
+                box-shadow:0 0 0 3px rgba(176,0,32,.18)!important;
+                outline: none;
             }
 
-            .btn-action.edit {
-                background-color: #4CAF50;
-                padding: 8px 18px;
-                color: white;
+            /* Discount unit chip */
+            .unit-wrap{ display:flex; align-items:center; gap:8px; }
+            .unit-badge{
+                user-select:none; min-width:36px; text-align:center; padding:8px 10px; border-radius:10px;
+                background:#f1f5f9; color:#0f172a; font-weight:700; border:1px solid #e5e7eb;
             }
 
-            .btn-action.delete {
-                background-color: #f44336;
-                padding: 8px 10px;
-                color: white;
+            #dateErrorRow{ display:none; }
+            #dateErrorMsg{ color:#b00020; font-weight:700; }
+
+            /* Submit aligned right */
+            .submit-row{
+                display:flex; justify-content:flex-end; gap:8px; margin-top:6px;
+            }
+            #submitBtn{
+                appearance:none; border:none; border-radius:12px; padding:12px 18px; font-weight:800; letter-spacing:.2px;
+                background: linear-gradient(135deg,var(--brand-2),#16a34a); color:#fff; box-shadow:0 10px 22px rgba(34,197,94,.22);
+                transition: transform .06s ease, filter .15s ease; cursor:pointer;
+            }
+            #submitBtn:hover{ filter: brightness(1.05); }
+            #submitBtn:active{ transform: translateY(1px); }
+            .disabled-button{
+                background:#cbd5e1!important; border:1px solid #cbd5e1!important; color:#fff!important; box-shadow:none!important;
+                cursor:not-allowed!important;
             }
 
-            .btn-action.reactivate {
-                background-color: #2196F3;
-                color: white;
-            }
-
-            .modal {
-                display: none;
-                position: fixed;
-                z-index: 999;
-                left: 0;
-                top: 50px;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0,0,0,0.4);
-            }
-
-            .modal-content {
-                background-color: #cccccc;
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                padding: 20px;
-                border-radius: 8px;
-                width: 90%;
-                max-width: 600px;
-            }
-
-            .close {
-                float: right;
-                font-size: 24px;
-                font-weight: bold;
-                color: #aaa;
-            }
-
-            .close:hover {
-                color: black;
-                cursor: pointer;
-            }
-
-            .form-row {
-                margin: 10px 0;
-            }
-
-            .form-row label {
-                display: inline-block;
-                width: 130px;
-            }
-
-            .submit-row {
-                text-align: center;
-            }
-
+            /* Misc */
             #alertPopup {
-                display: none;
-                background: #ffdddd;
-                color: #990000;
-                padding: 10px;
-                border: 1px solid #ff0000;
-                position: fixed;
-                top: 60px;
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 1000;
-                border-radius: 6px;
+                display: none; background: #ffdddd; color: #990000; padding: 10px; border: 1px solid #ff0000;
+                position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 1000; border-radius: 6px;
             }
+            #searchInput{ width:280px; padding:10px 12px; border-radius:10px; border:1px solid #d0d7de; }
+            .zebra:nth-child(even) { background-color: #f8fafc; }
+            .description-cell { max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            footer { padding-left: 260px !important; }
+            .main-content { padding-left: 260px; padding-right: 20px; padding-top: 20px; }
 
-            #searchInput {
-                width: 250px;
-                padding: 8px;
-                margin-bottom: 10px;
-            }
-
-            .zebra:nth-child(even) {
-                background-color: #e6f7ff;
-            }
-
-            .disabled-button {
-                background-color: #a0c4ff !important;  /* Xanh dương nhạt */
-                color: white !important;
-                cursor: not-allowed !important;
-                pointer-events: none;
-                border: 1px solid #90b8f0;
-                opacity: 1 !important; /* Giữ rõ */
-            }
-
-            .description-cell {
-                max-width: 200px;         /* hoặc điều chỉnh theo mong muốn */
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            footer {
-                padding-left: 260px !important;
-            }
-
-
+            /* Pagination */
+            .pagination{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:flex-end; margin:10px 0 0; }
+            .page-btn{ border:1px solid #e5e7eb; background:#fff; padding:6px 10px; border-radius:8px; cursor:pointer; text-decoration:none; color:#0f172a; }
+            .page-btn.disabled{ opacity:.5; pointer-events:none; }
+            .page-btn.active{ background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
         </style>
     </head>
 
     <body>
-
-        <div class="main-content" style="padding-left: 260px; padding-right: 20px; padding-top: 20px ">
+        <div class="main-content">
             <div class="content-top">
                 <!-- Alert -->
                 <div id="alertPopup">Voucher with this code already exists and is active. Please edit or delete it first.</div>
@@ -222,7 +163,6 @@
                     <input type="hidden" name="action" value="prepareAdd" />
                     <button type="submit" class="add-button">Add Voucher</button>
                 </form>
-
 
                 <button class="deleted-button" onclick="openDeletedModal()">View Deleted Vouchers</button>
             </div>
@@ -236,84 +176,129 @@
                         </tr>
                     </thead>
                     <tbody id="voucherTable">
-                        <% for (Voucher p : list) {%>
+                        <% if (list != null) {
+                           for (Voucher p : list) {
+                               String endIso = Utils.toHtmlDate(p.getEndDate()); // ISO yyyy-MM-dd
+                        %>
                         <tr class="zebra">
                             <td><%= p.getVoucherID()%></td>
                             <td><%= p.getCode()%></td>
-                            <td class="description-cell" title="<%= p.getDescription()%>">
-                                <%= p.getDescription()%>
+                            <td class="description-cell" title="<%= p.getDescription() == null ? "" : p.getDescription()%>">
+                                <%= p.getDescription() == null ? "" : p.getDescription()%>
                             </td>
                             <td><%= p.getDiscountType()%></td>
                             <td><%= p.getDiscountValue()%></td>
-                            <td><%= p.getStartDate()%></td>
-                            <td><%= p.getEndDate()%></td>
+                            <td><%= Utils.toDisplayDate(p.getStartDate())%></td>
+                            <td><%= Utils.toDisplayDate(p.getEndDate())%></td>
                             <td><%= p.getMinOrderValue()%></td>
                             <td><%= p.getMaxUsage()%></td>
                             <td><%= p.getUsedCount()%></td>
                             <td><%= Utils.getStatus(p.getEndDate())%></td>
                             <td>
-                                <a class="btn-action edit" href="Voucher?action=edit&id=<%= p.getVoucherID()%>">Edit</a>
-                                <a class="btn-action delete" href="Voucher?action=delete&id=<%= p.getVoucherID()%>" onclick="return confirm('Are you sure?');">Delete</a>
-
-                                <a c
-                                   </td>
+                                <a class="btn-action edit" href="Voucher?action=edit&id=<%= p.getVoucherID()%>&page=<%= currentPage %>">Edit</a>
+                                <%-- Delete button rules (ẩn nếu usedCount != 0): --%>
+                                <% if (p.getUsedCount() == 0) { %>
+                                    <a class="btn-action delete"
+                                       href="Voucher?action=delete&id=<%= p.getVoucherID()%>"
+                                       onclick="return handleDelete('<%= endIso %>');">Delete</a>
+                                <% } %>
+                            </td>
                         </tr>
-                        <% }%>
+                        <% } } %>
                     </tbody>
                 </table>
+
+                <!-- Pagination (server-side) -->
+                <div class="pagination">
+                    <a class="page-btn <%= (currentPage <= 1 ? "disabled" : "") %>" href="Voucher?action=list&page=<%= (currentPage-1) %>">Prev</a>
+
+                    <%
+                        int range = 2;
+                        int start = Math.max(1, currentPage - range);
+                        int end = Math.min(totalPages, currentPage + range);
+                        if (currentPage <= range) end = Math.min(totalPages, 1 + range * 2);
+                        if (currentPage + range > totalPages) start = Math.max(1, totalPages - range * 2);
+
+                        for (int i = start; i <= end; i++) {
+                    %>
+                        <a class="page-btn <%= (i == currentPage ? "active" : "") %>" href="Voucher?action=list&page=<%= i %>"><%= i %></a>
+                    <% } %>
+
+                    <a class="page-btn <%= (currentPage >= totalPages ? "disabled" : "") %>" href="Voucher?action=list&page=<%= (currentPage+1) %>">Next</a>
+                </div>
             </div>
 
-            <!-- Include modals (outside container to center properly) -->
             <!-- Add/Edit Modal -->
-            <div id="addVoucherModal" class="modal">
+            <div id="addVoucherModal" class="modal" aria-hidden="true" aria-labelledby="voucherModalTitle">
                 <div class="modal-content">
-                    <span class="close" onclick="closeModal()">×</span>
-                    <h2><%= (edit != null) ? "Edit Voucher" : "Create Voucher"%></h2>
+                    <span class="close" onclick="closeModal()" aria-label="Close">×</span>
+                    <h2 id="voucherModalTitle"><%= (edit != null) ? "Edit Voucher" : "Create Voucher"%></h2>
 
-                    <form id="voucherForm" action="Voucher" method="post">
-
-                        <% if (edit != null) {%>
+                    <form id="voucherForm" action="Voucher" method="post" autocomplete="off">
+                        <% if (edit != null) { %>
                         <input type="hidden" name="voucherID" value="<%= edit.getVoucherID()%>" />
-                        <% }%>
+                        <% } %>
+
                         <div class="form-row">
                             <label>Code:</label>
-                            <input type="text" name="code" value="<%= (edit != null) ? edit.getCode() : ""%>" required />
+                            <input type="text" name="code" value="<%= (edit != null) ? edit.getCode() : ""%>" maxlength="64" required />
                         </div>
+
                         <div class="form-row">
                             <label>Description:</label>
-                            <input type="text" name="description" value="<%= (edit != null) ? edit.getDescription() : ""%>" required />
+                            <input type="text" name="description" 
+                                   value="<%= (edit != null) ? (edit.getDescription() == null ? "" : edit.getDescription()) : ""%>" 
+                                   maxlength="255" required />
                         </div>
+
                         <div class="form-row">
                             <label>Discount Type:</label>
-                            <select name="discountType">
+                            <select name="discountType" id="discountType">
                                 <option value="percentage" <%= (edit != null && "percentage".equals(edit.getDiscountType())) ? "selected" : ""%>>Percentage</option>
                                 <option value="fixed" <%= (edit != null && "fixed".equals(edit.getDiscountType())) ? "selected" : ""%>>Fixed</option>
                             </select>
                         </div>
+
                         <div class="form-row">
                             <label>Discount Value:</label>
-                            <input type="number" name="discountValue" value="<%= (edit != null) ? edit.getDiscountValue() : ""%>" required />
+                            <div class="unit-wrap">
+                                <input type="number" name="discountValue" id="discountValue"
+                                       value="<%= (edit != null) ? edit.getDiscountValue() : ""%>" required />
+                                <span id="discountUnit" class="unit-badge">%</span>
+                            </div>
                         </div>
+
                         <div class="form-row">
                             <label>Start Date:</label>
-                            <input type="date" name="startDate" value="<%= (edit != null) ? edit.getStartDate() : ""%>" required />
+                            <input id="startDate" type="date" name="startDate" value="<%= (edit != null) ? Utils.toHtmlDate(edit.getStartDate()) : ""%>" required />
                         </div>
                         <div class="form-row">
                             <label>End Date:</label>
-                            <input type="date" name="endDate" value="<%= (edit != null) ? edit.getEndDate() : ""%>" required />
+                            <input id="endDate" type="date" name="endDate" value="<%= (edit != null) ? Utils.toHtmlDate(edit.getEndDate()) : ""%>" required />
                         </div>
+
+                        <!-- Thông báo lỗi ngày -->
+                        <div class="form-row" id="dateErrorRow" style="display:none;">
+                            <label></label>
+                            <div id="dateErrorMsg">End date must be after start date.</div>
+                        </div>
+
                         <div class="form-row">
                             <label>Min Order Value:</label>
-                            <input type="number" name="minOrderValue" value="<%= (edit != null) ? edit.getMinOrderValue() : "0"%>" required />
+                            <input type="number" name="minOrderValue" step="1" min="0" value="<%= (edit != null) ? String.valueOf(edit.getMinOrderValue()) : "0"%>" required />
                         </div>
                         <div class="form-row">
                             <label>Max Usage:</label>
-                            <input type="number" name="maxUsage" value="<%= (edit != null) ? edit.getMaxUsage() : "1"%>" required />
+                            <input type="number" name="maxUsage" min="1" step="1" value="<%= (edit != null) ? String.valueOf(edit.getMaxUsage()) : "1"%>" required />
                         </div>
+
                         <div class="form-row">
                             <label>Used Count:</label>
-                            <input type="number" name="usedCount" value="<%= (edit != null) ? edit.getUsedCount() : "0"%>" required />
+                            <input type="number" name="usedCount" min="0" step="1"
+                                   value="<%= (edit != null) ? String.valueOf(edit.getUsedCount()) : "0"%>"
+                                   readonly />
                         </div>
+
                         <% if (edit == null) { %>
                         <!-- Trường hợp tạo mới -->
                         <div class="form-row">
@@ -324,9 +309,9 @@
                             </select>
                         </div>
                         <% } else { %>
-                        <!-- Trường hợp sửa, luôn giữ active -->
+                        <!-- Trường hợp sửa, giữ active ở backend -->
                         <input type="hidden" name="isActive" value="true" />
-                        <% }%>
+                        <% } %>
 
                         <div class="form-row submit-row">
                             <input id="submitBtn" type="submit" value="<%= (edit != null) ? "Update" : "Add"%> Voucher" />
@@ -336,26 +321,26 @@
             </div>
 
             <!-- Deleted Modal -->
-            <div id="deletedModal" class="modal">
+            <div id="deletedModal" class="modal" aria-hidden="true" aria-labelledby="deletedModalTitle">
                 <div class="modal-content">
-                    <span class="close" onclick="closeDeletedModal()">×</span>
-                    <h3>Deleted Vouchers</h3>
+                    <span class="close" onclick="closeDeletedModal()" aria-label="Close">×</span>
+                    <h3 id="deletedModalTitle">Deleted Vouchers</h3>
                     <table>
                         <thead>
                             <tr><th>ID</th><th>Code</th><th>Desc</th><th>Action</th></tr>
                         </thead>
                         <tbody>
-                            <% for (Voucher d : deletedList) {%>
+                            <% if (deletedList != null) {
+                               for (Voucher d : deletedList) { %>
                             <tr>
                                 <td><%= d.getVoucherID()%></td>
                                 <td><%= d.getCode()%></td>
-                                <td><%= d.getDescription()%></td>
+                                <td><%= d.getDescription() == null ? "" : d.getDescription()%></td>
                                 <td>
-
                                     <a class="btn-action reactivate" href="Voucher?action=reactivate&id=<%= d.getVoucherID()%>">Reactivate</a>
                                 </td>
                             </tr>
-                            <% } %>
+                            <% } } %>
                         </tbody>
                     </table>
                 </div>
@@ -364,45 +349,46 @@
 
         <!-- Scripts -->
         <script>
-            function openModal() {
-                document.getElementById("addVoucherModal").style.display = "block";
-            }
-
-            function closeModal() {
-                document.getElementById("addVoucherModal").style.display = "none";
-            }
-
-            function openDeletedModal() {
-                document.getElementById("deletedModal").style.display = "block";
-            }
-
-            function closeDeletedModal() {
-                document.getElementById("deletedModal").style.display = "none";
-            }
+            function openModal() { document.getElementById("addVoucherModal").style.display = "block"; }
+            function closeModal() { document.getElementById("addVoucherModal").style.display = "none"; }
+            function openDeletedModal() { document.getElementById("deletedModal").style.display = "block"; }
+            function closeDeletedModal() { document.getElementById("deletedModal").style.display = "none"; }
 
             window.onclick = function (event) {
-                if (event.target === document.getElementById("addVoucherModal"))
-                    closeModal();
-                if (event.target === document.getElementById("deletedModal"))
-                    closeDeletedModal();
+                if (event.target === document.getElementById("addVoucherModal")) closeModal();
+                if (event.target === document.getElementById("deletedModal")) closeDeletedModal();
             };
 
             function filterVouchers() {
+                // Lọc trong trang hiện tại (server đã phân trang)
                 let input = document.getElementById("searchInput").value.toLowerCase();
                 let rows = document.querySelectorAll("#voucherTable tr");
-
                 let visibleIndex = 0;
                 rows.forEach(row => {
                     let code = row.cells[1].textContent.toLowerCase();
                     if (code.includes(input)) {
                         row.style.display = "";
-                        row.style.backgroundColor = (visibleIndex % 2 === 0) ? "#ffffff" : "#e6f7ff";
+                        row.style.backgroundColor = (visibleIndex % 2 === 0) ? "#ffffff" : "#f8fafc";
                         visibleIndex++;
                     } else {
                         row.style.display = "none";
                     }
                 });
             }
+
+            // Delete guard: block delete when voucher not expired
+            function handleDelete(endIso) {
+                if (!endIso) return false;
+                const end = new Date(endIso + "T00:00:00");
+                const today = new Date();
+                // if not expired
+                if (today < new Date(end.getFullYear(), end.getMonth(), end.getDate() + 1)) {
+                    alert("Voucher chưa hết hạn nên không thể xóa.");
+                    return false;
+                }
+                return confirm("Bạn có chắc muốn xóa voucher này?");
+            }
+
             <%-- Handle alerts and auto modal open --%>
             <% if (request.getAttribute("codeExists") != null) { %>
             window.onload = function () {
@@ -411,54 +397,138 @@
                 setTimeout(() => {
                     document.getElementById("alertPopup").style.display = "none";
                 }, 4000);
-                filterVouchers();
             };
             <% } else if (request.getAttribute("showModal") != null) { %>
-            window.onload = function () {
-                openModal();
-                filterVouchers();
-            };
+            window.onload = function () { openModal(); };
             <% } %>
 
             <% if (request.getAttribute("reactivate") != null) { %>
             if (confirm("This voucher code already exists but is inactive. Do you want to reactivate it?")) {
                 openModal();
             }
-            <% }%>
+            <% } %>
         </script>
-        <script>
-            const form = document.querySelector("#addVoucherModal form");
-            const submitBtn = form.querySelector("input[type=submit]");
-            let originalData = new FormData(form);
 
-            function checkFormChanges() {
-                const currentData = new FormData(form);
-                let changed = false;
-                for (let [key, value] of currentData.entries()) {
-                    if (value !== originalData.get(key)) {
-                        changed = true;
-                        break;
+        <!-- Client-side date validation: End must be >= Start -->
+        <script>
+            (function () {
+                const form = document.getElementById("voucherForm");
+                if (!form) return;
+
+                const startInput = document.getElementById("startDate");
+                const endInput   = document.getElementById("endDate");
+                const errorRow   = document.getElementById("dateErrorRow");
+                const submitBtn  = document.getElementById("submitBtn");
+
+                function toDate(val) { return val ? new Date(val + "T00:00:00") : null; }
+
+                function showError(show) {
+                    if (!errorRow) return;
+                    errorRow.style.display = show ? "flex" : "none";
+                    if (show) endInput.classList.add("is-invalid"); else endInput.classList.remove("is-invalid");
+                    if (submitBtn && show) submitBtn.disabled = true;
+                }
+
+                function syncEndMin() {
+                    if (startInput && startInput.value) endInput.min = startInput.value;
+                    else endInput.removeAttribute("min");
+                }
+
+                function validateDates() {
+                    const s = toDate(startInput.value);
+                    const e = toDate(endInput.value);
+                    if (s && e && e < s) showError(true); else showError(false);
+                }
+
+                startInput.addEventListener("change", () => { syncEndMin(); validateDates(); });
+                endInput.addEventListener("change", validateDates);
+                startInput.addEventListener("input", () => { syncEndMin(); validateDates(); });
+                endInput.addEventListener("input", validateDates);
+
+                window.addEventListener("load", () => { syncEndMin(); validateDates(); });
+
+                form.addEventListener("submit", (ev) => {
+                    const s = toDate(startInput.value);
+                    const e = toDate(endInput.value);
+                    if (s && e && e < s) { ev.preventDefault(); showError(true); }
+                });
+            })();
+        </script>
+
+        <!-- Discount Value constraints + unit badge -->
+        <script>
+            (function () {
+                const typeSel = document.getElementById("discountType");
+                const valInp  = document.getElementById("discountValue");
+                const unitEl  = document.getElementById("discountUnit");
+                if (!typeSel || !valInp || !unitEl) return;
+
+                function clamp(val, min, max) {
+                    if (val === "" || isNaN(val)) return "";
+                    val = Number(val);
+                    if (min != null && val < min) return min;
+                    if (max != null && val > max) return max;
+                    return val;
+                }
+
+                function applyRules() {
+                    const t = typeSel.value;
+                    if (t === "percentage") {
+                        unitEl.textContent = "%";
+                        valInp.min = "1";
+                        valInp.max = "99";
+                        valInp.step = "1";
+                        valInp.placeholder = "1–99";
+                        valInp.title = "Percentage (1–99)";
+                        valInp.value = clamp(valInp.value, 1, 99);
+                    } else {
+                        unitEl.textContent = "₫";
+                        valInp.min = "1000";
+                        valInp.removeAttribute("max");
+                        valInp.step = "1000";
+                        valInp.placeholder = "≥ 1000 (VND)";
+                        valInp.title = "Fixed amount (>= 1000 VND)";
+                        const v = clamp(valInp.value, 1000, null);
+                        if (v !== "") valInp.value = v;
                     }
                 }
 
-                if (changed) {
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove("disabled-button");
-                } else {
-                    submitBtn.disabled = true;
-                    submitBtn.classList.add("disabled-button");
-                }
-            }
-
-            form.querySelectorAll("input, select, textarea").forEach(field => {
-                field.addEventListener("input", checkFormChanges);
-            });
-
-            window.addEventListener("load", () => {
-                checkFormChanges();
-            });
-
+                typeSel.addEventListener("change", applyRules);
+                valInp.addEventListener("input", applyRules);
+                window.addEventListener("load", applyRules);
+            })();
         </script>
+
+        <!-- Existing "disable submit unless changed" logic -->
+        <script>
+            const form2 = document.querySelector("#addVoucherModal form");
+            if (form2) {
+                const submitBtn2 = form2.querySelector("input[type=submit]");
+                let originalData = new FormData(form2);
+
+                function checkFormChanges() {
+                    const currentData = new FormData(form2);
+                    let changed = false;
+                    for (let [key, value] of currentData.entries()) {
+                        if (value !== originalData.get(key)) { changed = true; break; }
+                    }
+                    if (changed) {
+                        submitBtn2.disabled = false;
+                        submitBtn2.classList.remove("disabled-button");
+                    } else {
+                        submitBtn2.disabled = true;
+                        submitBtn2.classList.add("disabled-button");
+                    }
+                }
+
+                form2.querySelectorAll("input, select, textarea").forEach(field => {
+                    field.addEventListener("input", checkFormChanges);
+                });
+
+                window.addEventListener("load", () => { checkFormChanges(); });
+            }
+        </script>
+
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     </body>
 </html>

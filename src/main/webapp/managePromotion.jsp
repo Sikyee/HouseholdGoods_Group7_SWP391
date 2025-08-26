@@ -1,466 +1,381 @@
-<%-- 
-    Document   : managePromotion
-    Created on : Jun 15, 2025, 9:19:03 AM
-    Author     : TriTM
---%>
-
-<%@ page import="Model.Promotion" %>
-<%@ page import="Model.Utils" %>
-<%@ page import="java.util.List" %>
+<%-- Document: managePromotion --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ include file="left-sidebar.jsp" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 
 <%
-    List<Promotion> list = (List<Promotion>) request.getAttribute("list");
-    List<Promotion> deletedList = (List<Promotion>) request.getAttribute("deletedList");
-    Promotion edit = (Promotion) request.getAttribute("promotion");
+    Integer currentPage = (Integer) request.getAttribute("page");
+    Integer totalPages  = (Integer) request.getAttribute("totalPages");
+    if (currentPage == null) currentPage = 1;
+    if (totalPages == null) totalPages = 1;
 %>
 
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Manage Promotions</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-            }
+<head>
+    <meta charset="UTF-8"/>
+    <title>Manage Promotions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{ --bg:#0b1220; --card:#ffffff; --muted:#64748b; --ring:#2563eb; --danger:#b00020; --brand:#0ea5e9; --brand-2:#22c55e; }
+        body { font-family: Inter, system-ui, Arial, sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: center; }
+        th { background: #f8fafc; font-weight: 600; color: #334155; }
+        .zebra:nth-child(even) { background-color: #f8fafc; }
+        .description-cell { max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .add-button, .deleted-button {
+            margin: 10px 10px 10px 0; padding: 10px 16px; border: none; border-radius: 10px;
+            cursor: pointer; color: white; font-weight: 700; box-shadow: 0 6px 18px rgba(2,6,23,.08);
+        }
+        .add-button { background: linear-gradient(135deg,var(--brand),#38bdf8); }
+        .add-button:hover { filter: brightness(1.05); }
+        .deleted-button { background: linear-gradient(135deg,#f59e0b,#f97316); }
+        .deleted-button:hover { filter: brightness(1.05); }
+        .btn-action {
+            padding: 8px 12px; border-radius: 10px; font-size: 14px; font-weight: 700; margin: 2px;
+            text-decoration: none; display: inline-block; box-shadow: 0 3px 10px rgba(2,6,23,.06);
+        }
+        .btn-action.edit { background: #22c55e; color: #fff; }
+        .btn-action.delete { background: #ef4444; color: #fff; }
+        .btn-action.reactivate { background: #3b82f6; color: #fff; }
+        #searchInput{ width:280px; padding:10px 12px; border-radius:10px; border:1px solid #d0d7de; }
+        .modal{ display:none; position:fixed; z-index:999; inset:0; background: rgba(2,6,23,.55); backdrop-filter: blur(3px); }
+        .modal-content{
+            background: var(--card); position:absolute; top:50%; left:50%;
+            transform: translate(-50%, -50%) scale(.96);
+            padding: 24px; border-radius: 16px; width: 92%; max-width: 720px;
+            border: 1px solid #e5e7eb; box-shadow: 0 24px 60px rgba(2,6,23,.18);
+            animation: modalIn .18s ease-out forwards;
+        }
+        @keyframes modalIn { to{ transform: translate(-50%, -50%) scale(1); } }
+        .close{ float:right; font-size:24px; font-weight:800; color:#94a3b8; line-height:1; padding:2px 8px; border-radius:8px; }
+        .close:hover{ color:#0f172a; background:#f1f5f9; cursor:pointer; }
+        .form-row{ display:grid; grid-template-columns: 170px 1fr; gap:12px; align-items:center; margin:12px 0; }
+        .form-row label{ font-weight:600; color:#334155; text-align:right; }
+        @media (max-width: 640px){ .form-row{ grid-template-columns:1fr; } .form-row label{ text-align:left; } }
+        .form-row input[type="text"], .form-row input[type="number"], .form-row input[type="date"], .form-row select, .form-row textarea{
+            width:100%; padding:10px 12px; border-radius:10px; border:1px solid #d0d7de; background:#fff; color:#0f172a; outline:none;
+            transition:border-color .15s, box-shadow .15s, background .15s;
+        }
+        .form-row input:hover, .form-row select:hover, .form-row textarea:hover{ border-color:#bac3cc; }
+        .form-row input:focus, .form-row select:focus, .form-row textarea:focus{
+            border-color: var(--ring); box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+        }
+        .unit-wrap{ display:flex; align-items:center; gap:8px; }
+        .unit-badge{ user-select:none; min-width:36px; text-align:center; padding:8px 10px; border-radius:10px; background:#f1f5f9; color:#0f172a; font-weight:700; border:1px solid #e5e7eb; }
+        .submit-row{ display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
+        #saveBtn{
+            appearance:none; border:none; border-radius:12px; padding:12px 18px; font-weight:800; letter-spacing:.2px;
+            background: linear-gradient(135deg,var(--brand-2),#16a34a); color:#fff; box-shadow:0 10px 22px rgba(34,197,94,.22);
+            transition: transform .06s ease, filter .15s ease; cursor:pointer;
+        }
+        #saveBtn:hover{ filter: brightness(1.05); }
+        #saveBtn:active{ transform: translateY(1px); }
+        .pagination{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:flex-end; margin:10px 0 0; }
+        .page-btn{ border:1px solid #e5e7eb; background:#fff; padding:6px 10px; border-radius:8px; cursor:pointer; text-decoration:none; color:#0f172a; }
+        .page-btn.disabled{ opacity:.5; pointer-events:none; }
+        .page-btn.active{ background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+        .main-content { padding-left: 260px; padding-right: 20px; padding-top: 20px; }
+        .content-top { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+<div class="main-content">
+    <div class="content-top">
+        <h4 class="mb-2"><i class="fa-solid fa-bullhorn"></i> Promotion List</h4>
 
-            /*            .content-top, .content-bottom {
-                            width: 100%;
-                            
-                        }
-            
-                        .content-top {
-                            background-color: #666666;  Trắng 
-                            min-height: 10vh;
-                        }
-            
-                        .content-bottom {
-                            background-color: #f2f2f2;  Xám nhạt 
-                            min-height: 50vh;
-                        }*/
+        <!-- Hiển thị lỗi/thông báo -->
+        <c:if test="${not empty error}">
+            <div class="alert alert-danger" role="alert">${error}</div>
+        </c:if>
+        <c:if test="${codeExists}">
+            <div class="alert alert-warning" role="alert">Code đã tồn tại và đang hoạt động.</div>
+        </c:if>
+        <c:if test="${reactivate}">
+            <div class="alert alert-info" role="alert">Code này thuộc một promotion đã xóa. Bạn có muốn khôi phục không?</div>
+        </c:if>
 
+        <input type="text" id="searchInput" placeholder="Search by code..." onkeyup="filterPromotions()" />
+        <a href="Promotion?action=prepareAdd&page=<%= currentPage %>" class="add-button text-decoration-none">Add Promotion</a>
+    </div>
 
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 20px;
-            }
+    <div class="content-bottom">
+        <!-- Active -->
+        <h6 class="fw-bold mb-2">Active Promotions</h6>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th><th>Code</th><th>Title</th><th>Description</th>
+                <th>Discount</th><th>Period</th><th>Min Order</th><th>Brand</th><th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="promotionTable">
+            <c:forEach var="p" items="${list}">
+                <tr class="zebra">
+                    <td>${p.promotionID}</td>
+                    <td>${p.code}</td>
+                    <td>${p.title}</td>
+                    <td class="description-cell" title="${fn:escapeXml(p.description)}"><c:out value="${p.description}"/></td>
+                    <td>${p.discountType} - ${p.discountValue}</td>
+                    <td>
+                        <fmt:formatDate value="${p.startDate}" pattern="yyyy-MM-dd"/> →
+                        <fmt:formatDate value="${p.endDate}" pattern="yyyy-MM-dd"/>
+                    </td>
+                    <td>${p.minOrderValue}</td>
+                    <td>${p.brandName}</td>
+                    <td>
+                        <a href="Promotion?action=edit&id=${p.promotionID}&page=<%= currentPage %>" class="btn-action edit">Edit</a>
+                        <a href="Promotion?action=delete&id=${p.promotionID}&page=<%= currentPage %>" class="btn-action delete"
+                           onclick="return confirm('Delete this promotion?')">Delete</a>
+                    </td>
+                </tr>
+            </c:forEach>
+            </tbody>
+        </table>
 
-            th, td {
-                border: 1px solid #ccc;
-                padding: 8px;
-                text-align: center;
-            }
-
-            th {
-                background-color: #f2f2f2;
-            }
-
-            .add-button, .deleted-button {
-                margin: 10px 10px 10px 0;
-                padding: 8px 16px;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                color: white;
-            }
-
-            .add-button {
-                background-color: #4CAF50;
-            }
-
-            .add-button:hover {
-                background-color: #45a049;
-            }
-
-            .deleted-button {
-                background-color: #f57c00;
-            }
-
-            .deleted-button:hover {
-                background-color: #ef6c00;
-            }
-
-            .btn-action {
-                padding: 6px 12px;
-                border-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-                margin: 2px;
-                text-decoration: none;
-                display: inline-block;
-            }
-
-            .btn-action.edit {
-                background-color: #4CAF50;
-                padding: 8px 18px;
-                color: white;
-            }
-
-            .btn-action.delete {
-                background-color: #f44336;
-                padding: 8px 10px;
-                color: white;
-            }
-
-            .btn-action.reactivate {
-                background-color: #2196F3;
-                color: white;
-            }
-
-            .modal {
-                display: none;
-                position: fixed;
-                z-index: 999;
-                left: 0;
-                top: 50px;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0,0,0,0.4);
-            }
-
-            .modal-content {
-                background-color: #cccccc;
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                padding: 20px;
-                border-radius: 8px;
-                width: 90%;
-                max-width: 600px;
-            }
-
-            .close {
-                float: right;
-                font-size: 24px;
-                font-weight: bold;
-                color: #aaa;
-            }
-
-            .close:hover {
-                color: black;
-                cursor: pointer;
-            }
-
-            .form-row {
-                margin: 10px 0;
-            }
-
-            .form-row label {
-                display: inline-block;
-                width: 130px;
-            }
-
-            .submit-row {
-                text-align: center;
-            }
-
-            #alertPopup {
-                display: none;
-                background: #ffdddd;
-                color: #990000;
-                padding: 10px;
-                border: 1px solid #ff0000;
-                position: fixed;
-                top: 60px;
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 1000;
-                border-radius: 6px;
-            }
-
-            #searchInput {
-                width: 250px;
-                padding: 8px;
-                margin-bottom: 10px;
-            }
-
-            .zebra:nth-child(even) {
-                background-color: #e6f7ff;
-            }
-
-            .disabled-button {
-                background-color: #a0c4ff !important;  /* Xanh dương nhạt */
-                color: white !important;
-                cursor: not-allowed !important;
-                pointer-events: none;
-                border: 1px solid #90b8f0;
-                opacity: 1 !important; /* Giữ rõ */
-            }
-
-            .description-cell {
-                max-width: 200px;         /* hoặc điều chỉnh theo mong muốn */
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            footer {
-                padding-left: 260px !important;
-            }
-
-
-        </style>
-    </head>
-
-    <body>
-
-        <div class="main-content" style="padding-left: 260px; padding-right: 20px; padding-top: 20px ">
-            <div class="content-top">
-                <!-- Alert -->
-                <div id="alertPopup">Voucher with this code already exists and is active. Please edit or delete it first.</div>
-
-                <h4><i class="fa-solid fa-tags"></i> Promotion List</h4>
-
-                <input type="text" id="searchInput" placeholder="Search by code..." onkeyup="filterPromotions()" />
-                <form action="Promotion" method="get" style="display:inline;">
-                    <input type="hidden" name="action" value="prepareAdd" />
-                    <button type="submit" class="add-button">Add Promotion</button>
-                </form>
-
-
-                <button class="deleted-button" onclick="openDeletedModal()">View Deleted Promotions</button>
-            </div>
-
-            <div class="content-bottom">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th><th>Code</th><th>Description</th><th>Type</th><th>Value</th><th>Start</th><th>End</th>
-                            <th>Min Order</th><th>Max Use</th><th>Used</th><th>Status</th><th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="promotionTable">
-                        <% for (Promotion p : list) {%>
-                        <tr class="zebra">
-                            <td><%= p.getPromotionID()%></td>
-                            <td><%= p.getCode()%></td>
-                            <td class="description-cell" title="<%= p.getDescription()%>">
-                                <%= p.getDescription()%>
-                            </td>
-                            <td><%= p.getDiscountType()%></td>
-                            <td><%= p.getDiscountValue()%></td>
-                            <td><%= p.getStartDate()%></td>
-                            <td><%= p.getEndDate()%></td>
-                            <td><%= p.getMinOrderValue()%></td>
-                            <td><%= p.getMaxUsage()%></td>
-                            <td><%= p.getUsedCount()%></td>
-                            <td><%= Utils.getStatus(p.getEndDate())%></td>
-                            <td>
-                                <a class="btn-action edit" href="Promotion?action=edit&id=<%= p.getPromotionID()%>">Edit</a>
-                                <a class="btn-action delete" href="Promotion?action=delete&id=<%= p.getPromotionID()%>" onclick="return confirm('Are you sure?');">Delete</a>
-
-                                <a c
-                                   </td>
-                        </tr>
-                        <% }%>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Include modals (outside container to center properly) -->
-            <!-- Add/Edit Modal -->
-            <div id="addPromotionModal" class="modal">
-                <div class="modal-content">
-                    <span class="close" onclick="closeModal()">×</span>
-                    <h2><%= (edit != null) ? "Edit Promotion" : "Create Promotion"%></h2>
-
-                    <form id="promotionForm" action="Promotion" method="post">
-
-                        <% if (edit != null) {%>
-                        <input type="hidden" name="promotionID" value="<%= edit.getPromotionID()%>" />
-                        <% }%>
-                        <div class="form-row">
-                            <label>Code:</label>
-                            <input type="text" name="code" value="<%= (edit != null) ? edit.getCode() : ""%>" required />
-                        </div>
-                        <div class="form-row">
-                            <label>Description:</label>
-                            <input type="text" name="description" value="<%= (edit != null) ? edit.getDescription() : ""%>" required />
-                        </div>
-                        <div class="form-row">
-                            <label>Discount Type:</label>
-                            <select name="discountType">
-                                <option value="percentage" <%= (edit != null && "percentage".equals(edit.getDiscountType())) ? "selected" : ""%>>Percentage</option>
-                                <option value="fixed" <%= (edit != null && "fixed".equals(edit.getDiscountType())) ? "selected" : ""%>>Fixed</option>
-                            </select>
-                        </div>
-                        <div class="form-row">
-                            <label>Discount Value:</label>
-                            <input type="number" name="discountValue" value="<%= (edit != null) ? edit.getDiscountValue() : ""%>" required />
-                        </div>
-                        <div class="form-row">
-                            <label>Start Date:</label>
-                            <input type="date" name="startDate" value="<%= (edit != null) ? edit.getStartDate() : ""%>" required />
-                        </div>
-                        <div class="form-row">
-                            <label>End Date:</label>
-                            <input type="date" name="endDate" value="<%= (edit != null) ? edit.getEndDate() : ""%>" required />
-                        </div>
-                        <div class="form-row">
-                            <label>Min Order Value:</label>
-                            <input type="number" name="minOrderValue" value="<%= (edit != null) ? edit.getMinOrderValue() : "0"%>" required />
-                        </div>
-                        <div class="form-row">
-                            <label>Max Usage:</label>
-                            <input type="number" name="maxUsage" value="<%= (edit != null) ? edit.getMaxUsage() : "1"%>" required />
-                        </div>
-                        <div class="form-row">
-                            <label>Used Count:</label>
-                            <input type="number" name="usedCount" value="<%= (edit != null) ? edit.getUsedCount() : "0"%>" required />
-                        </div>
-                        <% if (edit == null) { %>
-                        <!-- Trường hợp tạo mới -->
-                        <div class="form-row">
-                            <label>Is Active:</label>
-                            <select name="isActive">
-                                <option value="true">True</option>
-                                <option value="false">False</option>
-                            </select>
-                        </div>
-                        <% } else { %>
-                        <!-- Trường hợp sửa, luôn giữ active -->
-                        <input type="hidden" name="isActive" value="true" />
-                        <% }%>
-
-                        <div class="form-row submit-row">
-                            <input id="submitBtn" type="submit" value="<%= (edit != null) ? "Update" : "Add"%> Promotion" />
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Deleted Modal -->
-            <div id="deletedModal" class="modal">
-                <div class="modal-content">
-                    <span class="close" onclick="closeDeletedModal()">×</span>
-                    <h3>Deleted Promotions</h3>
-                    <table>
-                        <thead>
-                            <tr><th>ID</th><th>Code</th><th>Desc</th><th>Action</th></tr>
-                        </thead>
-                        <tbody>
-                            <% for (Promotion d : deletedList) {%>
-                            <tr>
-                                <td><%= d.getPromotionID()%></td>
-                                <td><%= d.getCode()%></td>
-                                <td><%= d.getDescription()%></td>
-                                <td>
-
-                                    <a class="btn-action reactivate" href="Promotion?action=reactivate&id=<%= d.getPromotionID()%>">Reactivate</a>
-                                </td>
-                            </tr>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <!-- Pagination (server-side) -->
+        <div class="pagination">
+            <a class="page-btn <%= (currentPage <= 1 ? "disabled" : "") %>" href="Promotion?action=list&page=<%= (currentPage-1) %>">Prev</a>
+            <%
+                int range = 2;
+                int start = Math.max(1, currentPage - range);
+                int end = Math.min(totalPages, currentPage + range);
+                if (currentPage <= range) end = Math.min(totalPages, 1 + range * 2);
+                if (currentPage + range > totalPages) start = Math.max(1, totalPages - range * 2);
+                for (int i = start; i <= end; i++) {
+            %>
+                <a class="page-btn <%= (i == currentPage ? "active" : "") %>" href="Promotion?action=list&page=<%= i %>"><%= i %></a>
+            <% } %>
+            <a class="page-btn <%= (currentPage >= totalPages ? "disabled" : "") %>" href="Promotion?action=list&page="<%= (currentPage+1) %>">Next</a>
         </div>
 
-        <!-- Scripts -->
-        <script>
-            function openModal() {
-                document.getElementById("addPromotionModal").style.display = "block";
+        <!-- Deleted -->
+        <h6 class="fw-bold mt-4 mb-2">Deleted Promotions</h6>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th><th>Code</th><th>Title</th><th>Description</th><th>Discount</th><th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <c:forEach var="p" items="${deletedList}">
+                <tr class="zebra">
+                    <td>${p.promotionID}</td>
+                    <td>${p.code}</td>
+                    <td>${p.title}</td>
+                    <td class="description-cell" title="${fn:escapeXml(p.description)}"><c:out value="${p.description}"/></td>
+                    <td>${p.discountType} - ${p.discountValue}</td>
+                    <td>
+                        <a href="Promotion?action=reactivate&id=${p.promotionID}&page=<%= currentPage %>" class="btn-action reactivate">Reactivate</a>
+                    </td>
+                </tr>
+            </c:forEach>
+            </tbody>
+        </table>
+
+        <!-- Debug nhỏ (tạm thời) -->
+        <small class="text-muted">
+            page=${page}, totalPages=${totalPages}, totalItems=${totalItems},
+            activeCount=${fn:length(list)}, deletedCount=${fn:length(deletedList)}
+        </small>
+    </div>
+</div>
+
+<!-- Modal Add/Edit -->
+<c:if test="${showModal}">
+    <div id="promotionModal" class="modal" style="display:block" aria-hidden="false" aria-labelledby="promotionModalTitle">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()" aria-label="Close">×</span>
+            <h2 id="promotionModalTitle">
+                <c:choose><c:when test="${promotion != null}">Edit Promotion</c:when><c:otherwise>Create Promotion</c:otherwise></c:choose>
+            </h2>
+
+            <form id="promotionForm" action="Promotion" method="post" autocomplete="off">
+                <input type="hidden" name="page" value="<%= currentPage %>"/>
+
+                <c:if test="${promotion != null}">
+                    <input type="hidden" name="promotionID" value="${promotion.promotionID}"/>
+                </c:if>
+
+                <div class="form-row">
+                    <label>Code:</label>
+                    <input type="text" name="code" value="${promotion.code}" maxlength="64" required />
+                </div>
+
+                <div class="form-row">
+                    <label>Title:</label>
+                    <input type="text" name="title" value="${promotion.title}" maxlength="255" required />
+                </div>
+
+                <div class="form-row">
+                    <label>Description:</label>
+                    <textarea name="description" rows="2" maxlength="500">${promotion.description}</textarea>
+                </div>
+
+                <div class="form-row">
+                    <label>Discount Type:</label>
+                    <select name="discountType" id="discountType" required>
+                        <option value="percentage" <c:if test="${promotion != null && promotion.discountType == 'percentage'}">selected</c:if>>Percentage</option>
+                        <option value="fixed" <c:if test="${promotion != null && promotion.discountType == 'fixed'}">selected</c:if>>Fixed Amount</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label>Discount Value:</label>
+                    <div class="unit-wrap">
+                        <input type="number" name="discountValue" id="discountValue" value="${promotion.discountValue}" required/>
+                        <span id="discountUnit" class="unit-badge">%</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label>Start Date:</label>
+                    <input type="date" name="startDate" id="startDate"
+                           value="<fmt:formatDate value='${promotion.startDate}' pattern='yyyy-MM-dd'/>" required/>
+                </div>
+
+                <div class="form-row">
+                    <label>End Date:</label>
+                    <input type="date" name="endDate" id="endDate"
+                           value="<fmt:formatDate value='${promotion.endDate}' pattern='yyyy-MM-dd'/>" required/>
+                </div>
+
+                <div class="form-row" id="dateErrorRow" style="display:none;">
+                    <label></label>
+                    <div id="dateErrorMsg" style="color:#b00020; font-weight:700;">End date must be after start date.</div>
+                </div>
+
+                <div class="form-row">
+                    <label>Min Order Value:</label>
+                    <input type="number" name="minOrderValue" step="1" min="0" value="${promotion.minOrderValue}" required/>
+                </div>
+
+                <div class="form-row">
+                    <label>Brand:</label>
+                    <select name="brand" required>
+                        <option value="">-- Brand --</option>
+                        <c:forEach var="b" items="${brands}">
+                            <option value="${b.brandID}" <c:if test="${promotion != null && promotion.brandID == b.brandID}">selected</c:if>>
+                                ${b.brandName}
+                            </option>
+                        </c:forEach>
+                    </select>
+                </div>
+
+                <c:choose>
+                    <c:when test="${promotion != null}">
+                        <input type="hidden" name="isActive" value="${promotion.isActive}"/>
+                    </c:when>
+                    <c:otherwise>
+                        <input type="hidden" name="isActive" value="true"/>
+                    </c:otherwise>
+                </c:choose>
+
+                <div class="form-row submit-row">
+                    <button id="saveBtn" type="submit">💾 Save</button>
+                    <a href="Promotion?action=list&page=<%= currentPage %>" class="btn btn-outline-secondary">❌ Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</c:if>
+
+<script>
+    function closeModal(){
+        const m=document.getElementById('promotionModal');
+        if(m) m.style.display='none';
+        window.location.href='Promotion?action=list&page=<%= currentPage %>';
+    }
+
+    function filterPromotions(){
+        const q = (document.getElementById('searchInput').value || '').toLowerCase();
+        const rows = document.querySelectorAll('#promotionTable tr');
+        let visibleIndex = 0;
+        rows.forEach(tr=>{
+            const code = (tr.cells[1]?.textContent || '').toLowerCase();
+            const show = code.includes(q);
+            tr.style.display = show ? '' : 'none';
+            if(show){
+                tr.style.backgroundColor = (visibleIndex % 2 === 0) ? '#ffffff' : '#f8fafc';
+                visibleIndex++;
             }
+        });
+    }
 
-            function closeModal() {
-                document.getElementById("addPromotionModal").style.display = "none";
+    (function () {
+        const startInput = document.getElementById("startDate");
+        const endInput   = document.getElementById("endDate");
+        const errorRow   = document.getElementById("dateErrorRow");
+
+        function toDate(val){ return val ? new Date(val + "T00:00:00") : null; }
+        function showError(show){
+            if(!errorRow) return;
+            errorRow.style.display = show ? "flex" : "none";
+            if (endInput) endInput.classList.toggle("is-invalid", !!show);
+        }
+        function syncEndMin(){
+            if (startInput && startInput.value) endInput.min = startInput.value;
+            else endInput.removeAttribute("min");
+        }
+        function validateDates(){
+            const s = toDate(startInput?.value);
+            const e = toDate(endInput?.value);
+            if (s && e && e < s) showError(true); else showError(false);
+        }
+        if(startInput && endInput){
+            startInput.addEventListener("input", ()=>{ syncEndMin(); validateDates(); });
+            endInput.addEventListener("input", validateDates);
+            window.addEventListener("load", ()=>{ syncEndMin(); validateDates(); });
+        }
+    })();
+
+    // 👉 Quan trọng: dùng "percentage"/"fixed"
+    (function(){
+        const typeSel = document.getElementById('discountType');
+        const valInp  = document.getElementById('discountValue');
+        const unitEl  = document.getElementById('discountUnit');
+        if(!typeSel || !valInp || !unitEl) return;
+
+        function clamp(val, min, max){
+            if (val === "" || isNaN(val)) return "";
+            val = Number(val);
+            if (min != null && val < min) return min;
+            if (max != null && val > max) return max;
+            return val;
+        }
+
+        function applyRules(){
+            const t = typeSel.value;
+            if (t === "percentage") {
+                unitEl.textContent = "%";
+                valInp.min = "1";
+                valInp.max = "100";
+                valInp.step = "1";
+                valInp.placeholder = "1–100";
+                valInp.title = "Percentage (1–100)";
+                valInp.value = clamp(valInp.value, 1, 100);
+            } else { // fixed
+                unitEl.textContent = "₫";
+                valInp.min = "1000";
+                valInp.removeAttribute("max");
+                valInp.step = "1000";
+                valInp.placeholder = "≥ 1000 (VND)";
+                valInp.title = "Fixed amount (>= 1000 VND)";
+                const v = clamp(valInp.value, 1000, null);
+                if (v !== "") valInp.value = v;
             }
+        }
 
-            function openDeletedModal() {
-                document.getElementById("deletedModal").style.display = "block";
-            }
+        typeSel.addEventListener('change', applyRules);
+        valInp.addEventListener('input', applyRules);
+        window.addEventListener('load', applyRules);
+    })();
+</script>
 
-            function closeDeletedModal() {
-                document.getElementById("deletedModal").style.display = "none";
-            }
-
-            window.onclick = function (event) {
-                if (event.target === document.getElementById("addPromotionModal"))
-                    closeModal();
-                if (event.target === document.getElementById("deletedModal"))
-                    closeDeletedModal();
-            };
-
-            function filterPromotions() {
-                let input = document.getElementById("searchInput").value.toLowerCase();
-                let rows = document.querySelectorAll("#promotionTable tr");
-
-                let visibleIndex = 0;
-                rows.forEach(row => {
-                    let code = row.cells[1].textContent.toLowerCase();
-                    if (code.includes(input)) {
-                        row.style.display = "";
-                        row.style.backgroundColor = (visibleIndex % 2 === 0) ? "#ffffff" : "#e6f7ff";
-                        visibleIndex++;
-                    } else {
-                        row.style.display = "none";
-                    }
-                });
-            }
-            <%-- Handle alerts and auto modal open --%>
-            <% if (request.getAttribute("codeExists") != null) { %>
-            window.onload = function () {
-                openModal();
-                document.getElementById("alertPopup").style.display = "block";
-                setTimeout(() => {
-                    document.getElementById("alertPopup").style.display = "none";
-                }, 4000);
-                filterPromotions();
-            };
-            <% } else if (request.getAttribute("showModal") != null) { %>
-            window.onload = function () {
-                openModal();
-                filterPromotions();
-            };
-            <% } %>
-
-            <% if (request.getAttribute("reactivate") != null) { %>
-            if (confirm("This voucher code already exists but is inactive. Do you want to reactivate it?")) {
-                openModal();
-            }
-            <% }%>
-        </script>
-        <script>
-            const form = document.querySelector("#addPromotionModal form");
-            const submitBtn = form.querySelector("input[type=submit]");
-            let originalData = new FormData(form);
-
-            function checkFormChanges() {
-                const currentData = new FormData(form);
-                let changed = false;
-                for (let [key, value] of currentData.entries()) {
-                    if (value !== originalData.get(key)) {
-                        changed = true;
-                        break;
-                    }
-                }
-
-                if (changed) {
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove("disabled-button");
-                } else {
-                    submitBtn.disabled = true;
-                    submitBtn.classList.add("disabled-button");
-                }
-            }
-
-            form.querySelectorAll("input, select, textarea").forEach(field => {
-                field.addEventListener("input", checkFormChanges);
-            });
-
-            window.addEventListener("load", () => {
-                checkFormChanges();
-            });
-
-        </script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-        <%@ include file="footer.jsp" %>
-    </body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
