@@ -53,7 +53,7 @@ public class LoginController extends HttpServlet {
             if (role == 3) {
                 response.sendRedirect(request.getContextPath() + "/");
             } else if (role == 1 || role == 2) {
-                response.sendRedirect("dashboard.jsp");
+                response.sendRedirect(request.getContextPath() + "/dashboard");
             } else {
                 request.setAttribute("error", "Role not supported");
                 request.getRequestDispatcher("login.jsp").forward(request, response);

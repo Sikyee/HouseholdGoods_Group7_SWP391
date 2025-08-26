@@ -27,7 +27,7 @@ public class CartDAO {
         Connection conn = DBConnection.getConnection();
 
         String sql = "SELECT c.cartID, c.quantity, c.productID, c.userID, "
-                + "p.productName, p.price, p.image, p.description, p.subCategory, p.brandID "
+                + "p.productName, p.price, p.image, p.description, p.subCategory, p.brandID, p.stonk_Quantity "
                 + "FROM Cart c JOIN Product p ON c.productID = p.productID "
                 + "WHERE c.userID = ?";
 
@@ -44,6 +44,7 @@ public class CartDAO {
             p.setDescription(rs.getString("description"));
             p.setSubCategory(rs.getInt("subCategory"));
             p.setBrandID(rs.getInt("brandID"));
+            p.setStonkQuantity(rs.getInt("stonk_Quantity"));
 
             Cart cart = new Cart();
             cart.setCartID(rs.getInt("cartID"));
@@ -154,12 +155,44 @@ public class CartDAO {
         checkPs.close();
         conn.close();
     }
-    
+
     public void clearCartByUser(int userID) throws Exception {
         Connection conn = DBConnection.getConnection();
         String sql = "DELETE Cart where userID = ?";
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setInt(1, userID);
         ps.executeUpdate();
+    }
+
+    public Cart getCartItemById(int cartId) throws Exception {
+        String sql = " SELECT c.CartID, c.UserID, c.ProductID, c.Quantity, p.ProductName, p.Price, p.Image, p.stonk_Quantity FROM Cart c JOIN Product p ON p.ProductID = c.ProductID WHERE c.CartID = ?";
+
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, cartId);
+
+            try ( ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    // map Product
+                    Product p = new Product();
+                    p.setProductID(rs.getInt("productID"));
+                    p.setProductName(rs.getString("productName"));
+                    p.setPrice(rs.getLong("price"));
+                    p.setImage(rs.getString("image"));
+                    p.setStonkQuantity(rs.getInt("stonk_Quantity"));
+
+                    // map Cart
+                    Cart cart = new Cart();
+                    cart.setCartID(rs.getInt("cartID"));
+                    cart.setUserID(rs.getInt("userID"));
+                    cart.setProductID(rs.getInt("productID"));
+                    cart.setQuantity(rs.getInt("quantity"));
+                    cart.setProduct(p);
+
+                    return cart;
+                }
+            }
+        }
+        return null; // không tìm thấy
     }
 }

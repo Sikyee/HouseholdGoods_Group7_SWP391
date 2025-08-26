@@ -51,13 +51,23 @@
                 text-align: right;
                 display: inline-block;
             }
-            
+
             .fa-trash{
                 color: red;
             }
         </style>
     </head>
     <body>
+        <% List<String> errors = (List<String>) request.getAttribute("errors");
+            if (errors != null && !errors.isEmpty()) { %>
+        <div class="alert alert-danger">
+            <ul>
+                <% for (String err : errors) {%>
+                <li><%= err%></li>
+                    <% } %>
+            </ul>
+        </div>
+        <% }%>
         <%@ include file="header.jsp" %>
         <div class="container-fluid mt-5">
             <h4 class="mb-4">🛒 Your Shopping Cart</h4>
@@ -71,69 +81,92 @@
             } else {
                 int totalAll = 0;
             %>
-            <div class="row">
-                <!-- Left side: Cart items -->
-                <div class="col-md-8">
+            <form id="checkout-selected-form" action="<%= request.getContextPath()%>/Checkout" method="post">
+                <input type="hidden" name="action" value="fromCart" />
 
+                <div class="row">
+                    <div class="col-md-8" style="display:flex;flex-direction:column;">
+                        <div class="checkBox-all mb-2">
+                            <input type="checkbox" id="checkAll">
+                            <label for="checkAll">Choose All</label>
+                        </div>
 
-                    <div id="cart-container">
-                        <ul class="list-group mb-3">
-                            <%
-                                for (Cart item : cart) {
-                                    Product p = item.getProduct();
-                                    long total = p.getPrice() * item.getQuantity();
-                                    totalAll += total;
-                            %>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <!-- Left: image + info -->
-                                <div class="d-flex align-items-center" style="flex: 1">
-                                    <img src="/HouseholdGoods_Group7_SWP391/images/<%= p.getImage()%>" class="cart-item-img me-3" alt="<%= p.getProductName()%>"/>
-                                    <div>
-                                        <strong class="product-name"><%= p.getProductName()%></strong><br>
-                                        <small><%= String.format("%,d", p.getPrice())%>₫</small>
+                        <div id="cart-container">
+                            <ul class="list-group mb-3">
+                                <%
+                                    for (Cart item : cart) {
+                                        Product p = item.getProduct();
+                                        long unit = p.getPrice();
+                                        long total = unit * item.getQuantity();
+                                        totalAll += total;
+                                %>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <!-- Checkbox chọn -->
+                                    <input
+                                        type="checkbox"
+                                        class="select-item"
+                                        name="cartId"                           
+                                        value="<%= item.getCartID()%>"
+                                        data-unit="<%= unit%>"
+                                        data-qty ="<%= item.getQuantity()%>"
+                                        />
+
+                                    <div class="d-flex align-items-center" style="flex:1">
+                                        <img src="/HouseholdGoods_Group7_SWP391/images/<%= p.getImage()%>" class="cart-item-img me-3" alt="<%= p.getProductName()%>"/>
+                                        <div>
+                                            <div style="display:flex;gap:10px">
+                                                <strong class="product-name"><%= p.getProductName()%></strong>
+                                                <span>(Quantity: <%= p.getStonkQuantity()%>)</span>
+                                            </div>
+                                            <small><%= String.format("%,d", unit)%>₫</small>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <!-- Right: quantity + total + delete -->
-                                <div class="d-flex align-items-center gap-4" style="flex-shrink: 0; min-width: 320px;">
-                                    <div class="quantity-layout">
-                                        <button class="btn btn-outline-secondary btn-sm quantity-btn" data-action="decrease" data-cart-id="<%= item.getCartID()%>">−</button>
-                                        <span class="quantity-<%= item.getCartID()%>"><%= item.getQuantity()%></span>
-                                        <button class="btn btn-outline-secondary btn-sm quantity-btn" data-action="increase" data-cart-id="<%= item.getCartID()%>">+</button>
+                                    <div class="d-flex align-items-center gap-4" style="flex-shrink:0;min-width:320px;">
+                                        <!-- Trong list item -->
+                                        <div class="quantity-layout">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm quantity-btn"
+                                                    data-action="decrease" data-cart-id="<%= item.getCartID()%>">−</button>
+
+                                            <span class="quantity-<%= item.getCartID()%>"><%= item.getQuantity()%></span>
+
+                                            <button type="button" class="btn btn-outline-secondary btn-sm quantity-btn"
+                                                    data-action="increase" data-cart-id="<%= item.getCartID()%>">+</button>
+                                        </div>
+
+                                        <strong class="total text-nowrap" style="min-width: 90px; text-align:right;">
+                                            <%= String.format("%,d", total)%>₫
+                                        </strong>
+                                        <a href="<%= context%>/Cart?action=delete&id=<%= item.getCartID()%>"
+                                           onclick="return confirm('Are you sure you want to delete this product in cart?');">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
                                     </div>
-                                    <strong class="total text-nowrap" style="min-width: 90px; text-align: right;">
-                                        <%= String.format("%,d", total)%>₫
-                                    </strong>
-                                    <a href="<%= context%>/Cart?action=delete&id=<%= item.getCartID()%>" 
-                                       class=""
-                                       onclick="return confirm('Are you sure you want to delete this product in cart?');">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </div>
-                            </li>
-                            <% }%>
-                        </ul>
+                                </li>
+                                <% }%>
+                            </ul>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Right side: Summary -->
-                <div class="col-md-4">
-                    <div class="summary-box" id="summary-box">
+                    <!-- Summary -->
+                    <div class="col-md-4">
                         <div class="summary-box" id="summary-box">
                             <h4 class="mb-3">Summary</h4>
-                            <p>ITEMS <span class="float-end"><%= String.format("%,d", totalAll)%>₫</span></p>
-<!--                            <label for="code">COUPON CODE</label>
-                            <input type="text" id="code" class="form-control mb-3" placeholder="Enter your code">-->
+                            <p>ITEMS SELECTED
+                                <span class="float-end" id="selected-subtotal">0₫</span>
+                            </p>
                             <div class="total-line">
                                 <strong>TOTAL PRICE</strong>
-                                <span class="float-end"><%= String.format("%,d", totalAll)%>₫</span>
+                                <span class="float-end" id="selected-total">0₫</span>
                             </div>
 
-                            <a class="btn btn-dark w-100 mt-3" href="<%= request.getContextPath()%>/Checkout">CHECKOUT</a>
+                            <button type="submit" class="btn btn-dark w-100 mt-3" id="checkout-btn">
+                                CHECKOUT
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
+            </form>
             <% }%>
         </div>
         <%@ include file="footer.jsp" %>
@@ -141,31 +174,80 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
-                                           $(document).ready(function () {
-                                               $(document).on("click", ".quantity-btn", function () {
-                                                   const button = $(this);
-                                                   const action = button.data("action");
-                                                   const cartId = button.data("cart-id");
+                                               // ====== Format & Tính tổng ======
+                                               function formatVND(n) { return n.toLocaleString('vi-VN') + '₫'; }
 
-                                                   $.ajax({
-                                                       url: "Cart",
-                                                       method: "POST",
-                                                       data: {
-                                                           action: action,
-                                                           cartID: cartId
-                                                       },
-                                                       success: function (data) {
-                                                           // Cập nhật phần giỏ hàng
-                                                           $("#cart-container").html($(data).find("#cart-container").html());
-
-                                                           // Cập nhật phần tóm tắt đơn hàng
-                                                           $("#summary-box").html($(data).find("#summary-box").html());
-                                                       },
-                                                       error: function () {
-                                                           alert("Error updating cart.");
-                                                       }
-                                                   });
+                                               function recalcSelected() {
+                                               let subtotal = 0;
+                                               document.querySelectorAll('.select-item:checked').forEach(cb => {
+                                               const unit = parseInt(cb.dataset.unit || '0', 10);
+                                               const qty = parseInt(cb.dataset.qty || '0', 10);
+                                               subtotal += unit * qty;
                                                });
-                                           });
+                                               document.getElementById('selected-subtotal').textContent = formatVND(subtotal);
+                                               document.getElementById('selected-total').textContent = formatVND(subtotal);
+                                               // Không disable nút nữa vì giờ chỉ còn một nút checkout
+                                               }
+
+                                               // ====== Chọn tất cả ======
+                                               const checkAll = document.getElementById('checkAll');
+                                               checkAll?.addEventListener('change', function () {
+                                               document.querySelectorAll('.select-item').forEach(cb => cb.checked = checkAll.checked);
+                                               recalcSelected();
+                                               });
+                                               // Chọn từng món
+                                               document.querySelectorAll('.select-item').forEach(cb => {
+                                               cb.addEventListener('change', function () {
+                                               const items = document.querySelectorAll('.select-item');
+                                               const checked = document.querySelectorAll('.select-item:checked');
+                                               checkAll.checked = (items.length > 0 && checked.length === items.length);
+                                               recalcSelected();
+                                               });
+                                               });
+                                               // ====== Trước khi submit checkout: nếu không chọn gì -> chọn tất cả ======
+                                               document.getElementById('checkout-selected-form')?.addEventListener('submit', function (e) {
+                                               const checked = document.querySelectorAll('.select-item:checked');
+                                               if (checked.length === 0) {
+                                               document.querySelectorAll('.select-item').forEach(cb => cb.checked = true);
+                                               }
+                                               // Không cần gì thêm, server /Checkout vẫn nhận mảng "cartId"
+                                               });
+                                               // ====== AJAX tăng/giảm số lượng ======
+                                               $(document).on('click', '.quantity-btn', function (e) {
+                                               e.preventDefault();
+                                               const $btn = $(this);
+                                               const id = $btn.data('cart-id');
+                                               const action = $btn.data('action'); // 'increase' | 'decrease'
+
+                                               $.post('<%= request.getContextPath()%>/Cart', {
+                                               action: action,
+                                                       cartID: id,
+                                                       ajax: '1'
+                                               }, function (res) {
+                                               if (!res || !res.ok) {
+                                               alert(res?.message || 'Cập nhật thất bại');
+                                               return;
+                                               }
+
+                                               // Cập nhật quantity hiển thị
+                                               $('.quantity-' + id).text(res.quantity);
+                                               // Cập nhật checkbox data-qty và tổng từng dòng
+                                               const $row = $btn.closest('li.list-group-item');
+                                               const $cb = $row.find('.select-item');
+                                               $cb.attr('data-qty', res.quantity);
+                                               $row.find('.total').text(res.itemTotalFmt);
+                                               // Nếu server báo xóa (quantity==0), có thể remove dòng:
+                                               if (res.deleted) {
+                                               $row.remove();
+                                               }
+
+                                               // Recalc summary
+                                               recalcSelected();
+                                               }, 'json').fail(function () {
+                                               alert('Có lỗi mạng khi cập nhật số lượng');
+                                               });
+                                               });
+                                               // Khởi tính
+                                               recalcSelected();
     </script>
 </html>

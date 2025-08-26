@@ -3,10 +3,16 @@ package DAO;
 import DB.DBConnection;
 import Model.Order;
 import Model.OrderInfo;
+import Model.dto.WeeklyRevenue;
+import java.math.BigInteger;
 
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class OrderDAO {
 
@@ -119,7 +125,7 @@ public class OrderDAO {
 
     public boolean updateOrderStatus(OrderInfo order) throws Exception {
         String sql = "UPDATE [dbo].[OrderInfo]\n"
-                + "   SET [statusID] = ?\n"
+                + "   SET [orderStatusID] = ?\n"
                 + " WHERE orderId = ?";
         try {
             Connection conn = DBConnection.getConnection();
@@ -156,5 +162,87 @@ public class OrderDAO {
         order.setDeliveryAddress(rs.getString("deliveryAddress"));
         order.setPhone(rs.getString("phone"));
         return order;
+    }
+
+    public int getRevenueToday() throws SQLException {
+        String sql = "SELECT SUM(finalPrice) AS total FROM OrderInfo WHERE orderStatusID = 1 AND orderDate BETWEEN ? AND ?";
+
+        int total = 0;
+
+        // Lấy thời gian bắt đầu và kết thúc của ngày hiện tại
+        LocalDate today = LocalDate.now();
+        Timestamp startOfDay = Timestamp.valueOf(today.atStartOfDay());
+        Timestamp endOfDay = Timestamp.valueOf(today.atTime(LocalTime.MAX));
+
+        try ( Connection connect = DBConnection.getConnection();  PreparedStatement ps = connect.prepareStatement(sql)) {
+
+            ps.setTimestamp(1, startOfDay);
+            ps.setTimestamp(2, endOfDay);
+
+            try ( ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getInt("total");
+                }
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(OrderDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return total;
+    }
+
+    public int getRevenueLastDay() throws SQLException {
+        String sql = "SELECT SUM(finalPrice) AS total FROM OrderInfo WHERE orderStatusID = 1 AND orderDate BETWEEN ? AND ?";
+
+        int total = 0;
+
+        // Lấy thời gian bắt đầu và kết thúc của ngày hiện tại
+        LocalDate today = LocalDate.now();
+        Timestamp startOfDay = Timestamp.valueOf(today.atStartOfDay());
+        Timestamp endOfDay = Timestamp.valueOf(today.atTime(LocalTime.MAX));
+
+        try ( Connection connect = DBConnection.getConnection();  PreparedStatement ps = connect.prepareStatement(sql)) {
+
+            ps.setTimestamp(1, startOfDay);
+            ps.setTimestamp(2, endOfDay);
+
+            try ( ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    total = rs.getInt("total");
+                }
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(OrderDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return total;
+    }
+
+    public List<WeeklyRevenue> getRevenueLast7Days() throws SQLException {
+        String sql
+                = "WITH d AS ( "
+                + "  SELECT CAST(CAST(GETDATE() AS date) AS datetime) AS d, 0 AS n "
+                + "  UNION ALL "
+                + "  SELECT DATEADD(day, -1, d), n + 1 FROM d WHERE n < 6 "
+                + ") "
+                + "SELECT CAST(d.d AS date) AS orderDay, ISNULL(SUM(oi.finalPrice), 0) AS totalRevenue "
+                + "FROM d "
+                + "LEFT JOIN OrderInfo oi "
+                + "  ON CAST(oi.orderDate AS date) = CAST(d.d AS date) "
+                + " AND oi.orderStatusID = 1 "
+                + "GROUP BY CAST(d.d AS date) "
+                + "ORDER BY orderDay ASC "
+                + "OPTION (MAXRECURSION 100);";
+
+        List<WeeklyRevenue> result = new ArrayList<>();
+        try ( Connection connect = DBConnection.getConnection();  PreparedStatement ps = connect.prepareStatement(sql);  ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                LocalDate day = rs.getDate("orderDay").toLocalDate();
+                double total = rs.getDouble("totalRevenue");
+                result.add(new WeeklyRevenue(day, total));
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(OrderDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return result;
     }
 }
