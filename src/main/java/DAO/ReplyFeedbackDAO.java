@@ -15,36 +15,44 @@ import java.util.List;
  *
  * @author TriTN
  */
+
+
 public class ReplyFeedbackDAO {
 
     public List<ReplyFeedback> getRepliesByFeedbackID(int feedbackID) {
-        List<ReplyFeedback> list = new ArrayList<>();
-        String sql = "SELECT * FROM ReplyFeedback WHERE feedbackID = ? ORDER BY createdAt ASC";
+    List<ReplyFeedback> list = new ArrayList<>();
+    String sql = "SELECT r.*, u.roleID FROM ReplyFeedback r " +
+                 "JOIN [User] u ON r.userID = u.userID " +
+                 "WHERE r.feedbackID = ? AND r.isDeleted = 0 " +
+                 "ORDER BY r.createdAt ASC";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, feedbackID);
-            ResultSet rs = ps.executeQuery();
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, feedbackID);
+        ResultSet rs = ps.executeQuery();
 
-            while (rs.next()) {
-                ReplyFeedback r = new ReplyFeedback();
-                r.setReplyID(rs.getInt("replyID"));
-                r.setFeedbackID(rs.getInt("feedbackID"));
-                r.setUserID(rs.getInt("userID"));
-                r.setReplyText(rs.getString("replyText"));
-                r.setCreatedAt(rs.getTimestamp("createdAt"));
-                list.add(r);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        while (rs.next()) {
+            ReplyFeedback r = new ReplyFeedback();
+            r.setReplyID(rs.getInt("replyID"));
+            r.setFeedbackID(rs.getInt("feedbackID"));
+            r.setUserID(rs.getInt("userID"));
+            r.setReplyText(rs.getString("replyText"));
+            r.setCreatedAt(rs.getTimestamp("createdAt"));
+            r.setIsDeleted(rs.getBoolean("isDeleted"));
+            r.setRoleID(rs.getInt("roleID")); //  lấy từ bảng User
+            list.add(r);
         }
 
-        return list;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
 
+    return list;
+}
+
     public boolean insertReply(ReplyFeedback reply) {
-        String sql = "INSERT INTO ReplyFeedback (feedbackID, userID, replyText, createdAt) VALUES (?, ?, ?, GETDATE())";
+        String sql = "INSERT INTO ReplyFeedback (feedbackID, userID, replyText, createdAt, isDeleted) " +
+                     "VALUES (?, ?, ?, GETDATE(), 0)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -62,7 +70,7 @@ public class ReplyFeedbackDAO {
     }
 
     public boolean updateReply(ReplyFeedback reply) {
-        String sql = "UPDATE ReplyFeedback SET replyText = ? WHERE replyID = ?";
+        String sql = "UPDATE ReplyFeedback SET replyText = ? WHERE replyID = ? AND isDeleted = 0";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -79,7 +87,7 @@ public class ReplyFeedbackDAO {
     }
 
     public boolean deleteReply(int replyID) {
-        String sql = "DELETE FROM ReplyFeedback WHERE replyID = ?";
+        String sql = "UPDATE ReplyFeedback SET isDeleted = 1 WHERE replyID = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -92,4 +100,35 @@ public class ReplyFeedbackDAO {
 
         return false;
     }
+    
+//    public List<ReplyFeedback> getRepliesByOrderDetailID(int orderDetailID) {
+//    List<ReplyFeedback> list = new ArrayList<>();
+//    String sql = "SELECT r.*, u.roleID " +
+//                 "FROM ReplyFeedback r " +
+//                 "JOIN Feedback f ON r.feedbackID = f.feedbackID " +
+//                 "JOIN [User] u ON r.userID = u.userID " +
+//                 "WHERE f.orderDetailID = ? AND r.isDeleted = 0 " +
+//                 "ORDER BY r.createdAt ASC";
+//    try (Connection conn = DBConnection.getConnection();
+//         PreparedStatement ps = conn.prepareStatement(sql)) {
+//        ps.setInt(1, orderDetailID);
+//        ResultSet rs = ps.executeQuery();
+//        while (rs.next()) {
+//            ReplyFeedback r = new ReplyFeedback();
+//            r.setReplyID(rs.getInt("replyID"));
+//            r.setFeedbackID(rs.getInt("feedbackID"));
+//            r.setUserID(rs.getInt("userID"));
+//            r.setReplyText(rs.getString("replyText"));
+//            r.setCreatedAt(rs.getTimestamp("createdAt"));
+//            r.setIsDeleted(rs.getBoolean("isDeleted"));
+//            r.setRoleID(rs.getInt("roleID"));
+//            list.add(r);
+//        }
+//    } catch (Exception e) {
+//        e.printStackTrace();
+//    }
+//    return list;
+//}
+
+    
 }
