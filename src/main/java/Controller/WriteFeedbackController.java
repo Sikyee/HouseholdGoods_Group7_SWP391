@@ -125,6 +125,5 @@ public class WriteFeedbackController extends HttpServlet {
         OrderDetail od = dao.getOrderDetailByID(orderDetailID);
         request.setAttribute("orderDetail", od);
         request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
-        
     }
 }

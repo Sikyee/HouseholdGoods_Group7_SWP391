@@ -5,11 +5,8 @@
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="Model.OrderDetail, Model.Feedback" %>
-<%@ include file="left-sidebar.jsp" %>
 
 <%
-    
-
     OrderDetail od = (OrderDetail) request.getAttribute("orderDetail");
     String context = request.getContextPath();
     String error = (String) request.getAttribute("error");
@@ -55,17 +52,49 @@
         <form method="post" action="<%= context %>/WriteFeedback" novalidate>
             <input type="hidden" name="orderDetailID" value="<%= od != null ? od.getOrderDetailID() : "" %>">
 
-            <div class="mb-3">
-                <label for="rating" class="form-label">Rating</label>
-                <select name="rating" class="form-select">
-                    <option value="" <%= (selectedRating == null || selectedRating.isEmpty()) ? "selected" : "" %>>Choose...</option>
-                    <option value="1" <%= "1".equals(selectedRating) ? "selected" : "" %>>★☆☆☆☆</option>
-                    <option value="2" <%= "2".equals(selectedRating) ? "selected" : "" %>>★★☆☆☆</option>
-                    <option value="3" <%= "3".equals(selectedRating) ? "selected" : "" %>>★★★☆☆</option>
-                    <option value="4" <%= "4".equals(selectedRating) ? "selected" : "" %>>★★★★☆</option>
-                    <option value="5" <%= "5".equals(selectedRating) ? "selected" : "" %>>★★★★★</option>
-                </select>
-            </div>
+<div class="mb-3">
+    <label class="form-label">Rating</label>
+    <div class="star-rating">
+        <input type="radio" id="star5" name="rating" value="5" <%= "5".equals(selectedRating) ? "checked" : "" %>/>
+        <label for="star5" title="5 stars">★</label>
+
+        <input type="radio" id="star4" name="rating" value="4" <%= "4".equals(selectedRating) ? "checked" : "" %>/>
+        <label for="star4" title="4 stars">★</label>
+
+        <input type="radio" id="star3" name="rating" value="3" <%= "3".equals(selectedRating) ? "checked" : "" %>/>
+        <label for="star3" title="3 stars">★</label>
+
+        <input type="radio" id="star2" name="rating" value="2" <%= "2".equals(selectedRating) ? "checked" : "" %>/>
+        <label for="star2" title="2 stars">★</label>
+
+        <input type="radio" id="star1" name="rating" value="1" <%= "1".equals(selectedRating) ? "checked" : "" %>/>
+        <label for="star1" title="1 star">★</label>
+    </div>
+</div>
+
+<style>
+.star-rating {
+    direction: rtl; /* Đảo thứ tự sao */
+    display: inline-block;
+    font-size: 2rem;
+}
+
+.star-rating input {
+    display: none; /* Ẩn radio */
+}
+
+.star-rating label {
+    color: lightgray;
+    cursor: pointer;
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input:checked ~ label {
+    color: gold;
+}
+</style>
+
 
             <div class="mb-3">
                 <label for="comment" class="form-label">Comment</label>

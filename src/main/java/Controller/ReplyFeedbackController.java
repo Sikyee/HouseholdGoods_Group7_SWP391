@@ -32,10 +32,11 @@ public class ReplyFeedbackController extends HttpServlet {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("user");
 
-        if (user == null || (user.getRoleID() != 1 && user.getRoleID() != 2)) {
-            response.sendRedirect("access-denied.jsp");
-            return;
-        }
+if (user == null || (user.getRoleID() != 1 || user.getRoleID() != 2 || user.getRoleID() != 3)) {
+    response.sendRedirect("access-denied.jsp");
+    return;
+}
+
 
         String action = request.getParameter("action");
         String replyText = request.getParameter("replyText") != null ? request.getParameter("replyText").trim() : "";
@@ -47,6 +48,7 @@ public class ReplyFeedbackController extends HttpServlet {
                     ReplyFeedback reply = new ReplyFeedback();
                     reply.setReplyID(replyID);
                     reply.setReplyText(replyText);
+                    reply.setRoleID(user.getRoleID());
                     replyDAO.updateReply(reply);
                 }
 
@@ -89,6 +91,5 @@ if (!hasActiveReplies) {
 
     private boolean isReplyValid(String text) {
         return text != null && text.length() >= 1 && text.length() <= 1000 && !text.toLowerCase().contains("<script");
-
     }
 }

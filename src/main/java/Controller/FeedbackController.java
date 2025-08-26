@@ -18,6 +18,7 @@ import java.util.List;
 
 @WebServlet("/Feedback")
 public class FeedbackController extends HttpServlet {
+
     private FeedbackDAO feedbackDAO = new FeedbackDAO();
 
     @Override
@@ -43,22 +44,23 @@ public class FeedbackController extends HttpServlet {
             return;
         }
 
-        // Cập nhật trạng thái
-       /* if ("updateStatus".equals(action) && id != -1) {
-            String status = request.getParameter("status");
-            if (status != null && (status.equals("Pending") || status.equals("Processing")
-                    || status.equals("Resolved") || status.equals("Ignored"))) {
+        // Report feedback → đổi status thành Ignored
+if ("report".equals(action) && id != -1) {
+    feedbackDAO.updateStatus(id, "Ignored");
+    response.sendRedirect("Feedback");
+    return;
+}
 
-                // Luôn cho phép Admin cập nhật, kể cả chọn Ignored
-                if (user.getRoleID() == 1 || !status.equals("Ignored")) {
-                    feedbackDAO.updateStatus(id, status);
-                }
-            }
-            response.sendRedirect("Feedback");
-            return;
-        }*/
+// Restore feedback → khôi phục lại status cũ (Pending chẳng hạn)
+if ("restore".equals(action) && id != -1) {
+    // Ở đây bạn có thể lưu trạng thái cũ trong DB (ví dụ thêm cột prevStatus).
+    // Nếu không thì cho restore về "Pending"
+    feedbackDAO.updateStatus(id, "Pending");
+    response.sendRedirect("Feedback");
+    return;
+}
 
-        // Export Feedback
+
         if ("export".equals(action)) {
             exportFeedback(response);
             return;
@@ -78,15 +80,17 @@ public class FeedbackController extends HttpServlet {
         } catch (NumberFormatException e) {
             page = 1;
         }
-        if (page < 1) page = 1;
+        if (page < 1) {
+            page = 1;
+        }
 
         List<Feedback> feedbacks;
         int totalRecords;
 
-        boolean isFiltered = (userName != null && !userName.isEmpty()) ||
-                (keyword != null && !keyword.isEmpty()) ||
-                (status != null && !status.isEmpty()) ||
-                (date != null && !date.isEmpty());
+        boolean isFiltered = (userName != null && !userName.isEmpty())
+                || (keyword != null && !keyword.isEmpty())
+                || (status != null && !status.isEmpty())
+                || (date != null && !date.isEmpty());
 
         if (isFiltered) {
             feedbacks = feedbackDAO.searchFeedback(userName, keyword, status, date, page, recordsPerPage);
@@ -97,33 +101,49 @@ public class FeedbackController extends HttpServlet {
         }
 
         int totalPages = (int) Math.ceil(totalRecords * 1.0 / recordsPerPage);
-        if (page > totalPages && totalPages > 0) page = totalPages;
+        if (page > totalPages && totalPages > 0) {
+            page = totalPages;
+        }
 
         request.setAttribute("feedbacks", feedbacks);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
 
         request.getRequestDispatcher("manageFeedback.jsp").forward(request, response);
+        
+       
+
+
+        
     }
 
     private void exportFeedback(HttpServletResponse response) throws IOException {
-        List<Feedback> list = feedbackDAO.getAllFeedback();
-        response.setContentType("application/vnd.ms-excel");
-        response.setHeader("Content-Disposition", "attachment; filename=Feedback_List.xls");
+    List<Feedback> list = feedbackDAO.getAllFeedbackWithoutPagination(); // lấy tất cả feedback
+    response.setContentType("application/vnd.ms-excel; charset=UTF-8");
+    response.setHeader("Content-Disposition", "attachment; filename=Feedback_List.xls");
 
-        PrintWriter out = response.getWriter();
-        out.println("ID\tUser\tOrderDetailID\tRating\tComment\tCreatedAt\tStatus");
-        for (Feedback fb : list) {
-            out.println(fb.getFeedbackID() + "\t" +
-                        fb.getUserName() + "\t" +
-                        fb.getOrderDetailID() + "\t" +
-                        fb.getRating() + "\t" +
-                        fb.getComment().replaceAll("\\t", " ").replaceAll("\\n", " ") + "\t" +
-                        fb.getCreatedAt() + "\t" +
-                        fb.getStatus());
-        }
-        out.flush();
-        out.close();
-       
+    PrintWriter out = response.getWriter();
+    // Viết BOM để Excel nhận UTF-8
+    out.write("\uFEFF");
+    out.println("ID\tOrderDetailID\tCustomerID\tUserName\tProductName\tImage\tRating\tComment\tCreatedAt\tStatus");
+
+    for (Feedback fb : list) {
+        out.println(
+            fb.getFeedbackID() + "\t"
+            + fb.getOrderDetailID() + "\t"
+            + fb.getUserID() + "\t"
+            + fb.getUserName() + "\t"
+            + fb.getProductName() + "\t"
+            + fb.getImage() + "\t"
+            + fb.getRating() + "\t"
+            + fb.getComment().replaceAll("\\t", " ").replaceAll("\\n", " ") + "\t"
+            + fb.getCreatedAt() + "\t"
+            + fb.getStatus()
+        );
     }
+
+    out.flush();
+    out.close();
+}
+
 }

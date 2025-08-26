@@ -23,7 +23,7 @@ public class ViewFeedbackOrdersController extends HttpServlet {
         HttpSession session = request.getSession(false); // không tạo session mới nếu chưa có
         User user = (session != null) ? (User) session.getAttribute("user") : null;
 
-        if (user == null) {
+        if (user == null || user.getRoleID() !=3) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
@@ -31,12 +31,14 @@ public class ViewFeedbackOrdersController extends HttpServlet {
         FeedbackDAO dao = new FeedbackDAO();
         List<OrderDetail> withoutFeedback = dao.getOrdersWithoutFeedback(user.getUserID());
         List<OrderDetail> withFeedback = dao.getOrdersWithFeedback(user.getUserID());
+        
+        System.err.println("without feedback" + withoutFeedback);
+        System.err.println("with feedback" + withFeedback);
 
         request.setAttribute("withoutFeedback", withoutFeedback);
         request.setAttribute("withFeedback", withFeedback);
 
         RequestDispatcher rd = request.getRequestDispatcher("viewFeedbackOrders.jsp");
         rd.forward(request, response);
-       
     }
 }

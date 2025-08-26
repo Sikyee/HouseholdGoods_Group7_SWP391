@@ -19,6 +19,15 @@ public class ReplyFeedback {
     private String replyText;
     private Timestamp createdAt;
     private boolean isDeleted;
+    private int roleID;
+
+    public int getRoleID() {
+        return roleID;
+    }
+
+    public void setRoleID(int roleID) {
+        this.roleID = roleID;
+    }
 
     public int getReplyID() {
         return replyID;
