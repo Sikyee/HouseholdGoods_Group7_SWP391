@@ -266,9 +266,17 @@
                                 <a class="dropdown-item" href="<%= request.getContextPath()%>/profile">
                                     <i class="fas fa-user"></i>My Profile
                                 </a>
+                                <a class="dropdown-item" href="<%= request.getContextPath()%>/ViewFeedbackOrders">
+                                    <i class="fas fa-pen me-1"></i>My Feedback
+
+                                </a>
+
+
+
                                 <a class="dropdown-item" href="<%= request.getContextPath()%>/orders">
                                     <i class="fas fa-shopping-bag"></i>My Orders
                                 </a>
+
                                 <a class="dropdown-item" href="<%= request.getContextPath()%>/changePassword">
                                     <i class="fas fa-key"></i>Change Password
                                 </a>
