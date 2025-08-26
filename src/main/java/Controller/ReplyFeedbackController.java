@@ -5,13 +5,15 @@
 package Controller;
 
 import DAO.ReplyFeedbackDAO;
+import DAO.FeedbackDAO;
 import Model.ReplyFeedback;
+import Model.User;
 
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-
 import java.io.IOException;
+
 /**
  *
  * @author TriTN
@@ -19,45 +21,75 @@ import java.io.IOException;
 
 @WebServlet("/ReplyFeedback")
 public class ReplyFeedbackController extends HttpServlet {
-    private ReplyFeedbackDAO dao = new ReplyFeedbackDAO();
+    private ReplyFeedbackDAO replyDAO = new ReplyFeedbackDAO();
+    private FeedbackDAO feedbackDAO = new FeedbackDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         request.setCharacterEncoding("UTF-8");
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+
+if (user == null || (user.getRoleID() != 1 || user.getRoleID() != 2 || user.getRoleID() != 3)) {
+    response.sendRedirect("access-denied.jsp");
+    return;
+}
+
+
         String action = request.getParameter("action");
-        String replyText = request.getParameter("replyText");
+        String replyText = request.getParameter("replyText") != null ? request.getParameter("replyText").trim() : "";
 
         try {
             if ("update".equals(action)) {
-                // ✅ Cập nhật phản hồi
                 int replyID = Integer.parseInt(request.getParameter("replyID"));
-                ReplyFeedback reply = new ReplyFeedback();
-                reply.setReplyID(replyID);
-                reply.setReplyText(replyText);
-                dao.updateReply(reply);
+                if (isReplyValid(replyText)) {
+                    ReplyFeedback reply = new ReplyFeedback();
+                    reply.setReplyID(replyID);
+                    reply.setReplyText(replyText);
+                    reply.setRoleID(user.getRoleID());
+                    replyDAO.updateReply(reply);
+                }
 
             } else if ("delete".equals(action)) {
-                // ✅ Xóa phản hồi
                 int replyID = Integer.parseInt(request.getParameter("replyID"));
-                dao.deleteReply(replyID);
-
-            } else {
-                // ✅ Gửi phản hồi mới
                 int feedbackID = Integer.parseInt(request.getParameter("feedbackID"));
-                int userID = 1; // Giả lập: admin đang đăng nhập
-                ReplyFeedback reply = new ReplyFeedback();
-                reply.setFeedbackID(feedbackID);
-                reply.setUserID(userID);
-                reply.setReplyText(replyText);
-                dao.insertReply(reply);
-            }
+                replyDAO.deleteReply(replyID);
 
+               // Check còn reply chưa xoá không
+boolean hasActiveReplies = false;
+for (ReplyFeedback r : replyDAO.getRepliesByFeedbackID(feedbackID)) {
+    if (!r.getIsDeleted()) {
+        hasActiveReplies = true;
+        break;
+    }
+}
+if (!hasActiveReplies) {
+    feedbackDAO.updateStatus(feedbackID, "Processing");
+}
+
+
+            } else { // insert reply
+                int feedbackID = Integer.parseInt(request.getParameter("feedbackID"));
+                if (isReplyValid(replyText)) {
+                    ReplyFeedback reply = new ReplyFeedback();
+                    reply.setFeedbackID(feedbackID);
+                    reply.setUserID(user.getUserID());
+                    reply.setReplyText(replyText);
+                    replyDAO.insertReply(reply);
+
+                    feedbackDAO.updateStatus(feedbackID, "Resolved");
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         response.sendRedirect("Feedback");
+    }
+
+    private boolean isReplyValid(String text) {
+        return text != null && text.length() >= 1 && text.length() <= 1000 && !text.toLowerCase().contains("<script");
     }
 }
