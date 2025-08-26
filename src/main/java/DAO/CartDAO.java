@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -156,12 +157,21 @@ public class CartDAO {
         conn.close();
     }
 
-    public void clearCartByUser(int userID) throws Exception {
-        Connection conn = DBConnection.getConnection();
-        String sql = "DELETE Cart where userID = ?";
-        PreparedStatement ps = conn.prepareStatement(sql);
-        ps.setInt(1, userID);
-        ps.executeUpdate();
+    public void deleteCartItemsByIds(int userId, List<Integer> cartIds) throws Exception {
+        if (cartIds == null || cartIds.isEmpty()) {
+            return;
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(cartIds.size(), "?"));
+        String sql = "DELETE FROM Cart WHERE userID = ? AND cartID IN (" + placeholders + ")";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            int idx = 2;
+            for (Integer id : cartIds) {
+                ps.setInt(idx++, id);
+            }
+            ps.executeUpdate();
+        }
     }
 
     public Cart getCartItemById(int cartId) throws Exception {

@@ -249,12 +249,25 @@ public class ProductDAO {
         return list;
     }
 
-    public void updateStockAfterPurchase(int productId, int quantityPurchased) throws Exception {
-        Connection conn = DBConnection.getConnection();
-        String sql = "UPDATE Product SET stonk_Quantity = stonk_Quantity - ? WHERE productID = ?";
-        PreparedStatement ps = conn.prepareStatement(sql);
-        ps.setInt(1, quantityPurchased);
-        ps.setInt(2, productId);
-        ps.executeUpdate();
+//    public void updateStockAfterPurchase(int productId, int quantityPurchased) throws Exception {
+//        Connection conn = DBConnection.getConnection();
+//        String sql = "UPDATE Product SET stonk_Quantity = stonk_Quantity - ? WHERE productID = ?";
+//        PreparedStatement ps = conn.prepareStatement(sql);
+//        ps.setInt(1, quantityPurchased);
+//        ps.setInt(2, productId);
+//        ps.executeUpdate();
+//    }
+    public boolean updateStockAfterPurchase(int productId, int quantityPurchased) throws Exception {
+        String sql = "UPDATE Product "
+                + "SET stonk_Quantity = stonk_Quantity - ? "
+                + "WHERE productID = ? AND stonk_Quantity >= ?";
+
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, quantityPurchased);
+            ps.setInt(2, productId);
+            ps.setInt(3, quantityPurchased);
+            int affected = ps.executeUpdate();
+            return affected > 0; // đủ tồn -> trừ thành công; thiếu -> false
+        }
     }
 }

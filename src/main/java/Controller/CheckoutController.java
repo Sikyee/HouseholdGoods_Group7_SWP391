@@ -150,23 +150,18 @@ public class CheckoutController extends HttpServlet {
             request.setCharacterEncoding("UTF-8");
             String action = request.getParameter("action"); // có thể là "fromCart" khi bấm CHECKOUT ở giỏ
 
+            // ====== GIAI ĐOẠN: từ cart sang trang checkout (review) ======
             if ("fromCart".equals(action)) {
-                if (user == null) {
-                    response.sendRedirect("login.jsp");
-                    return;
-                }
-
-                String[] cartIds = request.getParameterValues("cartId"); // từ checkbox
+                String[] cartIds = request.getParameterValues("cartId");
                 if (cartIds == null || cartIds.length == 0) {
-                    // không chọn gì thì coi như chọn hết (hoặc báo lỗi tuỳ bạn)
+                    // (tuỳ bạn) không chọn gì -> quay lại cart
                     response.sendRedirect(request.getContextPath() + "/Cart");
                     return;
                 }
 
                 List<String> errors = new ArrayList<>();
-                List<Cart> checkoutItems = new ArrayList<>();
+                List<Cart> selectedCarts = new ArrayList<>();
 
-                CartDAO cartDAO = new CartDAO();
                 for (String idStr : cartIds) {
                     int cartID = Integer.parseInt(idStr);
                     Cart c = cartDAO.getCartItemById(cartID);
@@ -174,89 +169,71 @@ public class CheckoutController extends HttpServlet {
                         continue;
                     }
 
+                    // Hydrate product nếu thiếu
                     Product p = c.getProduct();
+                    if (p == null) {
+                        p = productDAO.getProductById(c.getProductID());
+                        c.setProduct(p);
+                    }
+
                     int qty = c.getQuantity();
                     int stock = (p != null ? p.getStonkQuantity() : 0);
-
                     if (qty > stock) {
                         errors.add("Sản phẩm \"" + (p != null ? p.getProductName() : ("#" + cartID))
                                 + "\" chỉ còn " + stock + " sản phẩm, bạn đã chọn " + qty + ".");
                     }
-                    checkoutItems.add(c);
+
+                    selectedCarts.add(c);
                 }
 
                 if (!errors.isEmpty()) {
-                    // Nạp lại giỏ hàng và forward về cart.jsp để hiển thị lỗi
+                    // Quay lại cart.jsp với lỗi
                     List<Cart> cartList = cartDAO.getProductInCart(user.getUserID());
+                    // hydrate luôn để cart.jsp hiển thị đủ thông tin
+                    for (Cart c : cartList) {
+                        if (c.getProduct() == null) {
+                            c.setProduct(productDAO.getProductById(c.getProductID()));
+                        }
+                    }
                     request.setAttribute("cart", cartList);
                     request.setAttribute("errors", errors);
                     request.getRequestDispatcher("cart.jsp").forward(request, response);
                     return;
                 }
 
-                // Hợp lệ -> tiếp tục qua trang checkout
-                request.setAttribute("checkoutItems", checkoutItems);
-                request.getRequestDispatcher("checkout.jsp").forward(request, response);
-                return;
-            }
-            // ======== GIAI ĐOẠN 1: từ giỏ hàng sang trang checkout (review) ========
-            if ("fromCart".equals(action)) {
-
-                // lấy các cartId đã tick (nếu không tick gì -> checkout all)
-                String[] cartIdParams = request.getParameterValues("cartId");
-                List<Integer> selectedIds = new ArrayList<>();
-                if (cartIdParams != null) {
-                    for (String s : cartIdParams) {
-                        if (s != null && !s.isBlank()) {
-                            try {
-                                selectedIds.add(Integer.parseInt(s.trim()));
-                            } catch (NumberFormatException ignore) {
-                            }
-                        }
-                    }
-                }
-                List<Cart> cartList;
-                if (selectedIds.isEmpty()) {
-                    cartList = cartDAO.getProductInCart(user.getUserID());         // checkout all
-                } else {
-                    // nếu chưa có DAO get by ids, lọc tạm từ toàn bộ:
-                    cartList = new ArrayList<>();
-                    for (Cart c : cartDAO.getProductInCart(user.getUserID())) {
-                        if (selectedIds.contains(c.getCartID())) {
-                            cartList.add(c);
-                        }
-                    }
-                }
-
-                // tính subtotal server-side
+                // Tính subtotal server-side
                 long subtotal = 0L;
-                for (Cart c : cartList) {
-                    Product p = c.getProduct() != null ? c.getProduct() : productDAO.getProductById(c.getProductID());
+                for (Cart c : selectedCarts) {
+                    Product p = c.getProduct();
                     if (p != null) {
-                        subtotal += p.getPrice() * c.getQuantity();
+                        subtotal += (long) p.getPrice() * c.getQuantity();
                     }
                 }
 
-                // chuẩn bị dữ liệu cho checkout.jsp
+                // Chuẩn bị dữ liệu giống doGet()
                 Address addr = addressDAO.getDefaultAddress(user.getUserID());
-                List<Voucher> allV = voucherDAO.getAllVouchers();
                 List<Voucher> usable = new ArrayList<>();
-                for (Voucher v : allV) {
+                for (Voucher v : voucherDAO.getAllVouchers()) {
                     if (v.isIsActive() && v.getUsedCount() < v.getMaxUsage()) {
                         usable.add(v);
                     }
                 }
 
-                // lưu lại selection vào session để dùng ở bước đặt hàng
+                // (tuỳ chọn) lưu selection vào session nếu bạn dùng qua bước đặt hàng
+                List<Integer> selectedIds = new ArrayList<>();
+                for (String s : cartIds) {
+                    selectedIds.add(Integer.parseInt(s));
+                }
                 session.setAttribute("checkout_cart_ids", selectedIds);
 
-                request.setAttribute("cart", cartList);
+                // QUAN TRỌNG: luôn dùng cùng 1 tên attribute "cart"
+                request.setAttribute("cart", selectedCarts);
+                request.setAttribute("subtotal", subtotal);
                 request.setAttribute("address", addr);
                 request.setAttribute("vouchers", usable);
                 request.setAttribute("user", user);
-                request.setAttribute("subtotal", subtotal);
                 request.getRequestDispatcher("checkout.jsp").forward(request, response);
-                return; // QUAN TRỌNG
+                return;
             }
 
             // ======== GIAI ĐOẠN 2: đặt hàng (submit từ checkout.jsp) ========
@@ -382,8 +359,6 @@ public class CheckoutController extends HttpServlet {
                 d.setQuantity(c.getQuantity());
                 d.setTotalPrice(p.getPrice() * c.getQuantity());
                 orderDetails.add(d);
-
-                productDAO.updateStockAfterPurchase(c.getProductID(), c.getQuantity());
             }
             new OrderDetailDAO().insertOrderDetails(orderDetails);
 
@@ -456,12 +431,40 @@ public class CheckoutController extends HttpServlet {
                 query.append("&vnp_SecureHash=").append(vnp_SecureHash);
                 String paymentUrl = Config.vnp_PayUrl + "?" + query.toString();
 
+                @SuppressWarnings("unchecked")
+                Map<Integer, List<Integer>> mapSel = (Map<Integer, List<Integer>>) session.getAttribute("selected_cart_by_order");
+                if (mapSel == null) {
+                    mapSel = new HashMap<>();
+                }
+
+// selectedIds: lấy từ session "checkout_cart_ids" (đã set ở bước review)
+                List<Integer> selectedIds = (List<Integer>) session.getAttribute("checkout_cart_ids");
+                if (selectedIds != null && !selectedIds.isEmpty()) {
+                    mapSel.put(orderID, new ArrayList<>(selectedIds));
+                    session.setAttribute("selected_cart_by_order", mapSel);
+                }
+
                 // Điều hướng sang VNPay
                 response.sendRedirect(paymentUrl);
                 return;
             } else {
+                // COD: Trừ kho ở đây (nên làm trong transaction, nhưng ít nhất tách khỏi VNPay)
+                for (OrderDetail d : orderDetails) {
+                    boolean ok = productDAO.updateStockAfterPurchase(d.getProductID(), d.getQuantity());
+                    if (!ok) {
+                        request.setAttribute("error", "Sản phẩm không đủ số lượng.");
+                        request.getRequestDispatcher("checkout.jsp").forward(request, response);
+                        return;
+                    }
+                }
                 if (!isBuyNow) {
-                    cartDAO.clearCartByUser(user.getUserID());
+                    List<Integer> selectedIds = (List<Integer>) session.getAttribute("checkout_cart_ids");
+                    if (selectedIds != null && !selectedIds.isEmpty()) {
+                        cartDAO.deleteCartItemsByIds(user.getUserID(), selectedIds);
+                    } else {
+                        // fallback cũ: cartDAO.clearCartByUser(user.getUserID()); // KHÔNG khuyến khích
+                    }
+                    session.removeAttribute("checkout_cart_ids");
                 }
 
                 session.setAttribute("successMessage", "Đơn hàng đã được đặt thành công!");

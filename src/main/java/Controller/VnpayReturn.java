@@ -6,10 +6,12 @@ package Controller;
 
 import DAO.CartDAO;
 import DAO.OrderDAO;
+import DAO.OrderDetailDAO;
 import DAO.ProductDAO;
 import DAO.UserDAO;
 import Model.Cart;
 import Model.Order;
+import Model.OrderDetail;
 import Model.OrderInfo;
 import Model.User;
 import java.io.IOException;
@@ -22,6 +24,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +43,7 @@ public class VnpayReturn extends HttpServlet {
     CartDAO cartDAO = new CartDAO();
     UserDAO userDAO = new UserDAO();
     ProductDAO productDAO = new ProductDAO();
+    OrderDetailDAO orderDetailDAO = new OrderDetailDAO();
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -83,18 +87,57 @@ public class VnpayReturn extends HttpServlet {
 
                 boolean transSuccess = false;
                 if ("00".equals(request.getParameter("vnp_TransactionStatus"))) {
-                    //update banking system
+                    // Chuyển orderId sang int để dùng thống nhất
+                    int orderIdInt = Integer.parseInt(orderId);
+
+                    // 1) Cập nhật trạng thái đã thanh toán
                     order.setOrderStatusID(7);
                     transSuccess = true;
                     orderDao.updateOrderStatus(order);
 
-                    List<Cart> cartList = cartDAO.getProductInCart(user.getUserID());
-                    for (Cart c : cartList) {
-                        productDAO.updateStockAfterPurchase(c.getProductID(), c.getQuantity());
+                    // 2) TRỪ KHO THEO ORDER DETAIL (KHÔNG theo giỏ)
+                    List<OrderDetail> ods = orderDetailDAO.getOrderDetailsByOrderID(orderIdInt);
+                    boolean ok = true;
+                    for (OrderDetail d : ods) {
+                        // YÊU CẦU: ProductDAO.updateStockAfterPurchase trả về boolean, dùng WHERE stonk_Quantity >= ?
+                        boolean deducted = productDAO.updateStockAfterPurchase(d.getProductID(), d.getQuantity());
+                        if (!deducted) {
+                            ok = false;
+                            break;
+                        }
+                    }
+                    if (!ok) {
+                        // Hết hàng bất ngờ -> revert trạng thái, báo thất bại
+                        order.setOrderStatusID(6);
+                        orderDao.updateOrderStatus(order);
+                        request.setAttribute("transResult", false);
+                        request.getRequestDispatcher("paymentResult.jsp").forward(request, response);
+                        return;
                     }
 
-                    // Xóa giỏ hàng sau khi mua
-                    cartDAO.clearCartByUser(user.getUserID());
+                    // 3) CLEAR CÁC CART ITEM ĐÃ CHỌN CHO ĐƠN NÀY
+                    @SuppressWarnings("unchecked")
+                    Map<Integer, List<Integer>> mapSel = (Map<Integer, List<Integer>>) session.getAttribute("selected_cart_by_order");
+                    List<Integer> selectedIds = (mapSel != null ? mapSel.get(orderIdInt) : null);
+
+                    if (selectedIds != null && !selectedIds.isEmpty()) {
+                        // Xoá theo cartID đã chọn
+                        cartDAO.deleteCartItemsByIds(user.getUserID(), selectedIds);
+                        // Dọn map để tránh clear nhầm lần sau
+                        mapSel.remove(orderIdInt);
+                        session.setAttribute("selected_cart_by_order", mapSel);
+                    } else {
+                        // Fallback: xoá theo productID trong OrderDetail (khi session mất)
+                        List<Integer> productIds = new ArrayList<Integer>();
+                        for (OrderDetail od : ods) {
+                            int pid = od.getProductID();
+                            if (!productIds.contains(pid)) {
+                                productIds.add(pid);
+                            }
+                        }
+                        // PHẢI dùng hàm xoá theo productID
+                        cartDAO.deleteCartItemsByIds(user.getUserID(), productIds);
+                    }
                 } else {
                     order.setOrderStatusID(6);
                     orderDao.updateOrderStatus(order);
