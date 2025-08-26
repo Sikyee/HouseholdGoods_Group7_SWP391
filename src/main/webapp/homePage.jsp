@@ -1,13 +1,33 @@
 <%@page import="Model.Product"%>
+<%@page import="DAO.PromotionDAO"%>
+<%@page import="Model.Promotion"%>
 <%@page import="java.util.List"%>
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@page import="java.util.Map"%>
+<%@page import="java.util.HashMap"%>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
+    // Lấy danh sách sản phẩm
     List<Product> products = (List<Product>) request.getAttribute("productList");
     if (products == null) {
         products = (List<Product>) request.getAttribute("products");
     }
     String search = request.getParameter("search");
     String context = request.getContextPath();
+
+    // ===== Load promotions đang active và nhóm theo brandID =====
+    Map<Integer, List<Promotion>> promosByBrand = new HashMap<>();
+    try {
+        PromotionDAO promoDao = new PromotionDAO();
+        List<Promotion> promos = promoDao.getAllPromotions(); // WHERE isActive=1
+        for (Promotion pr : promos) {
+            Integer bid = pr.getBrandID(); // Promotion.brandID (đã map từ NVARCHAR)
+            if (bid != null) {
+                promosByBrand.computeIfAbsent(bid, k -> new java.util.ArrayList<>()).add(pr);
+            }
+        }
+    } catch (Exception e) {
+        request.setAttribute("promoError", e.getMessage());
+    }
 %>
 <!DOCTYPE html>
 <html>
@@ -32,12 +52,8 @@
                 font-weight: bold;
                 font-size: 18px;
             }
-            .hero-title {
-                font-size: 3rem;
-            }
-            .hero-subtitle {
-                font-size: 1.25rem;
-            }
+            .hero-title { font-size: 3rem; }
+            .hero-subtitle { font-size: 1.25rem; }
             .section-title {
                 text-align: center;
                 margin-top: 3rem;
@@ -60,6 +76,19 @@
                 font-weight: bold;
                 color: #007bff;
             }
+            .price-old {
+                text-decoration: line-through;
+                color: #6c757d;
+                margin: 0;
+            }
+            .price-new {
+                font-size: 1.25rem;
+                font-weight: bold;
+                color: #dc3545;
+            }
+            .promo-badge {
+                font-size: 0.85rem;
+            }
             .btn-layout {
                 display: flex;
                 gap: 10px;
@@ -73,20 +102,10 @@
                 border: none;
                 border-radius: 8px;
             }
-            .btn-add {
-                background-color: #198754;
-                color: white;
-            }
-            .btn-add:hover {
-                background-color: #157347;
-            }
-            .btn-buy {
-                background-color: #dc3545;
-                color: white;
-            }
-            .btn-buy:hover {
-                background-color: #bb2d3b;
-            }
+            .btn-add { background-color: #198754; color: white; }
+            .btn-add:hover { background-color: #157347; }
+            .btn-buy { background-color: #dc3545; color: white; }
+            .btn-buy:hover { background-color: #bb2d3b; }
         </style>
     </head>
     <body>
@@ -166,17 +185,72 @@
         <!-- Products Section -->
         <div class="container" id="products">
             <h2 class="section-title">Featured Products</h2>
+
+            <%
+                String promoError = (String) request.getAttribute("promoError");
+                if (promoError != null) {
+            %>
+            <div class="alert alert-warning text-center w-75 mx-auto">
+                Promotion data failed to load: <%= promoError %>
+            </div>
+            <% } %>
+
             <div class="row">
                 <% if (products != null && !products.isEmpty()) {
-                        for (Product p : products) {%>
+                       for (Product p : products) {
+
+                           long price = p.getPrice();
+                           long bestPrice = price;
+                           Promotion bestPromo = null;
+
+                           // Lưu ý: thay getBrandID() bằng tên getter đúng của bạn nếu khác
+                           Integer productBrandId = null;
+                           try { productBrandId = (Integer) Product.class.getMethod("getBrandID").invoke(p); }
+                           catch (Exception ignore) {
+                               try { productBrandId = (Integer) Product.class.getMethod("getBrandId").invoke(p); } catch (Exception e) { /* no-op */ }
+                           }
+
+                           List<Promotion> brandPromos = (productBrandId == null) ? null : promosByBrand.get(productBrandId);
+                           if (brandPromos != null) {
+                               for (Promotion pr : brandPromos) {
+                                   long discounted = price;
+                                   if ("percentage".equalsIgnoreCase(pr.getDiscountType())) {
+                                       discounted = Math.round(price * (100.0 - pr.getDiscountValue()) / 100.0);
+                                   } else if ("fixed".equalsIgnoreCase(pr.getDiscountType())) {
+                                       discounted = Math.max(0L, price - pr.getDiscountValue());
+                                   }
+                                   if (discounted < bestPrice) {
+                                       bestPrice = discounted;
+                                       bestPromo = pr;
+                                   }
+                               }
+                           }
+                %>
                 <div class="col-lg-3 col-md-6 p-2">
                     <div class="card product-card h-100">
                         <img src="/HouseholdGoods_Group7_SWP391/images/<%= p.getImage()%>" class="card-img-top" alt="<%= p.getProductName()%>">
                         <div class="card-body">
                             <a class="card-title" href="<%= context%>/Product?action=productDetail&id=<%= p.getProductID()%>"><%= p.getProductName()%></a>
                             <p class="card-text"><%= p.getDescription()%></p>
-                            <p class="price"><%= String.format("%,d", p.getPrice())%>₫</p>
+
+                            <% if (bestPromo != null && bestPrice < price) {
+                                   String promoLabel;
+                                   if ("percentage".equalsIgnoreCase(bestPromo.getDiscountType())) {
+                                       promoLabel = "-" + bestPromo.getDiscountValue() + "%";
+                                   } else {
+                                       promoLabel = "-" + String.format("%,d", bestPromo.getDiscountValue()) + "₫";
+                                   }
+                            %>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="price-old"><%= String.format("%,d", price) %>₫</span>
+                                    <span class="price-new"><%= String.format("%,d", bestPrice) %>₫</span>
+                                    <span class="badge bg-danger promo-badge"><%= promoLabel %></span>
+                                </div>
+                            <% } else { %>
+                                <p class="price"><%= String.format("%,d", price)%>₫</p>
+                            <% } %>
                         </div>
+
                         <div class="btn-layout">
                             <form action="<%= context%>/Cart" method="get" class="d-inline">
                                 <input type="hidden" name="action" value="add">
@@ -194,22 +268,21 @@
                     </div>
                 </div>
                 <% }
-                } else { %>
+                   } else { %>
                 <div class="text-center mt-5">
                     <p class="text-danger fs-5">No products found.</p>
                 </div>
                 <% }%>
             </div>
         </div>
+
+        <!-- Pagination -->
         <div class="d-flex justify-content-center mt-4">
             <nav>
                 <ul class="pagination">
                     <%
-                        Integer currentPageAttr = (Integer) request.getAttribute("currentPage");
-                        Integer totalPagesAttr = (Integer) request.getAttribute("totalPages");
-
-                        int currentPage = (currentPageAttr != null) ? currentPageAttr : 1;
-                        int totalPages = (totalPagesAttr != null) ? totalPagesAttr : 1;
+                        int currentPage = (int) request.getAttribute("currentPage");
+                        int totalPages = (int) request.getAttribute("totalPages");
 
                         // Nút Previous
                         if (currentPage > 1) {%>
@@ -254,7 +327,7 @@
             window.alert("<%= successMessage%>");
         </script>
         <%
-                session.removeAttribute("successMessage"); // Xóa để không lặp lại
+                session.removeAttribute("successMessage");
             }
         %>
 
