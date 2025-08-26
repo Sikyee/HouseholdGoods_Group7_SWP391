@@ -96,6 +96,46 @@ public class VoucherDAO {
         }
     }
 
+    /* ====== NEW: pagination helpers for SQL Server ====== */
+
+    public int countActiveVouchers() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Voucher WHERE isActive = 1";
+        try (Statement st = connection.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            if (rs.next()) return rs.getInt(1);
+        }
+        return 0;
+    }
+
+    public List<Voucher> getActiveVouchersPage(int page, int pageSize) throws SQLException {
+        // Safety bounds
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+
+        int offset = (page - 1) * pageSize;
+
+        // SQL Server 2012+: OFFSET-FETCH requires ORDER BY
+        String sql =
+            "SELECT * FROM Voucher " +
+            "WHERE isActive = 1 " +
+            "ORDER BY voucherID DESC " +
+            "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        List<Voucher> items = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, offset);
+            ps.setInt(2, pageSize);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    items.add(extractVoucher(rs));
+                }
+            }
+        }
+        return items;
+    }
+
+    /* ====== internal helpers ====== */
+
     private Voucher extractVoucher(ResultSet rs) throws SQLException {
         Voucher p = new Voucher();
         p.setVoucherID(rs.getInt("voucherID"));
