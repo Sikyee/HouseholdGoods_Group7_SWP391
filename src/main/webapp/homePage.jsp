@@ -1,6 +1,6 @@
 <%@page import="Model.Product"%>
 <%@page import="java.util.List"%>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%
     List<Product> products = (List<Product>) request.getAttribute("productList");
     if (products == null) {
@@ -205,8 +205,11 @@
             <nav>
                 <ul class="pagination">
                     <%
-                        int currentPage = (int) request.getAttribute("currentPage");
-                        int totalPages = (int) request.getAttribute("totalPages");
+                        Integer currentPageAttr = (Integer) request.getAttribute("currentPage");
+                        Integer totalPagesAttr = (Integer) request.getAttribute("totalPages");
+
+                        int currentPage = (currentPageAttr != null) ? currentPageAttr : 1;
+                        int totalPages = (totalPagesAttr != null) ? totalPagesAttr : 1;
 
                         // Nút Previous
                         if (currentPage > 1) {%>

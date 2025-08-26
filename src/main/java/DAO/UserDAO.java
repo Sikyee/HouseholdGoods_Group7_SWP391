@@ -8,8 +8,11 @@ import java.util.List;
 
 public class UserDAO {
 
+    // Tên table phù hợp với database SWP391_DB_Group7.dbo.Users
+    private static final String TABLE_NAME = "Users"; // Viết hoa U để phù hợp với SQL Server
+
     public User getUserByUsername(String userName) {
-        String sql = "SELECT * FROM users WHERE userName = ?";
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE userName = ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, userName);
@@ -36,7 +39,7 @@ public class UserDAO {
     }
 
     public boolean updateUser(User user) {
-        String sql = "UPDATE users SET fullName = ?, email = ?, phone = ?, dob = ?, gender = ? WHERE userID = ?";
+        String sql = "UPDATE " + TABLE_NAME + " SET fullName = ?, email = ?, phone = ?, dob = ?, gender = ? WHERE userID = ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, user.getFullName());
@@ -61,7 +64,7 @@ public class UserDAO {
     }
 
     public User getUserByEmail(String email) {
-        String sql = "SELECT * FROM users WHERE email = ?";
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE email = ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, email);
@@ -89,7 +92,7 @@ public class UserDAO {
 
     public List<User> getUsersByRole(int roleID) {
         List<User> list = new ArrayList<>();
-        String sql = "SELECT * FROM users WHERE roleID = ?";
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE roleID = ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, roleID);
@@ -105,7 +108,7 @@ public class UserDAO {
     }
 
     public boolean setUserStatus(int userID, boolean status) {
-        String sql = "UPDATE users SET status = ? WHERE userID = ?";
+        String sql = "UPDATE " + TABLE_NAME + " SET status = ? WHERE userID = ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, status ? 1 : 0);
@@ -120,7 +123,7 @@ public class UserDAO {
 
     public List<User> getAllUsers() {
         List<User> list = new ArrayList<>();
-        String sql = "SELECT * FROM users";
+        String sql = "SELECT * FROM " + TABLE_NAME;
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql);  ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -145,7 +148,7 @@ public class UserDAO {
     }
 
     public User login(String username, String password) throws Exception {
-        String sql = "SELECT * FROM users WHERE userName = ? AND password = ?";
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE userName = ? AND password = ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, username);
@@ -174,7 +177,7 @@ public class UserDAO {
     }
 
     public User getUserByID(int id) {
-        String sql = "SELECT * FROM users WHERE userID = ?";
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE userID = ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, id);
@@ -201,7 +204,7 @@ public class UserDAO {
     }
 
     public boolean deleteUser(int id) {
-        String sql = "DELETE FROM users WHERE userID = ?";
+        String sql = "DELETE FROM " + TABLE_NAME + " WHERE userID = ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, id);
@@ -215,7 +218,7 @@ public class UserDAO {
 
     public List<User> searchUsers(String keyword) {
         List<User> list = new ArrayList<>();
-        String sql = "SELECT * FROM users WHERE fullName LIKE ? OR email LIKE ?";
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE fullName LIKE ? OR email LIKE ?";
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             String pattern = "%" + keyword + "%";
@@ -233,69 +236,132 @@ public class UserDAO {
         return list;
     }
 
-    public boolean changePassword(int userID, String newPassword) {
-        String sql = "UPDATE users SET password = ? WHERE userID = ?";
-        Connection conn = null;
-        PreparedStatement ps = null;
+    /**
+     * Method bổ sung: kiểm tra xem email có tồn tại không (để validation)
+     */
+    public boolean isEmailExists(String email, int excludeUserID) {
+        String sql = "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE email = ? AND userID != ?";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        try {
-            conn = DBConnection.getConnection();
+            ps.setString(1, email);
+            ps.setInt(2, excludeUserID);
 
-            // Disable auto-commit to handle transaction manually
-            conn.setAutoCommit(false);
-
-            ps = conn.prepareStatement(sql);
-            ps.setString(1, newPassword);
-            ps.setInt(2, userID);
-
-            // Add debug logging
-            System.out.println("Executing password update query for userID: " + userID);
-            System.out.println("SQL: " + sql);
-
-            int rowsAffected = ps.executeUpdate();
-
-            System.out.println("Rows affected: " + rowsAffected);
-
-            if (rowsAffected > 0) {
-                conn.commit(); // Commit the transaction
-                System.out.println("Password update committed successfully");
-                return true;
-            } else {
-                conn.rollback(); // Rollback if no rows were affected
-                System.out.println("No rows affected, rolling back");
-                return false;
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
             }
-
         } catch (Exception e) {
-            System.err.println("Error in changePassword: " + e.getMessage());
+            System.err.println("Error in isEmailExists: " + e.getMessage());
             e.printStackTrace();
-
-            // Rollback transaction on error
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                    System.out.println("Transaction rolled back due to error");
-                } catch (SQLException rollbackEx) {
-                    System.err.println("Error during rollback: " + rollbackEx.getMessage());
-                }
-            }
-            return false;
-        } finally {
-            // Close resources
-            try {
-                if (ps != null) {
-                    ps.close();
-                }
-                if (conn != null) {
-                    conn.setAutoCommit(true); // Reset auto-commit
-                    conn.close();
-                }
-            } catch (SQLException e) {
-                System.err.println("Error closing resources: " + e.getMessage());
-            }
         }
+        return false;
     }
 
+    /**
+     * Method bổ sung: kiểm tra xem username có tồn tại không (để validation)
+     */
+    public boolean isUsernameExists(String userName, int excludeUserID) {
+        String sql = "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE userName = ? AND userID != ?";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, userName);
+            ps.setInt(2, excludeUserID);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (Exception e) {
+            System.err.println("Error in isUsernameExists: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Method bổ sung: lấy danh sách user theo status
+     */
+    public List<User> getUsersByStatus(int status) {
+        List<User> list = new ArrayList<>();
+        String sql = "SELECT * FROM " + TABLE_NAME + " WHERE status = ? ORDER BY fullName";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, status);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
+            }
+        } catch (Exception e) {
+            System.err.println("Error in getUsersByStatus: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Method bổ sung: đếm số lượng user theo role
+     */
+    public int countUsersByRole(int roleID) {
+        String sql = "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE roleID = ?";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, roleID);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            System.err.println("Error in countUsersByRole: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Method bổ sung: lấy user với phân trang
+     */
+    public List<User> getUsersWithPagination(int offset, int limit) {
+        List<User> list = new ArrayList<>();
+        String sql = "SELECT * FROM " + TABLE_NAME + " ORDER BY userID OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, offset);
+            ps.setInt(2, limit);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
+            }
+        } catch (Exception e) {
+            System.err.println("Error in getUsersWithPagination: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Method bổ sung: đếm tổng số user
+     */
+    public int getTotalUsersCount() {
+        String sql = "SELECT COUNT(*) FROM " + TABLE_NAME;
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            System.err.println("Error in getTotalUsersCount: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Helper method để mapping từ ResultSet sang User object
+     */
     private User mapResultSet(ResultSet rs) throws SQLException {
         User user = new User();
         user.setUserID(rs.getInt("userID"));
@@ -311,9 +377,12 @@ public class UserDAO {
         return user;
     }
 
+    /**
+     * Method insert user - giữ nguyên code cũ
+     */
     public void insert(User user) throws Exception {
         Connection conn = DBConnection.getConnection();
-        String sql = "INSERT INTO users (fullName, email, password, userName, roleID, phone, status, dob, gender) "
+        String sql = "INSERT INTO " + TABLE_NAME + " (fullName, email, password, userName, roleID, phone, status, dob, gender) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement ps = conn.prepareStatement(sql);
         ps.setString(1, user.getFullName());
@@ -331,5 +400,4 @@ public class UserDAO {
         ps.setString(9, user.getGender());
         ps.executeUpdate();
     }
-
 }
