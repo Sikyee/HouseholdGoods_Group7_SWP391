@@ -18,12 +18,21 @@ public class OrderStatusDAO {
         }
     }
 
-    public List<OrderStatus> getAllOrderStatuses() {
+    public List<OrderStatus> getAllOrderStatuses() throws Exception {
         List<OrderStatus> list = new ArrayList<>();
-        String sql = "SELECT orderStatusID, statusName FROM OrderStatus";
+        String sql = "SELECT orderStatusID, statusName "
+                + "FROM OrderStatus "
+                + "ORDER BY CASE statusName "
+                + "   WHEN 'Pending' THEN 1 "
+                + "   WHEN 'Paid' THEN 2 "
+                + "   WHEN 'Processing' THEN 3 "
+                + "   WHEN 'Shipping' THEN 4 "
+                + "   WHEN 'Delivered' THEN 5 "
+                + "   WHEN 'Completed' THEN 6 "
+                + "   WHEN 'Canceled' THEN 7 "
+                + "   ELSE 999 END";
 
-        try (PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql);  ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 OrderStatus status = new OrderStatus();

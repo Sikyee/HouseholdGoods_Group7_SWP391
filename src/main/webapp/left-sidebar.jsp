@@ -58,13 +58,13 @@
             </a>
         </li>
         <li class="nav-item mb-1">
-            <a href="order" class="nav-link text-dark">
-                <i class="fas fa-comments me-2"></i> Order
+            <a href="Order" class="nav-link text-dark">
+                <i class="fas fa-receipt me-2"></i> Order
             </a>
         </li>
         <li class="nav-item mb-1">
             <a href="Promotion" class="nav-link text-dark">
-                <i class="fas fa-tags me-2"></i> Promotion
+                <i class="fas fa-bullhorn me-2"></i> Promotion
             </a>
         </li>
         <li class="nav-item mb-1">
