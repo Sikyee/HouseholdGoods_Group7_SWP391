@@ -84,7 +84,7 @@ public class VnpayReturn extends HttpServlet {
                 boolean transSuccess = false;
                 if ("00".equals(request.getParameter("vnp_TransactionStatus"))) {
                     //update banking system
-                    order.setOrderStatusID(5);
+                    order.setOrderStatusID(7);
                     transSuccess = true;
                     orderDao.updateOrderStatus(order);
 
@@ -97,6 +97,7 @@ public class VnpayReturn extends HttpServlet {
                     cartDAO.clearCartByUser(user.getUserID());
                 } else {
                     order.setOrderStatusID(6);
+                    orderDao.updateOrderStatus(order);
                 }
 
                 request.setAttribute("transResult", transSuccess);

@@ -1,3 +1,4 @@
+<%@page import="java.time.LocalDate"%>
 <%@page import="Model.Voucher"%>
 <%@page import="Model.User"%>
 <%@page import="Model.Address"%>
@@ -123,7 +124,7 @@
                 background-color: #fff;
                 transition: border-color 0.3s, box-shadow 0.3s;
             }
-            
+
             #promoSelect option{
                 width: 10px;
             }
@@ -180,16 +181,28 @@
                             <%
                                     } // end for
                                 } // end if
-%>
+                            %>
 
                             <li class="list-group-item">
                                 <label for="promoSelect" class="font-weight-bold mb-2 d-block">🎁 Apply Voucher</label>
                                 <select id="promoSelect" name="promotionID" class="form-control">
                                     <option disabled <%= (selectedPromotionID == null) ? "selected" : ""%>>-- Select a voucher --</option>
-                                    <% if (vouchers != null) {
+                                    <%
+                                        // today as LocalDate
+                                        LocalDate today = LocalDate.now();
+
+                                        if (vouchers != null) {
                                             for (Voucher voucher : vouchers) {
-                                                boolean isValid = totalAll >= voucher.getMinOrderValue();
-                                                boolean isSelected = selectedPromotionID != null && selectedPromotionID == voucher.getVoucherID();
+                                                java.sql.Date endSqlDate = voucher.getEndDate(); // có thể null
+                                                LocalDate end = (endSqlDate != null) ? endSqlDate.toLocalDate() : null;
+
+                                                boolean validTotal = (totalAll >= voucher.getMinOrderValue());
+                                                boolean validDate = (end != null) && !today.isAfter(end); // today <= end
+
+                                                boolean isValid = validTotal && validDate;
+
+                                                boolean isSelected = (selectedPromotionID != null)
+                                                        && (selectedPromotionID == voucher.getVoucherID());
                                     %>
                                     <option value="<%= voucher.getVoucherID()%>"
                                             data-discount="<%= voucher.getDiscountValue()%>"
@@ -287,9 +300,6 @@
                             </label>
                             <label>
                                 <input type="radio" name="paymentMethod" value="2"> Banking Transfer
-                            </label>
-                            <label>
-                                <input type="radio" name="paymentMethod" value="3"> Credit Card
                             </label>
                         </div>
 

@@ -12,7 +12,9 @@ import jakarta.servlet.http.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Paths;
+import java.text.NumberFormat;
 import java.util.*;
 
 /**
@@ -104,8 +106,10 @@ public class CartController extends HttpServlet {
             throws ServletException, IOException {
         try {
             String action = request.getParameter("action");
-            int cartID = Integer.parseInt(request.getParameter("cartID"));
+            String ajax = request.getParameter("ajax");
+            boolean isAjax = "1".equals(ajax);
 
+            int cartID = Integer.parseInt(request.getParameter("cartID"));
             Cart cart = new Cart();
             cart.setCartID(cartID);
 
@@ -116,35 +120,38 @@ public class CartController extends HttpServlet {
             }
 
             HttpSession session = request.getSession(false);
-            Model.User user = (Model.User) session.getAttribute("user");
+            Model.User user = (Model.User) (session != null ? session.getAttribute("user") : null);
 
+            Cart updated = dao.getCartItemById(cartID);
+            if ("1".equals(request.getParameter("ajax"))) {
+                response.setContentType("application/json;charset=UTF-8");
+                PrintWriter out = response.getWriter();
+
+                if (updated == null) {
+                    out.write("{\"ok\":true,\"deleted\":true}");
+                    return;
+                }
+
+                Product p = updated.getProduct();
+                long unit = (p != null ? p.getPrice() : 0L);
+                int quantity = updated.getQuantity();
+                long itemTotal = unit * quantity;
+
+                NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
+                String itemTotalFmt = nf.format(itemTotal) + "₫";
+
+                out.write("{\"ok\":true,"
+                        + "\"quantity\":" + quantity + ","
+                        + "\"itemTotal\":" + itemTotal + ","
+                        + "\"itemTotalFmt\":\"" + itemTotalFmt.replace("\"", "\\\"") + "\"}");
+                return;
+            }
+
+            // Non-AJAX: render lại trang như cũ
             if (user != null) {
                 List<Cart> cartList = dao.getProductInCart(user.getUserID());
                 request.setAttribute("cart", cartList);
                 session.setAttribute("cartQuantity", cartList.size());
-
-                String promoIDStr = request.getParameter("promotionID");
-                if (promoIDStr != null) {
-                    try {
-                        int promoID = Integer.parseInt(promoIDStr);
-                        Voucher selected = voucherDAO.getVoucherById(promoID);
-                        if (selected != null && selected.isIsActive()) {
-                            request.setAttribute("selectedPromotion", selected);
-                            request.setAttribute("selectedPromotionID", promoID); // để đánh dấu lại <option selected>
-                        }
-                    } catch (NumberFormatException ex) {
-                        // optional: log lỗi
-                    }
-                }
-
-                List<Voucher> allPromotions = voucherDAO.getAllVouchers();
-                List<Voucher> availablePromotions = new ArrayList<>();
-                for (Voucher voucher : allPromotions) {
-                    if (voucher.isIsActive() && voucher.getUsedCount() < voucher.getMaxUsage()) {
-                        availablePromotions.add(voucher);
-                    }
-                }
-                request.setAttribute("promotions", availablePromotions);
             }
 
             request.getRequestDispatcher("cart.jsp").forward(request, response);
