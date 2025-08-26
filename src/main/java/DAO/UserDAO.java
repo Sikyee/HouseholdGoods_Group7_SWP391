@@ -400,4 +400,41 @@ public class UserDAO {
         ps.setString(9, user.getGender());
         ps.executeUpdate();
     }
+
+    /**
+     * Update user password
+     */
+    public boolean updatePassword(int userId, String newPassword) {
+        String sql = "UPDATE " + TABLE_NAME + " SET password = ? WHERE userID = ?";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, newPassword);
+            ps.setInt(2, userId);
+
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            System.err.println("Error in updatePassword: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Update user password with old password verification
+     */
+    public boolean updatePasswordWithVerification(int userId, String oldPassword, String newPassword) {
+        String sql = "UPDATE " + TABLE_NAME + " SET password = ? WHERE userID = ? AND password = ?";
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, newPassword);
+            ps.setInt(2, userId);
+            ps.setString(3, oldPassword);
+
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            System.err.println("Error in updatePasswordWithVerification: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
 }
