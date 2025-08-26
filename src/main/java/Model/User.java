@@ -7,7 +7,6 @@ public class User {
     private int userID;
     private String fullName, email, password, userName;
     private int roleID, status;
-    private Date registrationDate;
     private String phone, gender;
     private Date dob;
 
@@ -67,15 +66,7 @@ public class User {
     public void setStatus(int status) {
         this.status = status;
     }
-
-    public Date getRegistrationDate() {
-        return registrationDate;
-    }
-
-    public void setRegistrationDate(Date registrationDate) {
-        this.registrationDate = registrationDate;
-    }
-
+    
     public String getPhone() {
         return phone;
     }
