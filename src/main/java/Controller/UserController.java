@@ -8,7 +8,12 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import DAO.UserDAO;
+import Service.MailService;
+import jakarta.servlet.RequestDispatcher;
+import java.sql.Date;
 
 @WebServlet("/User")
 public class UserController extends HttpServlet {
@@ -53,6 +58,60 @@ public class UserController extends HttpServlet {
             response.sendRedirect("error.jsp");
         }
     }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        {
+            String action = request.getParameter("action");
+            String type = request.getParameter("type");
+
+            if ("create".equals(action) && "staff".equals(type)) {
+                try {
+                    String fullName = request.getParameter("fullName");
+                    String email = request.getParameter("email");
+                    String username = request.getParameter("username");
+                    String password = request.getParameter("password");
+                    String phone = request.getParameter("phone");
+                    String gender = request.getParameter("gender");
+                    String dobStr = request.getParameter("dob");
+
+                    java.sql.Date dob = null;
+                    if (dobStr != null && !dobStr.isEmpty()) {
+                        java.util.Date parsed = new SimpleDateFormat("yyyy-MM-dd").parse(dobStr);
+                        dob = new java.sql.Date(parsed.getTime());
+                    }
+
+                    User staff = new User();
+                    staff.setFullName(fullName);
+                    staff.setEmail(email);
+                    staff.setUserName(username);
+                    staff.setPassword(password);
+                    staff.setPhone(phone);
+                    staff.setRoleID(2); // Staff role = 2
+                    staff.setStatus(1); // Active
+                    staff.setGender(gender);
+                    staff.setDob(dob);
+
+                    // Insert vào DB
+                    dao.insert(staff);
+
+                    // ✅ Gửi email với username + password
+                    boolean sent = MailService.sendAccountInfo(email, username, password);
+                    if (sent) {
+                        request.setAttribute("successMessage", "Staff account created successfully! Login info sent to email.");
+                    } else {
+                        request.setAttribute("errorMessage", "Staff created but failed to send email.");
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    request.setAttribute("errorMessage", "Failed to create staff account: " + e.getMessage());
+                }
+
+                RequestDispatcher rd = request.getRequestDispatcher("createStaff.jsp");
+                rd.forward(request, response);
+            }
+        }
+    }
 }
-
-
