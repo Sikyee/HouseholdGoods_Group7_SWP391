@@ -73,6 +73,12 @@
                 </tbody>
             </table>
         </div>
+        <!-- Nút Create Account -->
+        <a href="createStaff.jsp" 
+           class="btn btn-primary btn-lg"
+           style="position: fixed; bottom: 20px; right: 20px; border-radius: 50px;">
+            + Create Account
+        </a>
     </body>
 </html>
 
