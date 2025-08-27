@@ -150,7 +150,9 @@
             %>
                 <a class="page-btn <%= (i == currentPage ? "active" : "") %>" href="Promotion?action=list&page=<%= i %>"><%= i %></a>
             <% } %>
-            <a class="page-btn <%= (currentPage >= totalPages ? "disabled" : "") %>" href="Promotion?action=list&page="<%= (currentPage+1) %>">Next</a>
+            <a class="page-btn <%= (currentPage >= totalPages ? "disabled" : "") %>"
+   href="Promotion?action=list&page=<%= (currentPage + 1) %>">Next</a>
+
         </div>
 
         <!-- Deleted -->
@@ -353,11 +355,11 @@
             if (t === "percentage") {
                 unitEl.textContent = "%";
                 valInp.min = "1";
-                valInp.max = "100";
+                valInp.max = "99";
                 valInp.step = "1";
-                valInp.placeholder = "1–100";
-                valInp.title = "Percentage (1–100)";
-                valInp.value = clamp(valInp.value, 1, 100);
+                valInp.placeholder = "1–99";
+                valInp.title = "Percentage (1–99)";
+                valInp.value = clamp(valInp.value, 1, 99);
             } else { // fixed
                 unitEl.textContent = "₫";
                 valInp.min = "1000";
