@@ -171,9 +171,9 @@
                 </div>
 
                 <div class="text-center mt-3">
-                    <a href="homePage.jsp" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Home
-                    </a>
+                    <div class="text-center mt-3">
+                        <a href="${pageContext.request.contextPath}/" class="btn btn-outline-secondary btn-sm">⬅ Back to Home</a>
+                    </div>
                 </div>
             </form>
         </div>
