@@ -291,7 +291,7 @@
                     </small>
                 </div>
                 <div class="text-center mt-3">
-                    <a href="homePage.jsp" class="btn btn-outline-secondary btn-sm">⬅ Back to Home</a>
+                    <a href="${pageContext.request.contextPath}/" class="btn btn-outline-secondary btn-sm">⬅ Back to Home</a>
                 </div>
             </form>
         </div>
