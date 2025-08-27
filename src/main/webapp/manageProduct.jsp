@@ -13,6 +13,7 @@
     <title>Manage Products</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     <style>
         .content {
             margin-left: 240px; /* để không đè lên left-sidebar.jsp */
@@ -112,6 +113,15 @@
         </div>
     </div>
 </div>
+<!-- Nút kho hàng nổi góc dưới bên phải -->
+<form action="<%= context %>/Inventory" method="getư">
+    <button type="submit"
+            class="btn btn-primary rounded-circle shadow"
+            style="position: fixed; bottom: 30px; right: 30px; width:60px; height:60px;
+                   display:flex; align-items:center; justify-content:center; z-index:999;">
+        <i class="fa-solid fa-warehouse fa-lg"></i>
+    </button>
+</form>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>

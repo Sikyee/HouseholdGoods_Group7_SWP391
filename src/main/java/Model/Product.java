@@ -21,6 +21,8 @@ public class Product {
     private int brandID;
     private String image;
     private List<Attribute> attributes;
+    private int stockQuantity;
+    private int status;
 
     public List<Attribute> getAttributes() {
         return attributes;
@@ -111,5 +113,4 @@ public class Product {
     public void setImage(String image) {
         this.image = image;
     }
-
 }
