@@ -2,6 +2,7 @@ package DAO;
 
 import DB.DBConnection;
 import Model.Order;
+import Model.OrderDetail;
 import Model.OrderInfo;
 import Model.dto.WeeklyRevenue;
 import java.math.BigInteger;
@@ -244,5 +245,76 @@ public class OrderDAO {
             Logger.getLogger(OrderDAO.class.getName()).log(Level.SEVERE, null, ex);
         }
         return result;
+    }
+
+    // Lấy danh sách đơn hàng theo userID
+    public List<Order> getOrdersByUser(int userID) {
+        List<Order> list = new ArrayList<>();
+        String sql
+                = "SELECT orderID, userID, orderStatusID, orderDate, paymentMethodID, "
+                + "voucherID, totalPrice, finalPrice, fullName, deliveryAddress, phone "
+                + "FROM OrderInfo "
+                + "WHERE userID = ? "
+                + "ORDER BY orderDate DESC";
+
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userID);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Order order = new Order();
+                order.setOrderID(rs.getInt("orderID"));
+                order.setUserID(rs.getInt("userID"));
+                order.setOrderStatusID(rs.getInt("orderStatusID"));
+                order.setOrderDate(rs.getDate("orderDate"));
+                order.setPaymentMethodID(rs.getInt("paymentMethodID"));
+                order.setVoucherID(rs.getInt("voucherID"));
+                order.setTotalPrice(rs.getFloat("totalPrice"));
+                order.setFinalPrice(rs.getFloat("finalPrice"));
+                order.setFullName(rs.getString("fullName"));
+                order.setDeliveryAddress(rs.getString("deliveryAddress"));
+                order.setPhone(rs.getString("phone"));
+
+                // Load chi tiết đơn hàng
+                order.setOrderDetails(getOrderDetailsByOrder(order.getOrderID()));
+
+                list.add(order);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // Lấy chi tiết sản phẩm trong 1 đơn
+    public List<OrderDetail> getOrderDetailsByOrder(int orderID) {
+        List<OrderDetail> list = new ArrayList<>();
+        String sql
+                = "SELECT d.orderDetailID, d.productID, d.quantity, d.totalPrice, "
+                + "p.productName, p.image "
+                + "FROM OrderDetail d "
+                + "JOIN Product p ON d.productID = p.productID "
+                + "WHERE d.orderID = ?";
+
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, orderID);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                OrderDetail od = new OrderDetail();
+                od.setOrderDetailID(rs.getInt("orderDetailID"));
+                od.setProductID(rs.getInt("productID"));
+                od.setQuantity(rs.getInt("quantity"));
+                od.setTotalPrice(rs.getInt("totalPrice"));
+                od.setOrderName(rs.getString("productName"));
+                od.setProductImage(rs.getString("image"));
+                list.add(od);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }
