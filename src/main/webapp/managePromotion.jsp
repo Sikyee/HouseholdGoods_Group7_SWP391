@@ -81,6 +81,8 @@
         .page-btn.active{ background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
         .main-content { padding-left: 260px; padding-right: 20px; padding-top: 20px; }
         .content-top { margin-bottom: 8px; }
+        .badge-scheduled { background:#fde68a; border:1px solid #f59e0b; color:#92400e; padding:2px 8px; border-radius: 999px; font-weight:700; }
+        .badge-inactive  { background:#f3f4f6; border:1px solid #d1d5db; color:#374151; padding:2px 8px; border-radius: 999px; font-weight:700; }
     </style>
 </head>
 <body>
@@ -88,15 +90,15 @@
     <div class="content-top">
         <h4 class="mb-2"><i class="fa-solid fa-bullhorn"></i> Promotion List</h4>
 
-        <!-- Hiển thị lỗi/thông báo -->
+        <!-- Alerts -->
         <c:if test="${not empty error}">
             <div class="alert alert-danger" role="alert">${error}</div>
         </c:if>
         <c:if test="${codeExists}">
-            <div class="alert alert-warning" role="alert">Code đã tồn tại và đang hoạt động.</div>
+            <div class="alert alert-warning" role="alert">This code already exists and is active.</div>
         </c:if>
         <c:if test="${reactivate}">
-            <div class="alert alert-info" role="alert">Code này thuộc một promotion đã xóa. Bạn có muốn khôi phục không?</div>
+            <div class="alert alert-info" role="alert">This code belongs to a disabled promotion. Do you want to activate it?</div>
         </c:if>
 
         <input type="text" id="searchInput" placeholder="Search by code..." onkeyup="filterPromotions()" />
@@ -110,7 +112,7 @@
             <thead>
             <tr>
                 <th>ID</th><th>Code</th><th>Title</th><th>Description</th>
-                <th>Discount</th><th>Period</th><th>Min Order</th><th>Brand</th><th>Action</th>
+                <th>Discount</th><th>Period</th><th>Min Price</th><th>Brand</th><th>Action</th>
             </tr>
             </thead>
             <tbody id="promotionTable">
@@ -129,8 +131,9 @@
                     <td>${p.brandName}</td>
                     <td>
                         <a href="Promotion?action=edit&id=${p.promotionID}&page=<%= currentPage %>" class="btn-action edit">Edit</a>
-                        <a href="Promotion?action=delete&id=${p.promotionID}&page=<%= currentPage %>" class="btn-action delete"
-                           onclick="return confirm('Delete this promotion?')">Delete</a>
+                        <a href="Promotion?action=deactivate&id=${p.promotionID}&page=<%= currentPage %>"
+                           class="btn-action delete btn-deactivate"
+                           data-id="${p.promotionID}">Deactivate</a>
                     </td>
                 </tr>
             </c:forEach>
@@ -151,20 +154,19 @@
                 <a class="page-btn <%= (i == currentPage ? "active" : "") %>" href="Promotion?action=list&page=<%= i %>"><%= i %></a>
             <% } %>
             <a class="page-btn <%= (currentPage >= totalPages ? "disabled" : "") %>"
-   href="Promotion?action=list&page=<%= (currentPage + 1) %>">Next</a>
-
+               href="Promotion?action=list&page=<%= (currentPage + 1) %>">Next</a>
         </div>
 
-        <!-- Deleted -->
-        <h6 class="fw-bold mt-4 mb-2">Deleted Promotions</h6>
+        <!-- Deactive (Inactive or Scheduled) -->
+        <h6 class="fw-bold mt-4 mb-2">Deactive Promotions</h6>
         <table>
             <thead>
             <tr>
-                <th>ID</th><th>Code</th><th>Title</th><th>Description</th><th>Discount</th><th>Action</th>
+                <th>ID</th><th>Code</th><th>Title</th><th>Description</th><th>Discount</th><th>Period</th><th>Status</th><th>Min Price</th><th>Action</th>
             </tr>
             </thead>
             <tbody>
-            <c:forEach var="p" items="${deletedList}">
+            <c:forEach var="p" items="${deactiveList}">
                 <tr class="zebra">
                     <td>${p.promotionID}</td>
                     <td>${p.code}</td>
@@ -172,17 +174,38 @@
                     <td class="description-cell" title="${fn:escapeXml(p.description)}"><c:out value="${p.description}"/></td>
                     <td>${p.discountType} - ${p.discountValue}</td>
                     <td>
-                        <a href="Promotion?action=reactivate&id=${p.promotionID}&page=<%= currentPage %>" class="btn-action reactivate">Reactivate</a>
+                        <fmt:formatDate value="${p.startDate}" pattern="yyyy-MM-dd"/> →
+                        <fmt:formatDate value="${p.endDate}" pattern="yyyy-MM-dd"/>
+                    </td>
+                    <td>
+                        <c:choose>
+                            <c:when test="${p.startDate != null && today != null && p.startDate.time > today.time}">
+                                <span class="badge-scheduled">Scheduled</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="badge-inactive">Inactive</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </td>
+                    <td>${p.minOrderValue}</td>
+                    <td>
+                        <a
+                          href="Promotion?action=activate&id=${p.promotionID}&page=<%= currentPage %>"
+                          class="btn-action reactivate btn-activate"
+                          data-id="${p.promotionID}"
+                          data-start="${p.startDate}"
+                          data-scheduled="${p.startDate != null && today != null && p.startDate.time > today.time}"
+                        >Activate</a>
                     </td>
                 </tr>
             </c:forEach>
             </tbody>
         </table>
 
-        <!-- Debug nhỏ (tạm thời) -->
+        <!-- Debug -->
         <small class="text-muted">
             page=${page}, totalPages=${totalPages}, totalItems=${totalItems},
-            activeCount=${fn:length(list)}, deletedCount=${fn:length(deletedList)}
+            activeCount=${fn:length(list)}, deactiveCount=${fn:length(deactiveList)}
         </small>
     </div>
 </div>
@@ -252,7 +275,7 @@
                 </div>
 
                 <div class="form-row">
-                    <label>Min Order Value:</label>
+                    <label>Min Price:</label>
                     <input type="number" name="minOrderValue" step="1" min="0" value="${promotion.minOrderValue}" required/>
                 </div>
 
@@ -285,6 +308,37 @@
         </div>
     </div>
 </c:if>
+
+<!-- Custom confirm modal: Activate (Scheduled) -->
+<div id="scheduledConfirm" class="modal" style="display:none" aria-hidden="true">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="scheduledConfirmTitle">
+    <span class="close" id="scheduledClose" aria-label="Close">×</span>
+    <h3 id="scheduledConfirmTitle" class="mb-2">Scheduled promotion</h3>
+    <p class="mb-3">
+      This promotion is scheduled to start on <b id="scheduledStart">—</b>.<br>
+      Would you like to change the start date (open the Edit modal)?
+    </p>
+    <div class="d-flex gap-2 justify-content-end">
+      <button type="button" class="btn btn-outline-secondary" id="keepScheduleBtn">Keep schedule</button>
+      <button type="button" class="btn btn-primary" id="openEditBtn">Open Edit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom confirm modal: Deactivate -->
+<div id="deactivateConfirm" class="modal" style="display:none" aria-hidden="true">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="deactivateConfirmTitle">
+    <span class="close" id="deactivateClose" aria-label="Close">×</span>
+    <h3 id="deactivateConfirmTitle" class="mb-2">Deactivate promotion</h3>
+    <p class="mb-3">
+      Are you sure you want to deactivate this promotion?
+    </p>
+    <div class="d-flex gap-2 justify-content-end">
+      <button type="button" class="btn btn-outline-secondary" id="cancelDeactivateBtn">Cancel</button>
+      <button type="button" class="btn btn-danger" id="confirmDeactivateBtn">Deactivate</button>
+    </div>
+  </div>
+</div>
 
 <script>
     function closeModal(){
@@ -335,7 +389,7 @@
         }
     })();
 
-    // 👉 Quan trọng: dùng "percentage"/"fixed"
+    // 👉 Client-side rules aligned with server
     (function(){
         const typeSel = document.getElementById('discountType');
         const valInp  = document.getElementById('discountValue');
@@ -355,11 +409,11 @@
             if (t === "percentage") {
                 unitEl.textContent = "%";
                 valInp.min = "1";
-                valInp.max = "99";
+                valInp.max = "100";
                 valInp.step = "1";
-                valInp.placeholder = "1–99";
-                valInp.title = "Percentage (1–99)";
-                valInp.value = clamp(valInp.value, 1, 99);
+                valInp.placeholder = "1–100";
+                valInp.title = "Percentage (1–100)";
+                valInp.value = clamp(valInp.value, 1, 100);
             } else { // fixed
                 unitEl.textContent = "₫";
                 valInp.min = "1000";
@@ -375,6 +429,91 @@
         typeSel.addEventListener('change', applyRules);
         valInp.addEventListener('input', applyRules);
         window.addEventListener('load', applyRules);
+    })();
+
+    // 👉 Custom modals
+    (function() {
+      function fmt(d) {
+        if (!d) return '';
+        try {
+          const dt = new Date(d);
+          const m = String(dt.getMonth() + 1).padStart(2, '0');
+          const day = String(dt.getDate()).padStart(2, '0');
+          return dt.getFullYear() + '-' + m + '-' + day;
+        } catch (_) { return d; }
+      }
+
+      // Activate (Scheduled) modal
+      var scheduledModal = document.getElementById('scheduledConfirm');
+      var scheduledStartEl = document.getElementById('scheduledStart');
+      var btnOpenEdit = document.getElementById('openEditBtn');
+      var btnKeep = document.getElementById('keepScheduleBtn');
+      var btnScheduledClose = document.getElementById('scheduledClose');
+      var pendingActivateId = null;
+
+      function openScheduledConfirm(id, start) {
+        pendingActivateId = id;
+        scheduledStartEl.textContent = fmt(start);
+        scheduledModal.style.display = 'block';
+      }
+      function closeScheduledConfirm() {
+        scheduledModal.style.display = 'none';
+        pendingActivateId = null;
+      }
+
+      btnOpenEdit.addEventListener('click', function() {
+        if (pendingActivateId) {
+          window.location.href = 'Promotion?action=edit&id=' + encodeURIComponent(pendingActivateId) +
+                                 '&page=' + encodeURIComponent('<%= currentPage %>');
+        }
+      });
+      btnKeep.addEventListener('click', closeScheduledConfirm);
+      btnScheduledClose.addEventListener('click', closeScheduledConfirm);
+      window.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeScheduledConfirm(); });
+      scheduledModal.addEventListener('click', function(e){ if (e.target === scheduledModal) closeScheduledConfirm(); });
+
+      document.querySelectorAll('.btn-activate').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          var scheduled = String(this.dataset.scheduled) === 'true';
+          if (!scheduled) return; // normal activate
+          e.preventDefault();
+          openScheduledConfirm(this.dataset.id, this.dataset.start);
+        });
+      });
+
+      // Deactivate modal
+      var deactivateModal = document.getElementById('deactivateConfirm');
+      var btnDeactivateClose = document.getElementById('deactivateClose');
+      var btnCancelDeactivate = document.getElementById('cancelDeactivateBtn');
+      var btnConfirmDeactivate = document.getElementById('confirmDeactivateBtn');
+      var pendingDeactivateId = null;
+
+      function openDeactivateConfirm(id) {
+        pendingDeactivateId = id;
+        deactivateModal.style.display = 'block';
+      }
+      function closeDeactivateConfirm() {
+        deactivateModal.style.display = 'none';
+        pendingDeactivateId = null;
+      }
+
+      btnDeactivateClose.addEventListener('click', closeDeactivateConfirm);
+      btnCancelDeactivate.addEventListener('click', closeDeactivateConfirm);
+      btnConfirmDeactivate.addEventListener('click', function() {
+        if (pendingDeactivateId) {
+          window.location.href = 'Promotion?action=deactivate&id=' + encodeURIComponent(pendingDeactivateId) +
+                                 '&page=' + encodeURIComponent('<%= currentPage %>');
+        }
+      });
+      window.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeDeactivateConfirm(); });
+      deactivateModal.addEventListener('click', function(e){ if (e.target === deactivateModal) closeDeactivateConfirm(); });
+
+      document.querySelectorAll('.btn-deactivate').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          openDeactivateConfirm(this.dataset.id);
+        });
+      });
     })();
 </script>
 
