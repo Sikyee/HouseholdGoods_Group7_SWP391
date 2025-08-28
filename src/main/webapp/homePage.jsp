@@ -229,6 +229,14 @@
                 <div class="col-lg-3 col-md-6 p-2">
                     <div class="card product-card h-100">
                         <img src="/HouseholdGoods_Group7_SWP391/images/<%= p.getImage()%>" class="card-img-top" alt="<%= p.getProductName()%>">
+
+   <!--wishlist-->             
+        <form action="<%= request.getContextPath() %>/Wishlist" method="post" class="wishlist-form">
+            <input type="hidden" name="action" value="add"/>
+            <input type="hidden" name="productID" value="<%= p.getProductID() %>"/>
+            <button type="submit" class="wishlist-btn">♡️</button>
+        </form>
+
                         <div class="card-body">
                             <a class="card-title" href="<%= context%>/Product?action=productDetail&id=<%= p.getProductID()%>"><%= p.getProductName()%></a>
                             <p class="card-text"><%= p.getDescription()%></p>
@@ -250,6 +258,26 @@
                                 <p class="price"><%= String.format("%,d", price)%>₫</p>
                             <% } %>
                         </div>
+
+                        <!--Rating trung binh-->
+                        <% Double avgRating = p.getAverageRating(); %>
+<% if (avgRating != null && avgRating > 0) { %>
+    <span class="text-warning">
+        <% for (int i = 1; i <= 5; i++) { %>
+            <% if (i <= avgRating) { %>
+                <i class="fas fa-star"></i>
+            <% } else if (i - avgRating < 1) { %>
+                <i class="fas fa-star-half-alt"></i>
+            <% } else { %>
+                <i class="far fa-star"></i>
+            <% } %>
+        <% } %>
+    </span>
+    <small>(<%= String.format("%.1f", avgRating) %>/5)</small>
+<% } else { %>
+    <small class="text-muted">No rating yet</small>
+<% } %>
+<% System.out.println("ProductID: " + p.getProductID() + ", Average Rating: " + avgRating); %>
 
                         <div class="btn-layout">
                             <form action="<%= context%>/Cart" method="get" class="d-inline">
@@ -315,6 +343,44 @@
                 </ul>
             </nav>
         </div>
+
+<!--css cua Wishlist-->
+ <style> 
+  .product-card {
+    border: 1px solid #dee2e6;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #ffffff;
+    position: relative; /* cần cho icon overlay */
+}
+
+.wishlist-form {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10;
+}
+
+.wishlist-btn {
+    border: 2px solid red;      /* viền đỏ */
+    background-color: black;     /* nền đen */
+    color: red;                  /* trái tim đỏ */
+    font-size: 28px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 6px;          /* bo góc nhẹ */
+    display: none;               /* ẩn mặc định */
+}
+
+.product-card:hover .wishlist-btn {
+    display: flex;               /* hiện khi hover */
+}
+
+</style>
 
         <%@ include file="footer.jsp" %>
 

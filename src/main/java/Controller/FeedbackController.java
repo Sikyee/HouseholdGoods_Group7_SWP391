@@ -5,7 +5,9 @@
 package Controller;
 
 import DAO.FeedbackDAO;
+import DB.DBConnection;
 import Model.Feedback;
+import Model.OrderDetail;
 import Model.User;
 
 import jakarta.servlet.*;
@@ -14,8 +16,15 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.List;
-
+/**
+ *
+ * @author TriTN
+ */
 @WebServlet("/Feedback")
 public class FeedbackController extends HttpServlet {
 
@@ -117,33 +126,48 @@ if ("restore".equals(action) && id != -1) {
         
     }
 
-    private void exportFeedback(HttpServletResponse response) throws IOException {
-    List<Feedback> list = feedbackDAO.getAllFeedbackWithoutPagination(); // lấy tất cả feedback
+   private void exportFeedback(HttpServletResponse response) throws IOException {
+    List<Feedback> list = feedbackDAO.getAllFeedbackWithoutPagination();
+    
     response.setContentType("application/vnd.ms-excel; charset=UTF-8");
     response.setHeader("Content-Disposition", "attachment; filename=Feedback_List.xls");
-
+    
     PrintWriter out = response.getWriter();
     // Viết BOM để Excel nhận UTF-8
     out.write("\uFEFF");
-    out.println("ID\tOrderDetailID\tCustomerID\tUserName\tProductName\tImage\tRating\tComment\tCreatedAt\tStatus");
-
+    
+    // Bắt đầu bảng HTML
+    out.println("<table border='1' style='border-collapse: collapse;'>");
+    
+    // Header
+    out.println("<tr style='background-color: #f2f2f2;'>");
+    out.println("<th>ID</th><th>OrderDetailID</th><th>CustomerID</th><th>UserName</th>"
+                + "<th>ProductName</th><th>Image</th><th>Rating</th><th>Comment</th>"
+                + "<th>CreatedAt</th><th>Status</th>");
+    out.println("</tr>");
+    
+    // Dữ liệu
     for (Feedback fb : list) {
-        out.println(
-            fb.getFeedbackID() + "\t"
-            + fb.getOrderDetailID() + "\t"
-            + fb.getUserID() + "\t"
-            + fb.getUserName() + "\t"
-            + fb.getProductName() + "\t"
-            + fb.getImage() + "\t"
-            + fb.getRating() + "\t"
-            + fb.getComment().replaceAll("\\t", " ").replaceAll("\\n", " ") + "\t"
-            + fb.getCreatedAt() + "\t"
-            + fb.getStatus()
-        );
+        out.println("<tr>");
+        out.println("<td>" + fb.getFeedbackID() + "</td>");
+        out.println("<td>" + fb.getOrderDetailID() + "</td>");
+        out.println("<td>" + fb.getUserID() + "</td>");
+        out.println("<td>" + fb.getUserName() + "</td>");
+        out.println("<td>" + fb.getProductName() + "</td>");
+        out.println("<td>" + fb.getImage() + "</td>");
+        out.println("<td>" + fb.getRating() + "</td>");
+        out.println("<td>" + fb.getComment().replaceAll("\n"," ").replaceAll("\r"," ") + "</td>");
+        out.println("<td>" + fb.getCreatedAt() + "</td>");
+        out.println("<td>" + fb.getStatus() + "</td>");
+        out.println("</tr>");
     }
-
+    
+    out.println("</table>");
     out.flush();
     out.close();
 }
 
+    
+
+    
 }

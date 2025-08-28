@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- * Simplified MailService for development
+ * Comprehensive MailService with all email functionalities
  *
  * @author LoiDH
  */
@@ -182,6 +182,38 @@ public class MailService {
         }
     }
 
+    /**
+     * Send staff account information (username & password)
+     *
+     * @param toEmail Staff email
+     * @param username Staff username
+     * @param password Staff password
+     * @return true if sent successfully
+     */
+    public static boolean sendAccountInfo(String toEmail, String username, String password) {
+        try {
+            Properties props = createSMTPProperties();
+            Session session = createAuthenticatedSession(props);
+
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(FROM_EMAIL, "Staff Management System"));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
+            message.setSubject("Your Staff Account Information");
+
+            String textContent = createAccountInfoEmailTemplate(username, password);
+            message.setContent(textContent, "text/plain; charset=utf-8");
+
+            Transport.send(message);
+            logger.info("Account info email sent successfully to: " + toEmail);
+            return true;
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to send account info email to: " + toEmail, e);
+            return false;
+        }
+    }
+
+    // ====================== PRIVATE HELPER METHODS ======================
     private static Properties createSMTPProperties() {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
@@ -299,5 +331,36 @@ public class MailService {
                 + "Best regards,\n"
                 + "Security Team\n\n"
                 + "==========================================";
+    }
+
+    private static String createAccountInfoEmailTemplate(String username, String password) {
+        return "STAFF ACCOUNT INFORMATION\n"
+                + "==========================================\n\n"
+                + "Hello,\n\n"
+                + "Your staff account has been created successfully.\n\n"
+                + "LOGIN CREDENTIALS:\n"
+                + "- Username: " + username + "\n"
+                + "- Password: " + password + "\n\n"
+                + "IMPORTANT SECURITY INSTRUCTIONS:\n"
+                + "1. Please log in immediately using these credentials\n"
+                + "2. We strongly recommend changing your password after first login\n"
+                + "3. Keep your credentials secure and do not share them with anyone\n"
+                + "4. Delete this email after you have successfully logged in\n\n"
+                + "Account Creation Details:\n"
+                + "- Time: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) + "\n"
+                + "- Role: Staff Member\n"
+                + "- Status: Active\n\n"
+                + "SECURITY NOTICE:\n"
+                + "If you did not expect to receive this account information, please contact our support team immediately.\n\n"
+                + "For your account security:\n"
+                + "- Change your password after first login\n"
+                + "- Use a strong, unique password\n"
+                + "- Log out from public computers\n"
+                + "- Never share your login credentials\n\n"
+                + "If you have any questions about your account or need assistance, please contact our support team.\n\n"
+                + "Best regards,\n"
+                + "Staff Management Team\n\n"
+                + "==========================================\n"
+                + "This email was sent automatically, please do not reply.";
     }
 }

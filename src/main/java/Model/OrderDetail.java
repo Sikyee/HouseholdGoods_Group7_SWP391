@@ -7,6 +7,15 @@ public class OrderDetail {
     private String orderName;
     private int quantity;
     private long totalPrice;
+    private String productImage;
+
+    public String getProductImage() {
+        return productImage;
+    }
+
+    public void setProductImage(String productImage) {
+        this.productImage = productImage;
+    }
 
     public OrderDetail() {}
 

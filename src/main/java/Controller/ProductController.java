@@ -1,10 +1,14 @@
 package Controller;
 
+import DAO.BrandDAO;
 import DAO.CartDAO;
 import DAO.ProductDAO;
+import DAO.SubCategoryDAO;
 import Model.Product;
 import Model.Attribute;
+import Model.Brand;
 import Model.Cart;
+import Model.SubCategory;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -15,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebServlet("/Product")
 @MultipartConfig(
@@ -29,23 +35,35 @@ public class ProductController extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
         try {
             String action = request.getParameter("action");
 
+            // ✅ Load SubCategory + Brand từ DB cho form
+            SubCategoryDAO subCategoryDAO = new SubCategoryDAO();
+            BrandDAO brandDAO = new BrandDAO();
+            List<SubCategory> subCategories = subCategoryDAO.getAllSubCategories();
+            List<Brand> brands = brandDAO.getAllBrands();
+            request.setAttribute("subCategories", subCategories);
+            request.setAttribute("brands", brands);
             if ("edit".equals(action)) {
                 int id = Integer.parseInt(request.getParameter("id"));
                 Product p = dao.getProductById(id);
                 List<Attribute> attributes = dao.getAttributesByProductId(id);
+
                 request.setAttribute("product", p);
                 request.setAttribute("attributes", attributes);
+
                 request.getRequestDispatcher("product-form.jsp").forward(request, response);
 
             } else if ("add".equals(action)) {
                 request.getRequestDispatcher("product-form.jsp").forward(request, response);
+
             } else if ("delete".equals(action)) {
                 int id = Integer.parseInt(request.getParameter("id"));
-                dao.softDeleteProduct(id); // ✅ Soft delete
+                dao.softDeleteProduct(id);
                 response.sendRedirect(request.getContextPath() + "/Product");
+
             } else if ("productDetail".equals(action)) {
                 int id = Integer.parseInt(request.getParameter("id"));
                 Product productDetail = dao.getProductById(id);
@@ -55,18 +73,17 @@ public class ProductController extends HttpServlet {
                 HttpSession session = request.getSession();
                 Object userObj = request.getSession().getAttribute("userID");
                 if (userObj == null) {
-                    // Chưa đăng nhập, chuyển hướng về login hoặc báo lỗi
-                    response.sendRedirect("login.jsp"); // hoặc custom thông báo
+                    response.sendRedirect("login.jsp");
                     return;
                 }
 
-                int userID = (int) userObj; // An toàn vì đã kiểm tra null
-                System.out.println("UserID: " + userID);
+                int userID = (int) userObj;
                 List<Cart> cartList = cartDAO.getProductInCart(userID);
                 session.setAttribute("cartQuantity", cartList.size());
 
                 request.setAttribute("productDetail", productDetail);
                 request.getRequestDispatcher("productDetail.jsp").forward(request, response);
+
             } else {
                 List<Product> list = dao.getAllProducts();
                 request.setAttribute("products", list);
@@ -86,9 +103,11 @@ public class ProductController extends HttpServlet {
             Product p = new Product();
             Map<String, String> errors = new HashMap<>();
 
+            // ✅ Gán các field
             p.setProductName(request.getParameter("productName"));
             p.setDescription(request.getParameter("description"));
 
+            // ✅ Validate Price
             try {
                 long price = Long.parseLong(request.getParameter("price"));
                 if (price < 0) {
@@ -100,15 +119,16 @@ public class ProductController extends HttpServlet {
             }
 
             try {
-                int quantity = Integer.parseInt(request.getParameter("stonkQuantity"));
+                int quantity = Integer.parseInt(request.getParameter("stockQuantity"));
                 if (quantity < 0) {
-                    errors.put("stonkQuantity", "Stock must be non-negative");
+                    errors.put("stockQuantity", "Stock must be non-negative");
                 }
                 p.setStonkQuantity(quantity);
             } catch (NumberFormatException e) {
-                errors.put("stonkQuantity", "Invalid stock quantity");
+                errors.put("stockQuantity", "Invalid stock quantity");
             }
 
+            // ✅ Validate Brand
             try {
                 int brandID = Integer.parseInt(request.getParameter("brandID"));
                 if (brandID < 0) {
@@ -119,6 +139,7 @@ public class ProductController extends HttpServlet {
                 errors.put("brandID", "Invalid Brand ID");
             }
 
+            // ✅ Validate SubCategory
             try {
                 int subCategory = Integer.parseInt(request.getParameter("subCategory"));
                 if (subCategory < 0) {
@@ -130,10 +151,10 @@ public class ProductController extends HttpServlet {
             }
 
             Part filePart = request.getPart("imageFile");
-            String fileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
-            String contentType = filePart.getContentType();
+            if (filePart != null && filePart.getSize() > 0) {
+                String fileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
+                String contentType = filePart.getContentType();
 
-            if (fileName != null && !fileName.isEmpty()) {
                 if (!contentType.startsWith("image/")) {
                     errors.put("imageFile", "Only image files are allowed.");
                 } else {
@@ -146,34 +167,54 @@ public class ProductController extends HttpServlet {
                     p.setImage(fileName);
                 }
             } else {
+                // Không upload ảnh mới thì giữ ảnh cũ
                 p.setImage(request.getParameter("image"));
             }
 
+            // 🔴 NGAY SAU KHI VALIDATE XONG
             if (!errors.isEmpty()) {
+                // ✅ load lại dropdown để hiển thị tiếp
+                SubCategoryDAO subCategoryDAO = new SubCategoryDAO();
+                BrandDAO brandDAO = new BrandDAO();
+                List<SubCategory> subCategories = subCategoryDAO.getAllSubCategories();
+                List<Brand> brands = brandDAO.getAllBrands();
+                request.setAttribute("subCategories", subCategories);
+                request.setAttribute("brands", brands);
+
                 request.setAttribute("errors", errors);
                 request.setAttribute("product", p);
                 request.getRequestDispatcher("product-form.jsp").forward(request, response);
-                return;
+                return; // ⬅️ Dừng luôn, không chạy insert/update nữa
             }
 
+            // ✅ Nếu không có lỗi thì mới xử lý Insert/Update
             int productID;
             if (idStr == null || idStr.isEmpty()) {
+                // Add
                 dao.addProduct(p);
-                productID = dao.getLastInsertedProductIdByName(p.getProductName()); // lấy id
+                productID = dao.getLastInsertedProductIdByName(p.getProductName());
+                request.getSession().setAttribute("successMessage", "Product added successfully!");
+
+                // về form Add trống
+                response.sendRedirect(request.getContextPath() + "/Product?action=add");
+
             } else {
+                // Edit
                 productID = Integer.parseInt(idStr);
                 p.setProductID(productID);
                 dao.updateProduct(p);
+                request.getSession().setAttribute("successMessage", "Product update successful!");
+
+                // về lại form Edit của sp vừa sửa
+                response.sendRedirect(request.getContextPath() + "/Product?action=edit&id=" + productID);
             }
 
-            // Handle attributes
+            // ✅ Handle Attributes
             String[] attributeNames = request.getParameterValues("attributeName");
             String[] attributeValues = request.getParameterValues("attributeValue");
             if (attributeNames != null && attributeValues != null) {
                 dao.updateProductAttributes(productID, attributeNames, attributeValues);
             }
-
-            response.sendRedirect(request.getContextPath() + "/Product");
 
         } catch (Exception e) {
             e.printStackTrace();

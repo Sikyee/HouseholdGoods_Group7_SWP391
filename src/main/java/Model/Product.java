@@ -21,6 +21,7 @@ public class Product {
     private int brandID;
     private String image;
     private List<Attribute> attributes;
+    private double averageRating;
 
     public List<Attribute> getAttributes() {
         return attributes;
@@ -111,5 +112,13 @@ public class Product {
     public void setImage(String image) {
         this.image = image;
     }
+
+    public double getAverageRating() {
+    return averageRating;
+}
+
+public void setAverageRating(double averageRating) {
+    this.averageRating = averageRating;
+}
 
 }
