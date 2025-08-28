@@ -4,12 +4,12 @@
     Author     : pts03
 --%>
 
-<%@page import="Model.Product1"%>
+<%@page import="Model.Inventory"%>
 <%@page import="java.util.List"%>
 <%@page contentType="text/html;charset=UTF-8" %>
 <%@ include file="left-sidebar.jsp" %>
 <%
-    List<Product1> products = (List<Product1>) request.getAttribute("products");
+    List<Inventory> products = (List<Inventory>) request.getAttribute("products");
     String context = request.getContextPath();
     boolean allSoldOut = true;
 %>
@@ -58,7 +58,7 @@
                 </thead>
                 <tbody>
                     <% int index = 1;
-                        for (Product1 p : products) {
+                        for (Inventory p : products) {
                             // Status = 1 mới hiển thị (DAO cũng đã lọc rồi, nhưng check thêm vẫn an toàn)
                             if (p.getStatus() == 1) {
                                 if (p.getQuantity() > 0) {

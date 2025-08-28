@@ -10,6 +10,8 @@
 package Model;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Feedback {
     private int feedbackID;
@@ -25,7 +27,16 @@ public class Feedback {
         private String image;
  
     
+private List<ReplyFeedback> replies = new ArrayList<>();
 
+    public List<ReplyFeedback> getReplies() {
+        return replies;
+    }
+
+    public void setReplies(List<ReplyFeedback> replies) {
+        this.replies = replies;
+    }
+    
 
 
 

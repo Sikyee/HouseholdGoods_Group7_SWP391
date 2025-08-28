@@ -137,11 +137,11 @@ public class CartDAO {
                 updatePs.executeUpdate();
                 updatePs.close();
             } else {
-                String deleteSql = "DELETE FROM Cart WHERE cartID = ?";
-                PreparedStatement deletePs = conn.prepareStatement(deleteSql);
-                deletePs.setInt(1, cartID);
-                deletePs.executeUpdate();
-                deletePs.close();
+//                String deleteSql = "DELETE FROM Cart WHERE cartID = ?";
+//                PreparedStatement deletePs = conn.prepareStatement(deleteSql);
+//                deletePs.setInt(1, cartID);
+//                deletePs.executeUpdate();
+//                deletePs.close();
             }
         }
 
@@ -167,8 +167,43 @@ public class CartDAO {
         }
     }
 
+//    public Cart getCartItemById(int cartId) throws Exception {
+//        String sql = " SELECT c.CartID, c.UserID, c.ProductID, c.Quantity, p.ProductName, p.Price, p.Image, p.stonk_Quantity FROM Cart c JOIN Product p ON p.ProductID = c.ProductID WHERE c.CartID = ?";
+//
+//        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
+//
+//            ps.setInt(1, cartId);
+//
+//            try ( ResultSet rs = ps.executeQuery()) {
+//                if (rs.next()) {
+//                    // map Product
+//                    Product p = new Product();
+//                    p.setProductID(rs.getInt("productID"));
+//                    p.setProductName(rs.getString("productName"));
+//                    p.setPrice(rs.getLong("price"));
+//                    p.setImage(rs.getString("image"));
+//                    p.setStonkQuantity(rs.getInt("stonk_Quantity"));
+//
+//                    // map Cart
+//                    Cart cart = new Cart();
+//                    cart.setCartID(rs.getInt("cartID"));
+//                    cart.setUserID(rs.getInt("userID"));
+//                    cart.setProductID(rs.getInt("productID"));
+//                    cart.setQuantity(rs.getInt("quantity"));
+//                    cart.setProduct(p);
+//
+//                    return cart;
+//                }
+//            }
+//        }
+//        return null; // không tìm thấy
+//    }
     public Cart getCartItemById(int cartId) throws Exception {
-        String sql = " SELECT c.CartID, c.UserID, c.ProductID, c.Quantity, p.ProductName, p.Price, p.Image, p.stonk_Quantity FROM Cart c JOIN Product p ON p.ProductID = c.ProductID WHERE c.CartID = ?";
+        String sql = " SELECT c.CartID, c.UserID, c.ProductID, c.Quantity, "
+                + "        p.ProductName, p.Price, p.Image, p.stonk_Quantity, p.brandID "
+                + // thêm brandID
+                " FROM Cart c JOIN Product p ON p.ProductID = c.ProductID "
+                + " WHERE c.CartID = ?";
 
         try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -176,15 +211,14 @@ public class CartDAO {
 
             try ( ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    // map Product
                     Product p = new Product();
                     p.setProductID(rs.getInt("productID"));
                     p.setProductName(rs.getString("productName"));
                     p.setPrice(rs.getLong("price"));
                     p.setImage(rs.getString("image"));
                     p.setStonkQuantity(rs.getInt("stonk_Quantity"));
+                    p.setBrandID(rs.getInt("brandID")); // <— thêm dòng này
 
-                    // map Cart
                     Cart cart = new Cart();
                     cart.setCartID(rs.getInt("cartID"));
                     cart.setUserID(rs.getInt("userID"));
@@ -196,6 +230,6 @@ public class CartDAO {
                 }
             }
         }
-        return null; // không tìm thấy
+        return null;
     }
 }

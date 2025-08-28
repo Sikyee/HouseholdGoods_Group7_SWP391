@@ -88,6 +88,16 @@
                 border-color: #0056b3;
             }
 
+            .btn-success {
+                background-color: #28a745;
+                border-color: #28a745;
+            }
+
+            .btn-success:hover {
+                background-color: #218838;
+                border-color: #1e7e34;
+            }
+
             .btn-danger {
                 background-color: #dc3545;
                 border-color: #dc3545;
@@ -118,6 +128,25 @@
 
                 .d-flex {
                     margin: 10px 0;
+                }
+
+                /* Stack login and register buttons vertically on mobile */
+                .auth-buttons {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    margin-top: 10px;
+                }
+
+                .auth-buttons .btn {
+                    width: 100%;
+                }
+            }
+
+            @media (min-width: 992px) {
+                .auth-buttons {
+                    display: flex;
+                    gap: 8px;
                 }
             }
 
@@ -246,6 +275,18 @@
 
                     <!-- Navigation Links -->
                     <ul class="navbar-nav d-flex flex-row align-items-center">
+<!--Wishlist-->
+                        <li class="nav-item me-3">
+    <a class="nav-link position-relative" href="<%= request.getContextPath()%>/Wishlist" title="Wishlist">
+        <i class="fas fa-heart"></i>
+        <span id="wishlist-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+    <% Integer wishlistQty = (Integer) session.getAttribute("wishlistQuantity"); %>
+    <%= (wishlistQty != null) ? wishlistQty : 0 %>
+</span>
+
+    </a>
+</li>
+
                         <!-- Cart -->
                         <li class="nav-item me-3 cart">
                             <a class="nav-link" href="<%= request.getContextPath()%>/Cart" title="Shopping Cart">
@@ -256,7 +297,7 @@
                             </span>
                         </li>
 
-                        <!-- Profile Menu -->
+                        <!-- Profile Menu or Auth Buttons -->
                         <% if (loggedInUser != null) {%>
                         <li class="nav-item me-3 profile-dropdown">
                             <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" onclick="toggleProfileDropdown()">
@@ -273,7 +314,7 @@
 
 
 
-                                <a class="dropdown-item" href="<%= request.getContextPath()%>/orders">
+                                <a class="dropdown-item" href="<%= request.getContextPath()%>/order">
                                     <i class="fas fa-shopping-bag"></i>My Orders
                                 </a>
 
@@ -286,11 +327,16 @@
                             </div>
                         </li>
                         <% } else {%>
-                        <!-- Login -->
+                        <!-- Auth Buttons -->
                         <li class="nav-item">
-                            <a href="<%= request.getContextPath()%>/login" class="btn btn-primary btn-sm">
-                                <i class="fas fa-sign-in-alt me-1"></i>Login
-                            </a>
+                            <div class="auth-buttons">
+                                <a href="<%= request.getContextPath()%>/login" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-sign-in-alt me-1"></i>Login
+                                </a>
+                                <a href="<%= request.getContextPath()%>/register" class="btn btn-success btn-sm">
+                                    <i class="fas fa-user-plus me-1"></i>Register
+                                </a>
+                            </div>
                         </li>
                         <% }%>
                     </ul>
