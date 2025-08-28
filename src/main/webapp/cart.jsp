@@ -1,6 +1,29 @@
 <%@page import="Model.Cart"%>
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ page import="java.util.*, Model.Product" %>
+<%@page import="DAO.PromotionDAO"%>
+<%@page import="Model.Promotion"%>
+<%
+    Map<Integer, List<Promotion>> promosByBrand = new HashMap<>();
+    try {
+        PromotionDAO promoDao = new PromotionDAO();
+        List<Promotion> promos = promoDao.getAllPromotions(); // active
+        for (Promotion pr : promos) {
+            Integer bid = pr.getBrandID();
+            if (bid != null) {
+                List<Promotion> list = promosByBrand.get(bid);
+                if (list == null) {
+                    list = new ArrayList<Promotion>();
+                    promosByBrand.put(bid, list);
+                }
+                list.add(pr);
+            }
+        }
+    } catch (Exception e) {
+        // optional: show alert
+    }
+%>
+
 <%
     HttpSession s = request.getSession(false);
     Model.User u = (Model.User) (s != null ? s.getAttribute("user") : null);
@@ -96,9 +119,37 @@
                                 <%
                                     for (Cart item : cart) {
                                         Product p = item.getProduct();
-                                        long unit = p.getPrice();
-                                        long total = unit * item.getQuantity();
-                                        totalAll += total;
+                                        long baseUnit = p.getPrice();
+                                        long effectiveUnit = baseUnit;
+                                        Promotion bestPromo = null;
+
+                                        Integer brandId = null;
+                                        try {
+                                            brandId = (Integer) Product.class.getMethod("getBrandID").invoke(p);
+                                        } catch (Exception ignore) {
+                                        }
+
+                                        if (brandId != null) {
+                                            List<Promotion> brandPromos = promosByBrand.get(brandId);
+                                            if (brandPromos != null) {
+                                                long best = baseUnit;
+                                                for (Promotion pr : brandPromos) {
+                                                    long discounted = baseUnit;
+                                                    if ("percentage".equalsIgnoreCase(pr.getDiscountType())) {
+                                                        discounted = Math.round(baseUnit * (100.0 - pr.getDiscountValue()) / 100.0);
+                                                    } else if ("fixed".equalsIgnoreCase(pr.getDiscountType())) {
+                                                        discounted = Math.max(0L, baseUnit - pr.getDiscountValue());
+                                                    }
+                                                    if (discounted < best) {
+                                                        best = discounted;
+                                                        bestPromo = pr;
+                                                    }
+                                                }
+                                                effectiveUnit = best;
+                                            }
+                                        }
+
+                                        long lineTotal = effectiveUnit * item.getQuantity();
                                 %>
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <!-- Checkbox chọn -->
@@ -107,7 +158,7 @@
                                         class="select-item"
                                         name="cartId"                           
                                         value="<%= item.getCartID()%>"
-                                        data-unit="<%= unit%>"
+                                        data-unit="<%= effectiveUnit%>"
                                         data-qty ="<%= item.getQuantity()%>"
                                         />
 
@@ -118,24 +169,43 @@
                                                 <strong class="product-name"><%= p.getProductName()%></strong>
                                                 <span>(Quantity: <%= p.getStonkQuantity()%>)</span>
                                             </div>
-                                            <small><%= String.format("%,d", unit)%>₫</small>
+                                            <% if (bestPromo != null && effectiveUnit < baseUnit) {
+                                                    String promoLabel = "percentage".equalsIgnoreCase(bestPromo.getDiscountType())
+                                                            ? ("-" + bestPromo.getDiscountValue() + "%")
+                                                            : ("-" + String.format("%,d", bestPromo.getDiscountValue()) + "₫");
+                                            %>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <small class="text-decoration-line-through text-muted"><%= String.format("%,d", baseUnit)%>₫</small>
+                                                <small class="fw-bold text-danger"><%= String.format("%,d", effectiveUnit)%>₫</small>
+                                                <span class="badge bg-danger promo-badge"><%= promoLabel%></span>
+                                            </div>
+                                            <% } else {%>
+                                            <small><%= String.format("%,d", baseUnit)%>₫</small>
+                                            <% }%>
                                         </div>
                                     </div>
 
                                     <div class="d-flex align-items-center gap-4" style="flex-shrink:0;min-width:320px;">
                                         <!-- Trong list item -->
                                         <div class="quantity-layout">
-                                            <button type="button" class="btn btn-outline-secondary btn-sm quantity-btn"
-                                                    data-action="decrease" data-cart-id="<%= item.getCartID()%>">−</button>
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm quantity-btn btn-decrease"
+                                                    data-action="decrease"
+                                                    data-cart-id="<%= item.getCartID()%>"
+                                                    <%= (item.getQuantity() <= 1 ? "disabled" : "")%>>
+                                                −
+                                            </button>
 
                                             <span class="quantity-<%= item.getCartID()%>"><%= item.getQuantity()%></span>
 
-                                            <button type="button" class="btn btn-outline-secondary btn-sm quantity-btn"
-                                                    data-action="increase" data-cart-id="<%= item.getCartID()%>">+</button>
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm quantity-btn"
+                                                    data-action="increase"
+                                                    data-cart-id="<%= item.getCartID()%>">+</button>
                                         </div>
 
                                         <strong class="total text-nowrap" style="min-width: 90px; text-align:right;">
-                                            <%= String.format("%,d", total)%>₫
+                                            <%= String.format("%,d", lineTotal)%>₫
                                         </strong>
                                         <a href="<%= context%>/Cart?action=delete&id=<%= item.getCartID()%>"
                                            onclick="return confirm('Are you sure you want to delete this product in cart?');">
@@ -217,8 +287,7 @@
                                                e.preventDefault();
                                                const $btn = $(this);
                                                const id = $btn.data('cart-id');
-                                               const action = $btn.data('action'); // 'increase' | 'decrease'
-
+                                               const action = $btn.data('action');
                                                $.post('<%= request.getContextPath()%>/Cart', {
                                                action: action,
                                                        cartID: id,
@@ -229,19 +298,26 @@
                                                return;
                                                }
 
-                                               // Cập nhật quantity hiển thị
-                                               $('.quantity-' + id).text(res.quantity);
-                                               // Cập nhật checkbox data-qty và tổng từng dòng
                                                const $row = $btn.closest('li.list-group-item');
                                                const $cb = $row.find('.select-item');
+                                               const $dec = $row.find('.btn-decrease');
+                                               // Quantity
+                                               $('.quantity-' + id).text(res.quantity);
                                                $cb.attr('data-qty', res.quantity);
-                                               $row.find('.total').text(res.itemTotalFmt);
-                                               // Nếu server báo xóa (quantity==0), có thể remove dòng:
-                                               if (res.deleted) {
-                                               $row.remove();
+                                               // Cập nhật unit sau KM (để summary dùng đúng)
+                                               if (typeof res.unit === 'number') {
+                                               $cb.attr('data-unit', res.unit);
                                                }
 
-                                               // Recalc summary
+                                               // Line total hiển thị
+                                               $row.find('.total').text(res.itemTotalFmt);
+                                               // Disable/enable nút giảm
+                                               if (res.canDecrease === false) {
+                                               $dec.prop('disabled', true);
+                                               } else {
+                                               $dec.prop('disabled', false);
+                                               }
+
                                                recalcSelected();
                                                }, 'json').fail(function () {
                                                alert('Có lỗi mạng khi cập nhật số lượng');
