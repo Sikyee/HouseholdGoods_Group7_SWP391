@@ -118,15 +118,14 @@ public class ProductController extends HttpServlet {
                 errors.put("price", "Invalid price format");
             }
 
-            // ✅ Validate Stock
             try {
-                int quantity = Integer.parseInt(request.getParameter("stonkQuantity"));
+                int quantity = Integer.parseInt(request.getParameter("stockQuantity"));
                 if (quantity < 0) {
-                    errors.put("stonkQuantity", "Stock must be non-negative");
+                    errors.put("stockQuantity", "Stock must be non-negative");
                 }
                 p.setStonkQuantity(quantity);
             } catch (NumberFormatException e) {
-                errors.put("stonkQuantity", "Invalid stock quantity");
+                errors.put("stockQuantity", "Invalid stock quantity");
             }
 
             // ✅ Validate Brand
@@ -151,12 +150,11 @@ public class ProductController extends HttpServlet {
                 errors.put("subCategory", "Invalid SubCategory ID");
             }
 
-            // ✅ Validate File Upload
             Part filePart = request.getPart("imageFile");
-            String fileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
-            String contentType = filePart.getContentType();
+            if (filePart != null && filePart.getSize() > 0) {
+                String fileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
+                String contentType = filePart.getContentType();
 
-            if (fileName != null && !fileName.isEmpty()) {
                 if (!contentType.startsWith("image/")) {
                     errors.put("imageFile", "Only image files are allowed.");
                 } else {
@@ -169,6 +167,7 @@ public class ProductController extends HttpServlet {
                     p.setImage(fileName);
                 }
             } else {
+                // Không upload ảnh mới thì giữ ảnh cũ
                 p.setImage(request.getParameter("image"));
             }
 
@@ -188,7 +187,7 @@ public class ProductController extends HttpServlet {
                 return; // ⬅️ Dừng luôn, không chạy insert/update nữa
             }
 
-             // ✅ Nếu không có lỗi thì mới xử lý Insert/Update
+            // ✅ Nếu không có lỗi thì mới xử lý Insert/Update
             int productID;
             if (idStr == null || idStr.isEmpty()) {
                 // Add
@@ -222,4 +221,3 @@ public class ProductController extends HttpServlet {
         }
     }
 }
-
