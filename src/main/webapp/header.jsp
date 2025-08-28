@@ -275,6 +275,18 @@
 
                     <!-- Navigation Links -->
                     <ul class="navbar-nav d-flex flex-row align-items-center">
+<!--Wishlist-->
+                        <li class="nav-item me-3">
+    <a class="nav-link position-relative" href="<%= request.getContextPath()%>/Wishlist" title="Wishlist">
+        <i class="fas fa-heart"></i>
+        <span id="wishlist-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+    <% Integer wishlistQty = (Integer) session.getAttribute("wishlistQuantity"); %>
+    <%= (wishlistQty != null) ? wishlistQty : 0 %>
+</span>
+
+    </a>
+</li>
+
                         <!-- Cart -->
                         <li class="nav-item me-3 cart">
                             <a class="nav-link" href="<%= request.getContextPath()%>/Cart" title="Shopping Cart">
