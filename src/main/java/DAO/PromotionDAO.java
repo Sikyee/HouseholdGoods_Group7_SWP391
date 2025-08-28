@@ -15,14 +15,13 @@ public class PromotionDAO {
     }
 
     /* ===================== LISTING (full) ===================== */
-    // Active - không phân trang (ít dùng, chủ yếu test)
+    /** Trả về tất cả promotions (không lọc theo isActive). */
     public List<Promotion> getAllPromotions() throws SQLException {
         List<Promotion> promotions = new ArrayList<>();
         String sql =
             "SELECT p.*, b.brandName " +
             "FROM Promotion p " +
-            "LEFT JOIN Brand b ON TRY_CAST(p.brand AS INT) = b.brandID " + // brand là NVARCHAR trong DB
-            "WHERE p.isActive = 1 " +
+            "LEFT JOIN Brand b ON TRY_CAST(p.brand AS INT) = b.brandID " +
             "ORDER BY p.promotionID ASC";
         try (PreparedStatement ps = connection.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -31,7 +30,7 @@ public class PromotionDAO {
         return promotions;
     }
 
-    // Deleted - không phân trang
+    /** (Tuỳ chọn) Danh sách inactive (legacy) */
     public List<Promotion> getDeletedPromotions() throws SQLException {
         List<Promotion> deleted = new ArrayList<>();
         String sql =
@@ -47,7 +46,7 @@ public class PromotionDAO {
         return deleted;
     }
 
-    /* ===================== PAGINATION (active only) ===================== */
+    /* ===================== (Legacy) PAGINATION (active only) ===================== */
     public int countActivePromotions() throws SQLException {
         String sql = "SELECT COUNT(*) FROM Promotion WHERE isActive = 1";
         try (PreparedStatement ps = connection.prepareStatement(sql);
@@ -134,20 +133,51 @@ public class PromotionDAO {
         }
     }
 
-    public void softDeletePromotion(int id) throws SQLException {
-        String sql = "UPDATE Promotion SET isActive = 0 WHERE promotionID = ?";
+    /** Legacy naming (giữ để tương thích) */
+    public void softDeletePromotion(int id) throws SQLException { setActive(id, false); }
+    public void reactivatePromotion(int id) throws SQLException { setActive(id, true); }
+
+    /** Bật/tắt promotion */
+    public void setActive(int id, boolean active) throws SQLException {
+        String sql = "UPDATE Promotion SET isActive = ? WHERE promotionID = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, id);
+            ps.setBoolean(1, active);
+            ps.setInt(2, id);
             ps.executeUpdate();
         }
     }
 
-    public void reactivatePromotion(int id) throws SQLException {
-        String sql = "UPDATE Promotion SET isActive = 1 WHERE promotionID = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            ps.executeUpdate();
+    /* ===================== APPLICABILITY HELPERS ===================== */
+    /**
+     * Kiểm tra promotion có áp dụng cho đơn hàng không:
+     * - isActive == true
+     * - onDate nằm trong [startDate, endDate] (nếu các trường này khác null)
+     * - brand khớp (nếu promotion có brandID)
+     * - orderTotal >= minOrderValue
+     */
+    public boolean isApplicableForOrder(Promotion p, Integer brandId, long orderTotal, java.sql.Date onDate) {
+        if (p == null) return false;
+        if (!p.isIsActive()) return false;
+
+        java.sql.Date today = (onDate != null) ? onDate : new java.sql.Date(System.currentTimeMillis());
+        if (p.getStartDate() != null && today.before(p.getStartDate())) return false;
+        if (p.getEndDate() != null && today.after(p.getEndDate())) return false;
+
+        // brand: nếu promo có brandID thì phải trùng
+        if (p.getBrandID() != null) {
+            if (brandId == null || !p.getBrandID().equals(brandId)) return false;
         }
+        // Min Price
+        long min = (p.getMinOrderValue() != 0L) ? p.getMinOrderValue() : 0L;
+        if (orderTotal < min) return false;
+
+        return true;
+    }
+
+    /** Lấy promotion theo ID, chỉ trả về nếu thỏa điều kiện áp dụng (tiện dùng ở checkout). */
+    public Promotion getPromotionIfApplicable(int promotionId, Integer brandId, long orderTotal, java.sql.Date onDate) throws SQLException {
+        Promotion p = getPromotionById(promotionId);
+        return isApplicableForOrder(p, brandId, orderTotal, onDate) ? p : null;
     }
 
     /* ===================== HELPERS ===================== */
@@ -164,7 +194,7 @@ public class PromotionDAO {
         p.setMinOrderValue(rs.getLong("minOrderValue"));
         p.setIsActive(rs.getBoolean("isActive"));
 
-        // brand trong DB là NVARCHAR -> parse thành Integer nếu là số
+        // brand (NVARCHAR) -> parse thành Integer nếu là số
         String brandStr = rs.getString("brand");
         if (brandStr != null && brandStr.matches("\\d+")) {
             p.setBrandID(Integer.parseInt(brandStr));

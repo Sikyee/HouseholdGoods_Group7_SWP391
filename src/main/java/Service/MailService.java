@@ -7,7 +7,8 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- * Comprehensive MailService with all email functionalities
+ * MailService: gửi email xác thực, chào mừng, đặt lại mật khẩu, gửi mật khẩu mới,
+ * xác nhận đổi mật khẩu, và gửi thông tin tài khoản nhân viên.
  *
  * @author LoiDH
  */
@@ -15,19 +16,19 @@ public class MailService {
 
     private static final Logger logger = Logger.getLogger(MailService.class.getName());
 
-    // Cấu hình email trực tiếp (có thể thay đổi theo nhu cầu)
+    // Cấu hình email (khuyến nghị đọc từ ENV trong production)
     private static final String FROM_EMAIL = "danghuuloi2312@gmail.com";
-    private static final String APP_PASSWORD = "uwnv muzf jlkg azxq";
+    private static final String APP_PASSWORD = "uwnv muzf jlkg azxq"; // TODO: đọc từ biến môi trường trong production
     private static final String SMTP_HOST = "smtp.gmail.com";
     private static final String SMTP_PORT = "587";
 
     /**
-     * Send verification code email with improved template
+     * Gửi mã xác thực đăng ký
      *
-     * @param toEmail Recipient email
-     * @param code Verification code
-     * @param fullName Recipient full name (optional)
-     * @return true if sent successfully
+     * @param toEmail  Email người nhận
+     * @param code     Mã xác thực
+     * @param fullName Tên người nhận (tùy chọn)
+     * @return true nếu gửi thành công
      */
     public static boolean sendVerificationCode(String toEmail, String code, String fullName) {
         try {
@@ -39,7 +40,6 @@ public class MailService {
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
             message.setSubject("Account Verification Code");
 
-            // Create plain text email content
             String textContent = createVerificationEmailTemplate(fullName != null ? fullName : "User", code);
             message.setContent(textContent, "text/plain; charset=utf-8");
 
@@ -54,18 +54,14 @@ public class MailService {
     }
 
     /**
-     * Send verification code (backward compatibility)
+     * Backward compatibility
      */
     public static boolean sendVerificationCode(String toEmail, String code) {
         return sendVerificationCode(toEmail, code, null);
     }
 
     /**
-     * Send welcome email after successful registration
-     *
-     * @param toEmail User email
-     * @param fullName User full name
-     * @return true if sent successfully
+     * Gửi email chào mừng sau khi đăng ký thành công
      */
     public static boolean sendWelcomeEmail(String toEmail, String fullName) {
         try {
@@ -91,12 +87,7 @@ public class MailService {
     }
 
     /**
-     * Send password reset verification code
-     *
-     * @param toEmail User email
-     * @param code Reset verification code
-     * @param fullName User full name
-     * @return true if sent successfully
+     * Gửi mã xác thực đặt lại mật khẩu
      */
     public static boolean sendPasswordResetCode(String toEmail, String code, String fullName) {
         try {
@@ -122,12 +113,7 @@ public class MailService {
     }
 
     /**
-     * Send new password to user after successful reset
-     *
-     * @param toEmail User email
-     * @param newPassword New generated password
-     * @param fullName User full name
-     * @return true if sent successfully
+     * Gửi mật khẩu mới sau khi reset thành công
      */
     public static boolean sendNewPassword(String toEmail, String newPassword, String fullName) {
         try {
@@ -153,11 +139,7 @@ public class MailService {
     }
 
     /**
-     * Send password reset confirmation email
-     *
-     * @param toEmail User email
-     * @param fullName User full name
-     * @return true if sent successfully
+     * Gửi email xác nhận đổi mật khẩu thành công
      */
     public static boolean sendPasswordResetConfirmation(String toEmail, String fullName) {
         try {
@@ -169,7 +151,7 @@ public class MailService {
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
             message.setSubject("Password Successfully Changed");
 
-            String textContent = createPasswordResetConfirmationTemplate(fullName);
+            String textContent = createPasswordResetConfirmationTemplate(fullName != null ? fullName : "User");
             message.setContent(textContent, "text/plain; charset=utf-8");
 
             Transport.send(message);
@@ -183,12 +165,7 @@ public class MailService {
     }
 
     /**
-     * Send staff account information (username & password)
-     *
-     * @param toEmail Staff email
-     * @param username Staff username
-     * @param password Staff password
-     * @return true if sent successfully
+     * Gửi thông tin tài khoản nhân viên (username & password)
      */
     public static boolean sendAccountInfo(String toEmail, String username, String password) {
         try {
@@ -214,6 +191,7 @@ public class MailService {
     }
 
     // ====================== PRIVATE HELPER METHODS ======================
+
     private static Properties createSMTPProperties() {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");

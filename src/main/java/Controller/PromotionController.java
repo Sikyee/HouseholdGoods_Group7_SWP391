@@ -11,8 +11,9 @@ import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.sql.Date;
-import java.util.List;
-import java.util.Objects;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @WebServlet("/Promotion")
 public class PromotionController extends HttpServlet {
@@ -34,23 +35,62 @@ public class PromotionController extends HttpServlet {
         catch (NumberFormatException e) { return def; }
     }
 
+    private boolean isScheduled(Promotion p, LocalDate today) {
+        Date sd = p.getStartDate();
+        return (sd != null) && sd.toLocalDate().isAfter(today); // startDate > today
+    }
+
+    /**
+     * Lấy toàn bộ promotions, phân loại Active vs Deactive theo quy tắc:
+     * Active: isActive == true && startDate <= today
+     * Deactive: isActive == false || startDate > today
+     * Có phân trang cho danh sách Active (server-side).
+     */
     private void preloadPagedLists(HttpServletRequest request, int page, int pageSize) throws Exception {
-        int totalItems = dao.countActivePromotions();
+        LocalDate today = LocalDate.now();
+
+        // Gợi ý: nếu DAO của bạn chưa có, thêm dao.getAllPromotions()
+        List<Promotion> all = dao.getAllPromotions();
+
+        List<Promotion> active = new ArrayList<>();
+        List<Promotion> deactive = new ArrayList<>();
+
+        for (Promotion p : all) {
+            if (p.isIsActive() && !isScheduled(p, today)) {
+                active.add(p);
+            } else {
+                deactive.add(p); // Inactive hoặc Scheduled
+            }
+        }
+
+        // Sort nhẹ cho dễ nhìn: Active mới nhất trước, Deactive sắp tới trước
+        active.sort(Comparator.comparing(Promotion::getStartDate, Comparator.nullsLast(Comparator.reverseOrder()))
+                              .thenComparing(Promotion::getPromotionID));
+        deactive.sort(Comparator.comparing(Promotion::getStartDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                                .thenComparing(Promotion::getPromotionID));
+
+        // Pagination cho Active
+        int totalItems = active.size();
         int totalPages = Math.max(1, (int) Math.ceil(totalItems / (double) pageSize));
         if (page < 1) page = 1;
         if (page > totalPages) page = totalPages;
 
-        List<Promotion> activePage = dao.getActivePromotionsPage(page, pageSize);
-        List<Promotion> deleted = dao.getDeletedPromotions();
+        int from = Math.max(0, (page - 1) * pageSize);
+        int to = Math.min(totalItems, from + pageSize);
+        List<Promotion> activePage = active.subList(from, to);
+
         List<Brand> brands = new BrandDAO().getAllBrands();
 
         request.setAttribute("list", activePage);
-        request.setAttribute("deletedList", deleted);
+        request.setAttribute("deactiveList", deactive);
         request.setAttribute("brands", brands);
 
         request.setAttribute("page", page);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("totalItems", totalItems);
+
+        // để JSP biết hôm nay nhằm hiển thị “Scheduled/Inactive”
+        request.setAttribute("today", Date.valueOf(today));
     }
 
     /* ------------------------ GET ------------------------ */
@@ -81,14 +121,14 @@ public class PromotionController extends HttpServlet {
                 preloadPagedLists(request, page, pageSize);
                 request.getRequestDispatcher("/managePromotion.jsp").forward(request, response);
 
-            } else if (action.equals("delete")) {
+            } else if (action.equals("deactivate")) {
                 int id = parseIntOrDefault(request.getParameter("id"), 0);
-                if (id > 0) dao.softDeletePromotion(id);
+                if (id > 0) dao.setActive(id, false); // thay cho softDelete
                 response.sendRedirect("Promotion?action=list&page=" + page);
 
-            } else if (action.equals("reactivate")) {
+            } else if (action.equals("activate")) {
                 int id = parseIntOrDefault(request.getParameter("id"), 0);
-                if (id > 0) dao.reactivatePromotion(id);
+                if (id > 0) dao.setActive(id, true); // thay cho reactivate
                 response.sendRedirect("Promotion?action=list&page=" + page);
 
             } else if (action.equals("prepareAdd")) {
@@ -164,6 +204,7 @@ public class PromotionController extends HttpServlet {
                 throw new IllegalArgumentException("Invalid discount type");
             }
 
+            // Kiểm tra trùng code (logic cũ còn hợp lý)
             Promotion existing = dao.getPromotionByCode(p.getCode());
             if (p.getPromotionID() == 0 && existing != null) {
                 if (existing.isIsActive()) {
@@ -172,6 +213,7 @@ public class PromotionController extends HttpServlet {
                     request.getRequestDispatcher("/managePromotion.jsp").forward(request, response);
                     return;
                 } else {
+                    // Gợi ý khôi phục bản cũ
                     request.setAttribute("promotion", existing);
                     request.setAttribute("reactivate", true);
                     preloadPagedLists(request, page, pageSize);
