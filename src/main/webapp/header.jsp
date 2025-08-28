@@ -302,7 +302,7 @@
 
 
 
-                                <a class="dropdown-item" href="<%= request.getContextPath()%>/orders">
+                                <a class="dropdown-item" href="<%= request.getContextPath()%>/order">
                                     <i class="fas fa-shopping-bag"></i>My Orders
                                 </a>
 
