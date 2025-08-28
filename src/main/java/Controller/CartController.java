@@ -1,9 +1,11 @@
 package Controller;
 
 import DAO.CartDAO;
+import DAO.PromotionDAO;
 import DAO.VoucherDAO;
 import Model.Cart;
 import Model.Product;
+import Model.Promotion;
 import Model.Voucher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
@@ -116,44 +118,81 @@ public class CartController extends HttpServlet {
             if ("increase".equals(action)) {
                 dao.increaseQuantityInCart(cart);
             } else if ("decrease".equals(action)) {
-                dao.decreaseQuantityByCartID(cartID);
+                dao.decreaseQuantityByCartID(cartID); // không xóa nếu =1
             }
 
-            HttpSession session = request.getSession(false);
-            Model.User user = (Model.User) (session != null ? session.getAttribute("user") : null);
-
             Cart updated = dao.getCartItemById(cartID);
-            if ("1".equals(request.getParameter("ajax"))) {
+
+            if (isAjax) {
                 response.setContentType("application/json;charset=UTF-8");
                 PrintWriter out = response.getWriter();
 
                 if (updated == null) {
+                    // (hiếm khi) item bị xóa bằng thao tác khác — cứ báo deleted
                     out.write("{\"ok\":true,\"deleted\":true}");
                     return;
                 }
 
                 Product p = updated.getProduct();
-                long unit = (p != null ? p.getPrice() : 0L);
+                long baseUnit = (p != null ? p.getPrice() : 0L);
                 int quantity = updated.getQuantity();
-                long itemTotal = unit * quantity;
+
+                // === ÁP DỤNG PROMOTION THEO BRAND ===
+                long effectiveUnit = baseUnit;
+                try {
+                    PromotionDAO promoDao = new PromotionDAO();
+                    List<Promotion> promos = promoDao.getAllPromotions(); // isActive=1
+                    Integer brandId = p != null ? p.getBrandID() : null;
+
+                    if (brandId != null) {
+                        long best = baseUnit;
+                        for (Promotion pr : promos) {
+                            if (brandId.equals(pr.getBrandID())) {
+                                long discounted = baseUnit;
+                                if ("percentage".equalsIgnoreCase(pr.getDiscountType())) {
+                                    discounted = Math.round(baseUnit * (100.0 - pr.getDiscountValue()) / 100.0);
+                                } else if ("fixed".equalsIgnoreCase(pr.getDiscountType())) {
+                                    discounted = Math.max(0L, baseUnit - pr.getDiscountValue());
+                                }
+                                if (discounted < best) {
+                                    best = discounted;
+                                }
+                            }
+                        }
+                        effectiveUnit = best;
+                    }
+                } catch (Exception ignore) {
+                    // nếu lỗi khuyến mãi thì dùng giá gốc
+                    effectiveUnit = baseUnit;
+                }
+
+                long itemTotal = effectiveUnit * quantity;
 
                 NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
                 String itemTotalFmt = nf.format(itemTotal) + "₫";
+                String unitFmt = nf.format(effectiveUnit) + "₫";
+
+                boolean canDecrease = quantity > 1;
 
                 out.write("{\"ok\":true,"
                         + "\"quantity\":" + quantity + ","
+                        + "\"unit\":" + effectiveUnit + ","
+                        + "\"unitFmt\":\"" + unitFmt.replace("\"", "\\\"") + "\","
                         + "\"itemTotal\":" + itemTotal + ","
-                        + "\"itemTotalFmt\":\"" + itemTotalFmt.replace("\"", "\\\"") + "\"}");
+                        + "\"itemTotalFmt\":\"" + itemTotalFmt.replace("\"", "\\\"") + "\","
+                        + "\"canDecrease\":" + canDecrease
+                        + "}");
                 return;
             }
 
-            // Non-AJAX: render lại trang như cũ
+            // Non-AJAX: render lại trang
+            HttpSession session = request.getSession(false);
+            Model.User user = (Model.User) (session != null ? session.getAttribute("user") : null);
             if (user != null) {
                 List<Cart> cartList = dao.getProductInCart(user.getUserID());
                 request.setAttribute("cart", cartList);
                 session.setAttribute("cartQuantity", cartList.size());
             }
-
             request.getRequestDispatcher("cart.jsp").forward(request, response);
         } catch (Exception e) {
             e.printStackTrace();

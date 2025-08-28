@@ -6,6 +6,7 @@ import DAO.UserDAO;
 import DAO.AddressDAO;
 import DAO.OrderDAO;
 import DAO.OrderDetailDAO;
+import DAO.PromotionDAO;
 import DAO.VoucherDAO;
 import Model.Address;
 import Model.Cart;
@@ -13,6 +14,7 @@ import Model.Order;
 import Model.OrderDetail;
 import Model.OrderInfo;
 import Model.Product;
+import Model.Promotion;
 import Model.Voucher;
 import Model.User;
 import jakarta.servlet.ServletException;
@@ -53,6 +55,53 @@ public class CheckoutController extends HttpServlet {
             this.voucherDAO = new VoucherDAO();
         } catch (Exception e) {
         }
+    }
+
+    private Map<Integer, List<Promotion>> buildPromosByBrand() throws Exception {
+        PromotionDAO promoDao = new PromotionDAO();
+        List<Promotion> promos = promoDao.getAllPromotions(); // isActive=1
+
+        Map<Integer, List<Promotion>> promosByBrand = new HashMap<Integer, List<Promotion>>();
+
+        for (Promotion p : promos) {
+            if (p.getBrandID() != null) {
+                Integer brandId = p.getBrandID();
+                List<Promotion> brandPromos = promosByBrand.get(brandId);
+                if (brandPromos == null) {
+                    brandPromos = new ArrayList<Promotion>();
+                    promosByBrand.put(brandId, brandPromos);
+                }
+                brandPromos.add(p);
+            }
+        }
+
+        return promosByBrand;
+    }
+
+// ===== Helper: tính đơn giá đã áp KM tốt nhất theo brand
+    private long bestUnitWithBrandPromos(long baseUnit, Integer brandId, Map<Integer, List<Promotion>> promosByBrand) {
+        if (brandId == null || promosByBrand == null) {
+            return baseUnit;
+        }
+        List<Promotion> brandPromos = promosByBrand.get(brandId);
+        if (brandPromos == null || brandPromos.isEmpty()) {
+            return baseUnit;
+        }
+
+        long best = baseUnit;
+        for (Promotion pr : brandPromos) {
+            long discounted = baseUnit;
+            String t = pr.getDiscountType();
+            if ("percentage".equalsIgnoreCase(t)) {
+                discounted = Math.round(baseUnit * (100.0 - pr.getDiscountValue()) / 100.0);
+            } else if ("fixed".equalsIgnoreCase(t)) {
+                discounted = Math.max(0L, baseUnit - pr.getDiscountValue());
+            }
+            if (discounted < best) {
+                best = discounted;
+            }
+        }
+        return best;
     }
 
     @Override
@@ -97,6 +146,24 @@ public class CheckoutController extends HttpServlet {
                 temp.setProduct(product);
                 cartList.add(temp);
 
+                Map<Integer, List<Promotion>> promosByBrand = buildPromosByBrand();
+
+// subtotal sau promotion
+                long subtotal = 0L;
+                for (Cart c : cartList) {
+                    Product p = c.getProduct();
+                    if (p == null) {
+                        p = productDAO.getProductById(c.getProductID());
+                        c.setProduct(p);
+                    }
+                    long base = (p != null ? p.getPrice() : 0L);
+                    Integer brandId = (p != null ? p.getBrandID() : null);
+                    long unitEff = bestUnitWithBrandPromos(base, brandId, promosByBrand);
+                    subtotal += unitEff * c.getQuantity();
+                }
+
+                request.setAttribute("subtotal", subtotal);
+
                 Address address = addressDAO.getDefaultAddress(user.getUserID());
                 List<Voucher> allVouchers = voucherDAO.getAllVouchers(); // bạn đã có DAO sẵn
                 List<Voucher> availableVouches = new ArrayList<>();
@@ -124,6 +191,24 @@ public class CheckoutController extends HttpServlet {
                         availableVouches.add(promo);
                     }
                 }
+
+                Map<Integer, List<Promotion>> promosByBrand = buildPromosByBrand();
+
+// subtotal sau promotion
+                long subtotal = 0L;
+                for (Cart c : cartList) {
+                    Product p = c.getProduct();
+                    if (p == null) {
+                        p = productDAO.getProductById(c.getProductID());
+                        c.setProduct(p);
+                    }
+                    long base = (p != null ? p.getPrice() : 0L);
+                    Integer brandId = (p != null ? p.getBrandID() : null);
+                    long unitEff = bestUnitWithBrandPromos(base, brandId, promosByBrand);
+                    subtotal += unitEff * c.getQuantity();
+                }
+
+                request.setAttribute("subtotal", subtotal);
 
                 request.setAttribute("cart", cartList);
                 request.setAttribute("address", address);
@@ -202,13 +287,29 @@ public class CheckoutController extends HttpServlet {
                 }
 
                 // Tính subtotal server-side
+//                long subtotal = 0L;
+//                for (Cart c : selectedCarts) {
+//                    Product p = c.getProduct();
+//                    if (p != null) {
+//                        subtotal += (long) p.getPrice() * c.getQuantity();
+//                    }
+//                }
+                Map<Integer, List<Promotion>> promosByBrand = buildPromosByBrand();
+
                 long subtotal = 0L;
                 for (Cart c : selectedCarts) {
                     Product p = c.getProduct();
-                    if (p != null) {
-                        subtotal += (long) p.getPrice() * c.getQuantity();
+                    if (p == null) {
+                        p = productDAO.getProductById(c.getProductID());
+                        c.setProduct(p);
                     }
+                    long base = (p != null ? p.getPrice() : 0L);
+                    Integer brandId = (p != null ? p.getBrandID() : null);
+                    long unitEff = bestUnitWithBrandPromos(base, brandId, promosByBrand);
+                    subtotal += unitEff * c.getQuantity();
                 }
+
+                request.setAttribute("subtotal", subtotal);
 
                 // Chuẩn bị dữ liệu giống doGet()
                 Address addr = addressDAO.getDefaultAddress(user.getUserID());
@@ -288,12 +389,22 @@ public class CheckoutController extends HttpServlet {
             }
 
             // subtotal server-side (không phụ thuộc client gửi 'total')
+//            long subtotal = 0L;
+//            for (Cart c : cartList) {
+//                Product p = c.getProduct() != null ? c.getProduct() : productDAO.getProductById(c.getProductID());
+//                if (p != null) {
+//                    subtotal += p.getPrice() * c.getQuantity();
+//                }
+//            }
+            Map<Integer, List<Promotion>> promosByBrand = buildPromosByBrand();
+
             long subtotal = 0L;
             for (Cart c : cartList) {
                 Product p = c.getProduct() != null ? c.getProduct() : productDAO.getProductById(c.getProductID());
-                if (p != null) {
-                    subtotal += p.getPrice() * c.getQuantity();
-                }
+                long base = (p != null ? p.getPrice() : 0L);
+                Integer brandId = (p != null ? p.getBrandID() : null);
+                long unitEff = bestUnitWithBrandPromos(base, brandId, promosByBrand);
+                subtotal += unitEff * c.getQuantity();
             }
 
             // voucher
@@ -344,6 +455,23 @@ public class CheckoutController extends HttpServlet {
                 return;
             }
 
+//            List<OrderDetail> orderDetails = new ArrayList<>();
+//            for (Cart c : cartList) {
+//                Product p = c.getProduct() != null ? c.getProduct() : productDAO.getProductById(c.getProductID());
+//                if (p.getStonkQuantity() < c.getQuantity()) {
+//                    request.setAttribute("error", "Sản phẩm '" + p.getProductName() + "' không đủ số lượng.");
+//                    request.getRequestDispatcher("checkout.jsp").forward(request, response);
+//                    return;
+//                }
+//                OrderDetail d = new OrderDetail();
+//                d.setOrderID(orderID);
+//                d.setProductID(c.getProductID());
+//                d.setOrderName(p.getProductName());
+//                d.setQuantity(c.getQuantity());
+//                d.setTotalPrice(p.getPrice() * c.getQuantity());
+//                orderDetails.add(d);
+//            }
+//            new OrderDetailDAO().insertOrderDetails(orderDetails);
             List<OrderDetail> orderDetails = new ArrayList<>();
             for (Cart c : cartList) {
                 Product p = c.getProduct() != null ? c.getProduct() : productDAO.getProductById(c.getProductID());
@@ -352,12 +480,17 @@ public class CheckoutController extends HttpServlet {
                     request.getRequestDispatcher("checkout.jsp").forward(request, response);
                     return;
                 }
+
+                long base = p.getPrice();
+                Integer brandId = p.getBrandID();
+                long unitEff = bestUnitWithBrandPromos(base, brandId, promosByBrand);
+
                 OrderDetail d = new OrderDetail();
                 d.setOrderID(orderID);
                 d.setProductID(c.getProductID());
                 d.setOrderName(p.getProductName());
                 d.setQuantity(c.getQuantity());
-                d.setTotalPrice(p.getPrice() * c.getQuantity());
+                d.setTotalPrice(unitEff * c.getQuantity()); // <-- giá sau KM theo brand
                 orderDetails.add(d);
             }
             new OrderDetailDAO().insertOrderDetails(orderDetails);
