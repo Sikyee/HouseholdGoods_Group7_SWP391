@@ -11,7 +11,10 @@ import Model.OrderDetail;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ *
+ * @author TriTN
+ */
 public class FeedbackDAO {
 
     // Lấy feedback theo trang
@@ -337,6 +340,152 @@ public class FeedbackDAO {
     }
     return null;
 }
+    // Hàm lấy trung bình rating của 1 sản phẩm
 
+ public Double getAverageRatingByProduct(int productID) {
+    String sql = "SELECT AVG(CAST(f.rating AS FLOAT)) AS avgRating " +
+                 "FROM OrderDetail od " +
+                 "LEFT JOIN Feedback f ON f.orderDetailID = od.orderDetailID " +
+                 "WHERE od.productID = ?";
+    try (Connection conn = new DBConnection().getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, productID);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getObject("avgRating", Double.class); // null nếu không có feedback
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return null;
+}
+
+    // Lấy orders chưa feedback theo page
+public List<OrderDetail> getOrdersWithoutFeedback(int userID, int page, int limit) {
+    List<OrderDetail> list = new ArrayList<>();
+    String sql = "SELECT od.* FROM OrderDetail od "
+            + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
+            + "WHERE oi.userID = ? AND oi.orderStatusID = 5 "
+            + "AND od.orderDetailID NOT IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0) "
+            + "ORDER BY od.orderDetailID OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, userID);
+        ps.setInt(2, (page - 1) * limit);
+        ps.setInt(3, limit);
+
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            OrderDetail od = new OrderDetail();
+            od.setOrderDetailID(rs.getInt("orderDetailID"));
+            od.setProductID(rs.getInt("productID"));
+            od.setOrderID(rs.getInt("orderID"));
+            od.setOrderName(rs.getString("orderName"));
+            od.setQuantity(rs.getInt("quantity"));
+            od.setTotalPrice(rs.getLong("totalPrice"));
+            list.add(od);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return list;
+}
+
+public int countOrdersWithoutFeedback(int userID) {
+    String sql = "SELECT COUNT(*) FROM OrderDetail od "
+               + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
+               + "WHERE oi.userID = ? AND oi.orderStatusID = 5 "
+               + "AND od.orderDetailID NOT IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0)";
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, userID);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) return rs.getInt(1);
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return 0;
+}
+
+// Lấy orders đã feedback theo page
+public List<OrderDetail> getOrdersWithFeedback(int userID, int page, int limit) {
+    List<OrderDetail> list = new ArrayList<>();
+    String sql = "SELECT od.* FROM OrderDetail od "
+            + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
+            + "WHERE oi.userID = ? AND oi.orderStatusID = 5 "
+            + "AND od.orderDetailID IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0) "
+            + "ORDER BY od.orderDetailID OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, userID);
+        ps.setInt(2, (page - 1) * limit);
+        ps.setInt(3, limit);
+
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            OrderDetail od = new OrderDetail();
+            od.setOrderDetailID(rs.getInt("orderDetailID"));
+            od.setProductID(rs.getInt("productID"));
+            od.setOrderID(rs.getInt("orderID"));
+            od.setOrderName(rs.getString("orderName"));
+            od.setQuantity(rs.getInt("quantity"));
+            od.setTotalPrice(rs.getLong("totalPrice"));
+            list.add(od);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return list;
+}
+
+public int countOrdersWithFeedback(int userID) {
+    String sql = "SELECT COUNT(*) FROM OrderDetail od "
+               + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
+               + "WHERE oi.userID = ? AND oi.orderStatusID = 5 "
+               + "AND od.orderDetailID IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0)";
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, userID);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) return rs.getInt(1);
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return 0;
+}
+
+public List<Feedback> getFeedbackByProductID(int productID) {
+        List<Feedback> list = new ArrayList<>();
+        String sql = "SELECT f.*, u.fullName AS userName " +
+                     "FROM Feedback f " +
+                     "JOIN OrderDetail od ON f.orderDetailID = od.orderDetailID " +
+                     "JOIN Users u ON f.userID = u.userID " +
+                     "WHERE od.productID = ? AND f.isDeleted = 0 " +
+                     "ORDER BY f.createdAt DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, productID);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Feedback f = new Feedback();
+                f.setFeedbackID(rs.getInt("feedbackID"));
+                f.setOrderDetailID(rs.getInt("orderDetailID"));
+                f.setUserID(rs.getInt("userID"));
+                f.setComment(rs.getString("comment"));
+                f.setRating(rs.getInt("rating"));
+                f.setCreatedAt(rs.getTimestamp("createdAt"));
+                f.setDeleted(rs.getBoolean("isDeleted"));
+f.setUserName(rs.getString("userName"));
+                list.add(f);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
 
 }
