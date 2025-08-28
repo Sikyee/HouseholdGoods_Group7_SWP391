@@ -1,15 +1,18 @@
 package DAO;
 
 import DB.DBConnection;
+import Model.MonthlyRevenue;
 import Model.Order;
 import Model.OrderDetail;
 import Model.OrderInfo;
+import Model.StatusCount;
 import Model.dto.WeeklyRevenue;
 import java.math.BigInteger;
 
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -247,6 +250,96 @@ public class OrderDAO {
         return result;
     }
 
+    // OrderDAO.java
+    public List<WeeklyRevenue> getWeeklyRevenue(LocalDate startDate, LocalDate endDate, int statusId) throws SQLException {
+        // end exclusive
+        Timestamp startTs = Timestamp.valueOf(startDate.atStartOfDay());
+        Timestamp endTsExclusive = Timestamp.valueOf(endDate.plusDays(1).atStartOfDay());
+
+        String sql
+                = "WITH weeks AS ( "
+                + "  SELECT CAST(DATEADD(day, -((DATEPART(weekday, ?)+@@DATEFIRST-2)%7), CAST(? AS date)) AS date) AS weekStart "
+                + // Monday-based
+                "  UNION ALL "
+                + "  SELECT DATEADD(week, 1, weekStart) FROM weeks WHERE weekStart < ? "
+                + ") "
+                + "SELECT w.weekStart AS weekStart, ISNULL(SUM(oi.finalPrice),0) AS total "
+                + "FROM weeks w "
+                + "LEFT JOIN ( "
+                + "  SELECT TRY_CONVERT(date, orderDate) AS d, finalPrice "
+                + "  FROM OrderInfo "
+                + "  WHERE orderStatusID = ? AND orderDate >= ? AND orderDate < ? "
+                + ") oi ON oi.d >= w.weekStart AND oi.d < DATEADD(week, 1, w.weekStart) "
+                + "GROUP BY w.weekStart "
+                + "ORDER BY w.weekStart "
+                + "OPTION (MAXRECURSION 0);";
+
+        List<WeeklyRevenue> list = new ArrayList<>();
+        try ( Connection c = DBConnection.getConnection();  PreparedStatement ps = c.prepareStatement(sql)) {
+
+            // 1-3: for weeks CTE anchors
+            ps.setDate(1, java.sql.Date.valueOf(startDate));
+            ps.setDate(2, java.sql.Date.valueOf(startDate));
+            ps.setDate(3, java.sql.Date.valueOf(endDate));
+            // 4-6: filter orders
+            ps.setInt(4, statusId);
+            ps.setTimestamp(5, startTs);
+            ps.setTimestamp(6, endTsExclusive);
+
+            try ( ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    LocalDate weekStart = rs.getDate("weekStart").toLocalDate();
+                    double total = rs.getDouble("total");
+                    list.add(new WeeklyRevenue(weekStart, total));
+                }
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(OrderDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return list;
+    }
+
+    // Lấy doanh thu theo tháng trong khoảng ngày với trạng thái cố định (mặc định = 5)
+// - An toàn trước lỗi convert (nếu có view/trigger/dữ liệu không chuẩn)
+// - Giữ điều kiện end-exclusive
+    public List<MonthlyRevenue> getMonthlyRevenue(LocalDate startDate, LocalDate endDate, int statusId) throws SQLException {
+        Timestamp startTs = Timestamp.valueOf(startDate.atStartOfDay());
+        Timestamp endTsExclusive = Timestamp.valueOf(endDate.plusDays(1).atStartOfDay());
+
+        String sql
+                = "WITH o AS ( "
+                + "  SELECT TRY_CONVERT(datetime, orderDate) AS dt, finalPrice, orderStatusID "
+                + "  FROM OrderInfo "
+                + ") "
+                + "SELECT YEAR(dt) AS y, MONTH(dt) AS m, ISNULL(SUM(finalPrice),0) AS total "
+                + "FROM o "
+                + "WHERE dt IS NOT NULL "
+                + "  AND orderStatusID = ? "
+                + "  AND dt >= ? AND dt < ? "
+                + "GROUP BY YEAR(dt), MONTH(dt) "
+                + "ORDER BY y, m";
+
+        List<MonthlyRevenue> list = new ArrayList<>();
+        try ( Connection c = DBConnection.getConnection();  PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, statusId);
+            ps.setTimestamp(2, startTs);
+            ps.setTimestamp(3, endTsExclusive);
+
+            try ( ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int y = rs.getInt("y");
+                    int m = rs.getInt("m");
+                    double total = rs.getDouble("total");
+                    list.add(new MonthlyRevenue(YearMonth.of(y, m), total));
+                }
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(OrderDAO.class.getName()).log(Level.SEVERE, "getMonthlyRevenue error", ex);
+            throw ex;
+        } catch (Exception ex) {
+            Logger.getLogger(OrderDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     // Lấy danh sách đơn hàng theo userID
     public List<Order> getOrdersByUser(int userID) {
         List<Order> list = new ArrayList<>();
@@ -287,6 +380,37 @@ public class OrderDAO {
         return list;
     }
 
+    // Đếm số đơn theo trạng thái trong khoảng thời gian (dùng cho pie chart)
+    public List<StatusCount> getOrderCountByStatus(LocalDate startDate, LocalDate endDate) throws SQLException {
+        Timestamp startTs = Timestamp.valueOf(startDate.atStartOfDay());
+        Timestamp endTsExclusive = Timestamp.valueOf(endDate.plusDays(1).atStartOfDay());
+
+        String sql
+                = "SELECT \n"
+                + "    os.statusName, \n"
+                + "    oi.orderStatusID, \n"
+                + "    COUNT(*) AS cnt\n"
+                + "FROM OrderInfo oi\n"
+                + "JOIN OrderStatus os \n"
+                + "    ON oi.orderStatusID = os.orderStatusID\n"
+                + "WHERE oi.orderDate >= ?\n"
+                + "  AND oi.orderDate < ?\n"
+                + "GROUP BY oi.orderStatusID, os.statusName\n"
+                + "ORDER BY oi.orderStatusID;";
+
+        List<StatusCount> list = new ArrayList<>();
+        try ( Connection c = DBConnection.getConnection();  PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setTimestamp(1, startTs);
+            ps.setTimestamp(2, endTsExclusive);
+            try ( ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new StatusCount(rs.getInt("orderStatusID"), rs.getLong("cnt"), rs.getString("statusName")));
+                }
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(OrderDAO.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     // Lấy chi tiết sản phẩm trong 1 đơn
     public List<OrderDetail> getOrderDetailsByOrder(int orderID) {
         List<OrderDetail> list = new ArrayList<>();
