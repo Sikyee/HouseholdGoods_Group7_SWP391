@@ -184,7 +184,7 @@
                 <div class="row g-3">
                     <div class="col-12 col-md-4">
                         <div class="stat-card p-4 bg-white">
-                            <div class="stat-title mb-1">Total User</div>
+                            <div class="stat-title mb-1"><i class="fa fa-users" aria-hidden="true"></i> Total User</div>
                             <div class="stat-value">
                                 <c:out value="${userCount}" default="0" />
                             </div>
@@ -193,7 +193,7 @@
 
                     <div class="col-12 col-md-4">
                         <div class="stat-card p-4 bg-white">
-                            <div class="stat-title mb-1">Total Product</div>
+                            <div class="stat-title mb-1"><i class="fa fa-archive" aria-hidden="true"></i> Total Product</div>
                             <div class="stat-value">
                                 <c:out value="${productCount}" default="0" />
                             </div>
@@ -202,11 +202,62 @@
 
                     <div class="col-12 col-md-4">
                         <div class="stat-card p-4 bg-white">
-                            <div class="stat-title mb-1">Revenue Today</div>
+                            <div class="stat-title mb-1"><i class="fa fa-line-chart" aria-hidden="true"></i> Revenue Today</div>
                             <div class="stat-value">
                                 <c:out value="${revenueADay}" default="0₫" />₫
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Bộ lọc thời gian -->
+                    <div class="card p-3 my-3">
+                        <form class="row g-3 align-items-end" action="dashboard" method="get">
+                            <div class="col-sm-4">
+                                <label class="form-label">Start</label>
+                                <input type="date" class="form-control" name="start" value="${start != null ? start : ''}">
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label">End</label>
+                                <input type="date" class="form-control" name="end" value="${end != null ? end : ''}">
+                            </div>
+                            <div class="col-sm-2">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" name="status">
+                                    <option value="5" ${status == 5 ? 'selected' : ''}>Completed</option>
+                                    <option value="1" ${status == 1 ? 'selected' : ''}>Pending</option>
+                                    <option value="2" ${status == 2 ? 'selected' : ''}>Proccessing</option>
+                                    <option value="3" ${status == 3 ? 'selected' : ''}>Shipping</option>
+                                    <option value="4" ${status == 4 ? 'selected' : ''}>Delivered</option>
+                                    <!-- Thêm nếu bạn có nhiều trạng thái hơn -->
+                                </select>
+                            </div>
+                            <div class="col-sm-2">
+                                <button class="btn btn-primary w-100" type="submit">Filter</button>
+                            </div>
+                            <!--                            <div class="col-12">
+                                                            <small class="text-muted">* Revenue <b>orderStatusID = ${status}</b> trong khoảng thời gian đã chọn.</small>
+                                                        </div>-->
+                        </form>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-7">
+                            <div class="bg-white p-3">
+                                <h5 class="mb-3">Weekly Revenue</h5>
+                                <div id="weekChart" style="height: 360px;"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-5">
+                            <div class="bg-white p-3">
+                                <h5 class="mb-3">Orders by Status</h5>
+                                <div id="pieChart" style="height: 360px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-3 my-4">
+                        <h5 class="mb-3">Monthly Revenue</h5>
+                        <div id="monthlyChart" style="height: 360px;"></div>
                     </div>
                 </div>
 
@@ -218,23 +269,38 @@
         <!-- Bootstrap JS (tùy chọn) -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
-        <script type="text/javascript">
+        <script>
             window.onload = function () {
-                var dataPoints = <%= request.getAttribute("weekRevenueData")%>;
-                // ví dụ: [{label:"Mon", y: 300000},{label:"Tue", y:0},...]
+                var weekData = <%= request.getAttribute("weekRevenueData")%> || [];
+                var monthlyData = <%= request.getAttribute("monthlyRevenueData")%> || [];
+                var pieData = <%= request.getAttribute("orderStatusPieData")%> || [];
 
-                var chart = new CanvasJS.Chart("chartContainer", {
-                    animationEnabled: true,
-                    theme: "light2",
-                    title: {text: "Week Revenue"},
+                // Tuần
+                new CanvasJS.Chart("weekChart", {
+                    animationEnabled: true, theme: "light2",
                     axisY: {title: "Money (VND)"},
+                    data: [{type: "column", dataPoints: weekData}]
+                }).render();
+
+                // Tháng
+                new CanvasJS.Chart("monthlyChart", {
+                    animationEnabled: true, theme: "light2",
+                    axisY: {title: "Money (VND)"},
+                    data: [{type: "column", dataPoints: monthlyData}]
+                }).render();
+
+                // Pie
+                new CanvasJS.Chart("pieChart", {
+                    animationEnabled: true, theme: "light2",
+                    legend: {verticalAlign: "center", horizontalAlign: "right"},
                     data: [{
-                            type: "column",
-                            showInLegend: false,
-                            dataPoints: dataPoints
+                            type: "pie",
+                            showInLegend: true,
+                            legendText: "{name}",
+                            indexLabel: "{name} - {y}",
+                            dataPoints: pieData
                         }]
-                });
-                chart.render();
+                }).render();
             }
         </script>
     </body>
