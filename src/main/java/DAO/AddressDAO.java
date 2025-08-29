@@ -13,26 +13,24 @@ public class AddressDAO {
     // Regex patterns for validation
     private static final Pattern PHONE_PATTERN = Pattern.compile("^(\\+84|0)[3-9][0-9]{8}$");
     private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}\\s.'-]{2,100}$");
-    
+
     // Validation constants
     private static final int MAX_ADDRESS_NAME_LENGTH = 100;
     private static final int MAX_RECIPIENT_NAME_LENGTH = 100;
     private static final int MAX_ADDRESS_DETAIL_LENGTH = 255;
-    private static final int MAX_PROVINCE_LENGTH = 50;
-    private static final int MAX_DISTRICT_LENGTH = 50;
-    private static final int MAX_WARD_LENGTH = 50;
     private static final int MAX_ADDRESS_TYPE_LENGTH = 20;
     private static final int MAX_ADDRESSES_PER_USER = 10;
 
     /**
      * Validates an Address object
+     *
      * @param address Address to validate
      * @param isUpdate true if this is an update operation
      * @return ValidationResult containing validation status and errors
      */
     public ValidationResult validateAddress(Address address, boolean isUpdate) {
         ValidationResult result = new ValidationResult();
-        
+
         if (address == null) {
             result.addError("Address object cannot be null");
             return result;
@@ -78,30 +76,9 @@ public class AddressDAO {
             result.addError("Address detail must not exceed " + MAX_ADDRESS_DETAIL_LENGTH + " characters");
         }
 
-        // Validate province
-        if (isNullOrEmpty(address.getProvince())) {
-            result.addError("Province is required");
-        } else if (address.getProvince().length() > MAX_PROVINCE_LENGTH) {
-            result.addError("Province must not exceed " + MAX_PROVINCE_LENGTH + " characters");
-        }
-
-        // Validate district
-        if (isNullOrEmpty(address.getDistrict())) {
-            result.addError("District is required");
-        } else if (address.getDistrict().length() > MAX_DISTRICT_LENGTH) {
-            result.addError("District must not exceed " + MAX_DISTRICT_LENGTH + " characters");
-        }
-
-        // Validate ward
-        if (isNullOrEmpty(address.getWard())) {
-            result.addError("Ward is required");
-        } else if (address.getWard().length() > MAX_WARD_LENGTH) {
-            result.addError("Ward must not exceed " + MAX_WARD_LENGTH + " characters");
-        }
-
         // Validate address type
-        if (!isNullOrEmpty(address.getAddressType()) && 
-            address.getAddressType().length() > MAX_ADDRESS_TYPE_LENGTH) {
+        if (!isNullOrEmpty(address.getAddressType())
+                && address.getAddressType().length() > MAX_ADDRESS_TYPE_LENGTH) {
             result.addError("Address type must not exceed " + MAX_ADDRESS_TYPE_LENGTH + " characters");
         }
 
@@ -110,6 +87,7 @@ public class AddressDAO {
 
     /**
      * Validates if user can add more addresses
+     *
      * @param userID User ID to check
      * @return true if user can add more addresses
      */
@@ -119,6 +97,7 @@ public class AddressDAO {
 
     /**
      * Checks if user has a default address
+     *
      * @param userID User ID to check
      * @return true if user has a default address
      */
@@ -128,6 +107,7 @@ public class AddressDAO {
 
     /**
      * Checks if the address is the default address
+     *
      * @param addressID Address ID to check
      * @return true if this is the default address
      */
@@ -138,14 +118,14 @@ public class AddressDAO {
 
     /**
      * Counts active addresses for a user
+     *
      * @param userID User ID to check
      * @return number of active addresses
      */
     private int countActiveAddresses(int userID) {
         String sql = "SELECT COUNT(*) FROM address WHERE userID = ? AND isActive = 1";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, userID);
             ResultSet rs = ps.executeQuery();
@@ -163,6 +143,7 @@ public class AddressDAO {
 
     /**
      * Checks if user has permission to modify the address
+     *
      * @param addressID Address ID to check
      * @param userID User ID to verify ownership
      * @return true if user owns the address
@@ -189,8 +170,7 @@ public class AddressDAO {
         List<Address> addressList = new ArrayList<>();
         String sql = "SELECT * FROM address WHERE userID = ? ORDER BY addressID DESC";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, userID);
             ResultSet rs = ps.executeQuery();
@@ -219,8 +199,7 @@ public class AddressDAO {
 
         String sql = "SELECT * FROM address WHERE addressID = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, addressID);
             ResultSet rs = ps.executeQuery();
@@ -237,7 +216,7 @@ public class AddressDAO {
         return null;
     }
 
-    // Inserts a new address into the database with validation
+    // UPDATED: Removed province, district, ward fields
     public boolean addAddress(Address address) {
         // Validate input
         ValidationResult validation = validateAddress(address, false);
@@ -259,11 +238,10 @@ public class AddressDAO {
         }
 
         String sql = "INSERT INTO address (userID, addressName, recipientName, phone, addressDetail, "
-                + "province, district, ward, addressType, isDefault, isActive) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "addressType, isDefault, isActive, displayOrder) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             // Unset other default addresses if this one is default
             if (address.isDefault()) {
@@ -275,19 +253,17 @@ public class AddressDAO {
             ps.setString(3, address.getRecipientName().trim());
             ps.setString(4, address.getPhone().replaceAll("\\s", ""));
             ps.setString(5, address.getAddressDetail().trim());
-            ps.setString(6, address.getProvince().trim());
-            ps.setString(7, address.getDistrict().trim());
-            ps.setString(8, address.getWard().trim());
-            ps.setString(9, address.getAddressType() != null ? address.getAddressType().trim() : null);
-            ps.setBoolean(10, address.isDefault());
-            ps.setBoolean(11, true); // all new addresses are active by default
+            ps.setString(6, address.getAddressType() != null ? address.getAddressType().trim() : null);
+            ps.setBoolean(7, address.isDefault());
+            ps.setBoolean(8, true); // all new addresses are active by default
+            ps.setInt(9, 0); // displayOrder default value
 
             boolean success = ps.executeUpdate() > 0;
-            
+
             if (success && shouldSetAsDefault) {
                 System.out.println("Address added and set as default (user's first address)");
             }
-            
+
             return success;
 
         } catch (Exception e) {
@@ -298,7 +274,7 @@ public class AddressDAO {
         return false;
     }
 
-    // Updates an existing address with validation
+    // UPDATED: Removed province, district, ward fields
     public boolean updateAddress(Address address) {
         // Validate input
         ValidationResult validation = validateAddress(address, true);
@@ -330,11 +306,9 @@ public class AddressDAO {
         }
 
         String sql = "UPDATE address SET addressName = ?, recipientName = ?, phone = ?, "
-                + "addressDetail = ?, province = ?, district = ?, ward = ?, addressType = ?, "
-                + "isDefault = ? WHERE addressID = ?";
+                + "addressDetail = ?, addressType = ?, isDefault = ? WHERE addressID = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             if (address.isDefault()) {
                 unsetOtherDefaultAddresses(address.getUserID());
@@ -344,21 +318,18 @@ public class AddressDAO {
             ps.setString(2, address.getRecipientName().trim());
             ps.setString(3, address.getPhone().replaceAll("\\s", ""));
             ps.setString(4, address.getAddressDetail().trim());
-            ps.setString(5, address.getProvince().trim());
-            ps.setString(6, address.getDistrict().trim());
-            ps.setString(7, address.getWard().trim());
-            ps.setString(8, address.getAddressType() != null ? address.getAddressType().trim() : null);
-            ps.setBoolean(9, address.isDefault());
-            ps.setInt(10, address.getAddressID());
+            ps.setString(5, address.getAddressType() != null ? address.getAddressType().trim() : null);
+            ps.setBoolean(6, address.isDefault());
+            ps.setInt(7, address.getAddressID());
 
             boolean success = ps.executeUpdate() > 0;
-            
+
             // If we just unset the default flag and update was successful, 
             // we need to set another address as default
             if (success && currentAddress.isDefault() && !address.isDefault()) {
                 setFirstActiveAddressAsDefault(address.getUserID());
             }
-            
+
             return success;
 
         } catch (Exception e) {
@@ -401,8 +372,7 @@ public class AddressDAO {
 
         String sql = "DELETE FROM address WHERE addressID = ? AND userID = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, addressID);
             ps.setInt(2, userID);
@@ -446,8 +416,7 @@ public class AddressDAO {
 
         String sql = "UPDATE address SET isActive = 0 WHERE addressID = ? AND userID = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, addressID);
             ps.setInt(2, userID);
@@ -470,8 +439,7 @@ public class AddressDAO {
 
         String sql = "SELECT * FROM address WHERE userID = ? AND isDefault = 1 AND isActive = 1";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, userID);
             ResultSet rs = ps.executeQuery();
@@ -501,7 +469,7 @@ public class AddressDAO {
             return false;
         }
 
-        try (Connection conn = DBConnection.getConnection()) {
+        try ( Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
 
             try {
@@ -518,7 +486,7 @@ public class AddressDAO {
                 ps2.setInt(2, userID);
 
                 int rowsAffected = ps2.executeUpdate();
-                
+
                 if (rowsAffected > 0) {
                     conn.commit();
                     return true;
@@ -546,8 +514,7 @@ public class AddressDAO {
     private void unsetOtherDefaultAddresses(int userID) {
         String sql = "UPDATE address SET isDefault = 0 WHERE userID = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, userID);
             ps.executeUpdate();
@@ -558,20 +525,21 @@ public class AddressDAO {
     }
 
     /**
-     * Helper method to set the first active address as default when current default is removed
+     * Helper method to set the first active address as default when current
+     * default is removed
+     *
      * @param userID User ID
      */
     private void setFirstActiveAddressAsDefault(int userID) {
-        String sql = "UPDATE address SET isDefault = 1 WHERE addressID = " +
-                    "(SELECT addressID FROM (SELECT addressID FROM address WHERE userID = ? " +
-                    "AND isActive = 1 ORDER BY addressID ASC LIMIT 1) AS temp)";
+        String sql = "UPDATE address SET isDefault = 1 WHERE addressID = "
+                + "(SELECT addressID FROM (SELECT addressID FROM address WHERE userID = ? "
+                + "AND isActive = 1 ORDER BY addressID ASC LIMIT 1) AS temp)";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, userID);
             int rowsAffected = ps.executeUpdate();
-            
+
             if (rowsAffected > 0) {
                 System.out.println("Automatically set first active address as default for user: " + userID);
             }
@@ -602,8 +570,7 @@ public class AddressDAO {
 
         String sql = "SELECT COUNT(*) FROM address WHERE userID = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try ( Connection conn = DBConnection.getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, userID);
             ResultSet rs = ps.executeQuery();
@@ -621,7 +588,8 @@ public class AddressDAO {
     }
 
     /**
-     * Helper method to map ResultSet to Address object
+     * Helper method to map ResultSet to Address object UPDATED: Removed
+     * province, district, ward fields
      */
     private Address mapResultSetToAddress(ResultSet rs) {
         try {
@@ -632,9 +600,6 @@ public class AddressDAO {
             address.setRecipientName(rs.getString("recipientName"));
             address.setPhone(rs.getString("phone"));
             address.setAddressDetail(rs.getString("addressDetail"));
-            address.setProvince(rs.getString("province"));
-            address.setDistrict(rs.getString("district"));
-            address.setWard(rs.getString("ward"));
             address.setAddressType(rs.getString("addressType"));
 
             try {
@@ -649,6 +614,12 @@ public class AddressDAO {
                 address.setActive(true);
             }
 
+            try {
+                address.setDisplayOrder(rs.getInt("displayOrder"));
+            } catch (Exception e) {
+                address.setDisplayOrder(0);
+            }
+
             return address;
         } catch (Exception e) {
             System.out.println("Error mapping ResultSet to Address: " + e.getMessage());
@@ -660,6 +631,7 @@ public class AddressDAO {
      * Inner class for validation results
      */
     public static class ValidationResult {
+
         private List<String> errors = new ArrayList<>();
 
         public void addError(String error) {
