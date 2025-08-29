@@ -247,62 +247,71 @@ public class FeedbackDAO {
         return false;
     }
 
-    public List<OrderDetail> getOrdersWithoutFeedback(int userID) {
-        List<OrderDetail> list = new ArrayList<>();
-        String sql = "SELECT od.* FROM OrderDetail od "
-                + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
-                + "WHERE oi.userID = ? "
-                + "AND oi.orderStatusID = 5 " // chỉ lấy đơn đã hoàn thành
-                + "AND od.orderDetailID NOT IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0)";
+public List<OrderDetail> getOrdersWithoutFeedback(int userID) {
+    List<OrderDetail> list = new ArrayList<>();
+    String sql = "SELECT od.orderDetailID, od.productID, od.orderID, od.quantity, od.totalPrice, p.productName "
+               + "FROM OrderDetail od "
+               + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
+               + "JOIN Product p ON od.productID = p.productID "
+               + "WHERE oi.userID = ? "
+               + "AND oi.orderStatusID = 5 " // chỉ lấy đơn đã hoàn thành
+               + "AND od.orderDetailID NOT IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0)";
 
-        try ( Connection conn = new DBConnection().getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userID);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                OrderDetail od = new OrderDetail();
-                od.setOrderDetailID(rs.getInt("orderDetailID"));
-                od.setProductID(rs.getInt("productID"));
-                od.setOrderID(rs.getInt("orderID"));
-                od.setOrderName(rs.getString("orderName"));
-                od.setQuantity(rs.getInt("quantity"));
-                od.setTotalPrice(rs.getLong("totalPrice"));
-                list.add(od);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    try (Connection conn = new DBConnection().getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, userID);
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            OrderDetail od = new OrderDetail();
+            od.setOrderDetailID(rs.getInt("orderDetailID"));
+            od.setProductID(rs.getInt("productID"));
+            od.setOrderID(rs.getInt("orderID"));
+            od.setQuantity(rs.getInt("quantity"));
+            od.setTotalPrice(rs.getLong("totalPrice"));
+            // Lấy tên sản phẩm thay cho orderName cũ
+            od.setOrderName(rs.getString("productName"));
+            list.add(od);
         }
-        return list;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+    return list;
+}
 
-    public List<OrderDetail> getOrdersWithFeedback(int userID) {
-        List<OrderDetail> list = new ArrayList<>();
-        String sql = "SELECT od.* FROM OrderDetail od "
-                + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
-                + "WHERE oi.userID = ? "
-                + "AND oi.orderStatusID = 5 " // chỉ lấy đơn đã hoàn thành
-                + "AND od.orderDetailID IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0)";
+public List<OrderDetail> getOrdersWithFeedback(int userID) {
+    List<OrderDetail> list = new ArrayList<>();
+    String sql = "SELECT od.orderDetailID, od.productID, od.orderID, od.quantity, od.totalPrice, p.productName "
+               + "FROM OrderDetail od "
+               + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
+               + "JOIN Product p ON od.productID = p.productID "
+               + "WHERE oi.userID = ? "
+               + "AND oi.orderStatusID = 5 " // chỉ lấy đơn đã hoàn thành
+               + "AND od.orderDetailID IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0)";
 
-        try ( Connection conn = new DBConnection().getConnection();  PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userID);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                OrderDetail od = new OrderDetail();
-                od.setOrderDetailID(rs.getInt("orderDetailID"));
-                od.setProductID(rs.getInt("productID"));
-                od.setOrderID(rs.getInt("orderID"));
-                od.setOrderName(rs.getString("orderName"));
-                od.setQuantity(rs.getInt("quantity"));
-                od.setTotalPrice(rs.getLong("totalPrice"));
-                list.add(od);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    try (Connection conn = new DBConnection().getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, userID);
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            OrderDetail od = new OrderDetail();
+            od.setOrderDetailID(rs.getInt("orderDetailID"));
+            od.setProductID(rs.getInt("productID"));
+            od.setOrderID(rs.getInt("orderID"));
+            od.setQuantity(rs.getInt("quantity"));
+            od.setTotalPrice(rs.getLong("totalPrice"));
+            // Lấy tên sản phẩm thay cho orderName cũ
+            od.setOrderName(rs.getString("productName"));
+            list.add(od);
         }
-        return list;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+    return list;
+}
+
     
-    
-    public List<Feedback> getAllFeedbackWithoutPagination() {
+ // Lấy tất cả feedback (không phân trang)
+public List<Feedback> getAllFeedbackWithoutPagination() {
     List<Feedback> list = new ArrayList<>();
     String sql = "SELECT f.*, u.fullName AS userName, p.productName, p.image "
                + "FROM Feedback f "
@@ -326,8 +335,8 @@ public class FeedbackDAO {
     return list;
 }
 
-    
-    public Integer getFeedbackIdByOrderDetail(int orderDetailID) {
+// Lấy feedbackID theo orderDetailID
+public Integer getFeedbackIdByOrderDetail(int orderDetailID) {
     String sql = "SELECT feedbackID FROM Feedback WHERE orderDetailID = ?";
     try (Connection conn = DBConnection.getConnection();
          PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -340,19 +349,19 @@ public class FeedbackDAO {
     }
     return null;
 }
-    // Hàm lấy trung bình rating của 1 sản phẩm
 
- public Double getAverageRatingByProduct(int productID) {
+// Lấy trung bình rating của 1 sản phẩm
+public Double getAverageRatingByProduct(int productID) {
     String sql = "SELECT AVG(CAST(f.rating AS FLOAT)) AS avgRating " +
                  "FROM OrderDetail od " +
                  "LEFT JOIN Feedback f ON f.orderDetailID = od.orderDetailID " +
                  "WHERE od.productID = ?";
-    try (Connection conn = new DBConnection().getConnection();
+    try (Connection conn = DBConnection.getConnection();
          PreparedStatement ps = conn.prepareStatement(sql)) {
         ps.setInt(1, productID);
         ResultSet rs = ps.executeQuery();
         if (rs.next()) {
-            return rs.getObject("avgRating", Double.class); // null nếu không có feedback
+            return rs.getObject("avgRating", Double.class); // null nếu chưa có feedback
         }
     } catch (Exception e) {
         e.printStackTrace();
@@ -360,14 +369,16 @@ public class FeedbackDAO {
     return null;
 }
 
-    // Lấy orders chưa feedback theo page
+// Lấy orders chưa feedback theo page
 public List<OrderDetail> getOrdersWithoutFeedback(int userID, int page, int limit) {
     List<OrderDetail> list = new ArrayList<>();
-    String sql = "SELECT od.* FROM OrderDetail od "
-            + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
-            + "WHERE oi.userID = ? AND oi.orderStatusID = 5 "
-            + "AND od.orderDetailID NOT IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0) "
-            + "ORDER BY od.orderDetailID OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+    String sql = "SELECT od.orderDetailID, od.productID, od.orderID, od.quantity, od.totalPrice, p.productName "
+               + "FROM OrderDetail od "
+               + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
+               + "JOIN Product p ON od.productID = p.productID "
+               + "WHERE oi.userID = ? AND oi.orderStatusID = 5 "
+               + "AND od.orderDetailID NOT IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0) "
+               + "ORDER BY od.orderDetailID OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
     try (Connection conn = DBConnection.getConnection();
          PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -381,9 +392,9 @@ public List<OrderDetail> getOrdersWithoutFeedback(int userID, int page, int limi
             od.setOrderDetailID(rs.getInt("orderDetailID"));
             od.setProductID(rs.getInt("productID"));
             od.setOrderID(rs.getInt("orderID"));
-            od.setOrderName(rs.getString("orderName"));
             od.setQuantity(rs.getInt("quantity"));
             od.setTotalPrice(rs.getLong("totalPrice"));
+            od.setOrderName(rs.getString("productName")); // thay cho orderName cũ
             list.add(od);
         }
     } catch (Exception e) {
@@ -392,6 +403,7 @@ public List<OrderDetail> getOrdersWithoutFeedback(int userID, int page, int limi
     return list;
 }
 
+// Đếm số order chưa feedback
 public int countOrdersWithoutFeedback(int userID) {
     String sql = "SELECT COUNT(*) FROM OrderDetail od "
                + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
@@ -411,11 +423,13 @@ public int countOrdersWithoutFeedback(int userID) {
 // Lấy orders đã feedback theo page
 public List<OrderDetail> getOrdersWithFeedback(int userID, int page, int limit) {
     List<OrderDetail> list = new ArrayList<>();
-    String sql = "SELECT od.* FROM OrderDetail od "
-            + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
-            + "WHERE oi.userID = ? AND oi.orderStatusID = 5 "
-            + "AND od.orderDetailID IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0) "
-            + "ORDER BY od.orderDetailID OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+    String sql = "SELECT od.orderDetailID, od.productID, od.orderID, od.quantity, od.totalPrice, p.productName "
+               + "FROM OrderDetail od "
+               + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
+               + "JOIN Product p ON od.productID = p.productID "
+               + "WHERE oi.userID = ? AND oi.orderStatusID = 5 "
+               + "AND od.orderDetailID IN (SELECT orderDetailID FROM Feedback WHERE isDeleted = 0) "
+               + "ORDER BY od.orderDetailID OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
     try (Connection conn = DBConnection.getConnection();
          PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -429,9 +443,9 @@ public List<OrderDetail> getOrdersWithFeedback(int userID, int page, int limit) 
             od.setOrderDetailID(rs.getInt("orderDetailID"));
             od.setProductID(rs.getInt("productID"));
             od.setOrderID(rs.getInt("orderID"));
-            od.setOrderName(rs.getString("orderName"));
             od.setQuantity(rs.getInt("quantity"));
             od.setTotalPrice(rs.getLong("totalPrice"));
+            od.setOrderName(rs.getString("productName")); // thay cho orderName cũ
             list.add(od);
         }
     } catch (Exception e) {
@@ -440,6 +454,7 @@ public List<OrderDetail> getOrdersWithFeedback(int userID, int page, int limit) 
     return list;
 }
 
+// Đếm số order đã feedback
 public int countOrdersWithFeedback(int userID) {
     String sql = "SELECT COUNT(*) FROM OrderDetail od "
                + "JOIN OrderInfo oi ON od.orderID = oi.orderID "
@@ -456,36 +471,37 @@ public int countOrdersWithFeedback(int userID) {
     return 0;
 }
 
+// Lấy feedback theo productID
 public List<Feedback> getFeedbackByProductID(int productID) {
-        List<Feedback> list = new ArrayList<>();
-        String sql = "SELECT f.*, u.fullName AS userName " +
-                     "FROM Feedback f " +
-                     "JOIN OrderDetail od ON f.orderDetailID = od.orderDetailID " +
-                     "JOIN Users u ON f.userID = u.userID " +
-                     "WHERE od.productID = ? AND f.isDeleted = 0 " +
-                     "ORDER BY f.createdAt DESC";
+    List<Feedback> list = new ArrayList<>();
+    String sql = "SELECT f.*, u.fullName AS userName "
+               + "FROM Feedback f "
+               + "JOIN OrderDetail od ON f.orderDetailID = od.orderDetailID "
+               + "JOIN Users u ON f.userID = u.userID "
+               + "WHERE od.productID = ? AND f.isDeleted = 0 "
+               + "ORDER BY f.createdAt DESC";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, productID);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                Feedback f = new Feedback();
-                f.setFeedbackID(rs.getInt("feedbackID"));
-                f.setOrderDetailID(rs.getInt("orderDetailID"));
-                f.setUserID(rs.getInt("userID"));
-                f.setComment(rs.getString("comment"));
-                f.setRating(rs.getInt("rating"));
-                f.setCreatedAt(rs.getTimestamp("createdAt"));
-                f.setDeleted(rs.getBoolean("isDeleted"));
-f.setUserName(rs.getString("userName"));
-                list.add(f);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        ps.setInt(1, productID);
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            Feedback f = new Feedback();
+            f.setFeedbackID(rs.getInt("feedbackID"));
+            f.setOrderDetailID(rs.getInt("orderDetailID"));
+            f.setUserID(rs.getInt("userID"));
+            f.setComment(rs.getString("comment"));
+            f.setRating(rs.getInt("rating"));
+            f.setCreatedAt(rs.getTimestamp("createdAt"));
+            f.setDeleted(rs.getBoolean("isDeleted"));
+            f.setUserName(rs.getString("userName"));
+            list.add(f);
         }
-
-        return list;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+
+    return list;
+}
 
 }

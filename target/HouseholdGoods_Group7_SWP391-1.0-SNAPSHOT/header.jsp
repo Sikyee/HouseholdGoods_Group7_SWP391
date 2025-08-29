@@ -1,4 +1,5 @@
 <%@page import="Model.Cart"%>
+<%@page import="Model.User"%>
 <%@page import="java.util.List"%>
 <!DOCTYPE html>
 <html>
@@ -87,6 +88,16 @@
                 border-color: #0056b3;
             }
 
+            .btn-success {
+                background-color: #28a745;
+                border-color: #28a745;
+            }
+
+            .btn-success:hover {
+                background-color: #218838;
+                border-color: #1e7e34;
+            }
+
             .btn-danger {
                 background-color: #dc3545;
                 border-color: #dc3545;
@@ -118,6 +129,25 @@
                 .d-flex {
                     margin: 10px 0;
                 }
+
+                /* Stack login and register buttons vertically on mobile */
+                .auth-buttons {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    margin-top: 10px;
+                }
+
+                .auth-buttons .btn {
+                    width: 100%;
+                }
+            }
+
+            @media (min-width: 992px) {
+                .auth-buttons {
+                    display: flex;
+                    gap: 8px;
+                }
             }
 
             /* Simple hover effects */
@@ -148,11 +178,81 @@
                 text-align: center;
                 position: absolute;
             }
+
+            /* Profile dropdown CSS */
+            .profile-dropdown {
+                position: relative;
+            }
+
+            .profile-dropdown .dropdown-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                right: 0;
+                background: white;
+                border: none;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+                min-width: 180px;
+                z-index: 1000;
+                padding: 8px 0;
+            }
+
+            .profile-dropdown .dropdown-menu.show {
+                display: block;
+            }
+
+            .profile-dropdown .dropdown-item {
+                color: #333;
+                padding: 10px 16px;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                font-size: 0.875rem;
+                transition: all 0.2s ease;
+                border: none;
+                background: none;
+                width: 100%;
+                text-align: left;
+            }
+
+            .profile-dropdown .dropdown-item:hover {
+                background-color: #f8f9fa;
+                color: #333;
+            }
+
+            .profile-dropdown .dropdown-item i {
+                margin-right: 8px;
+                width: 16px;
+                text-align: center;
+            }
+
+            /* Divider between menu items */
+            .dropdown-divider {
+                height: 0;
+                margin: 4px 0;
+                overflow: hidden;
+                border-top: 1px solid #e9ecef;
+            }
+
+            /* Special styling for logout button */
+            .profile-dropdown .dropdown-item.logout-btn {
+                color: #dc3545;
+                border-top: 1px solid #e9ecef;
+                margin-top: 4px;
+                padding-top: 12px;
+            }
+
+            .profile-dropdown .dropdown-item.logout-btn:hover {
+                background-color: #f8d7da;
+                color: #721c24;
+            }
         </style>
     </head>
     <body>
         <%
             Integer cartQuantity = (Integer) session.getAttribute("cartQuantity");
+            User loggedInUser = (User) session.getAttribute("user");
         %>
         <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
             <div class="container-fluid">
@@ -175,9 +275,21 @@
 
                     <!-- Navigation Links -->
                     <ul class="navbar-nav d-flex flex-row align-items-center">
+<!--Wishlist-->
+                        <li class="nav-item me-3">
+    <a class="nav-link position-relative" href="<%= request.getContextPath()%>/Wishlist" title="Wishlist">
+        <i class="fas fa-heart"></i>
+        <span id="wishlist-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+    <% Integer wishlistQty = (Integer) session.getAttribute("wishlistQuantity"); %>
+    <%= (wishlistQty != null) ? wishlistQty : 0 %>
+</span>
+
+    </a>
+</li>
+
                         <!-- Cart -->
                         <li class="nav-item me-3 cart">
-                            <a class="nav-link" href="<%= request.getContextPath()%>/Cart" title="">
+                            <a class="nav-link" href="<%= request.getContextPath()%>/Cart" title="Shopping Cart">
                                 <i class="fas fa-shopping-cart"></i>
                             </a>
                             <span class="product-quantity">
@@ -185,25 +297,46 @@
                             </span>
                         </li>
 
-                        <!-- Profile -->
-                        <li class="nav-item me-3">
-                            <a href="<%= request.getContextPath()%>/profile" class="btn btn-outline-light btn-sm">
-                                <i class="fas fa-user me-1"></i>Profile
-                            </a>
-                        </li>
+                        <!-- Profile Menu or Auth Buttons -->
+                        <% if (loggedInUser != null) {%>
+                        <li class="nav-item me-3 profile-dropdown">
+                            <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" onclick="toggleProfileDropdown()">
+                                <i class="fas fa-user me-1"></i><%= loggedInUser.getFullName()%>
+                            </button>
+                            <div class="dropdown-menu" id="profileDropdownMenu">
+                                <a class="dropdown-item" href="<%= request.getContextPath()%>/profile">
+                                    <i class="fas fa-user"></i>My Profile
+                                </a>
+                                <a class="dropdown-item" href="<%= request.getContextPath()%>/ViewFeedbackOrders">
+                                    <i class="fas fa-pen me-1"></i>My Feedback
 
-                        <!-- Login/Logout -->
-                        <% if (session.getAttribute("user") == null) {%>
-                        <li class="nav-item">
-                            <a href="<%= request.getContextPath()%>/login" class="btn btn-primary btn-sm">
-                                <i class="fas fa-sign-in-alt me-1"></i>Login
-                            </a>
+                                </a>
+
+
+
+                                <a class="dropdown-item" href="<%= request.getContextPath()%>/order">
+                                    <i class="fas fa-shopping-bag"></i>My Orders
+                                </a>
+
+                                <a class="dropdown-item" href="<%= request.getContextPath()%>/changePassword">
+                                    <i class="fas fa-key"></i>Change Password
+                                </a>
+                                <a class="dropdown-item logout-btn" href="<%= request.getContextPath()%>/logout">
+                                    <i class="fas fa-sign-out-alt"></i>Logout
+                                </a>
+                            </div>
                         </li>
                         <% } else {%>
+                        <!-- Auth Buttons -->
                         <li class="nav-item">
-                            <a href="<%= request.getContextPath()%>/logout" class="btn btn-danger btn-sm">
-                                <i class="fas fa-sign-out-alt me-1"></i>Logout
-                            </a>
+                            <div class="auth-buttons">
+                                <a href="<%= request.getContextPath()%>/login" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-sign-in-alt me-1"></i>Login
+                                </a>
+                                <a href="<%= request.getContextPath()%>/register" class="btn btn-success btn-sm">
+                                    <i class="fas fa-user-plus me-1"></i>Register
+                                </a>
+                            </div>
                         </li>
                         <% }%>
                     </ul>
@@ -240,6 +373,30 @@
                     }
                 });
             }
+
+            // Profile dropdown function
+            function toggleProfileDropdown() {
+                const dropdown = document.getElementById('profileDropdownMenu');
+                dropdown.classList.toggle('show');
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function (e) {
+                const profileDropdown = document.querySelector('.profile-dropdown');
+                const dropdown = document.getElementById('profileDropdownMenu');
+
+                if (!profileDropdown.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+
+            // Close dropdown when clicking on a menu item
+            document.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const dropdown = document.getElementById('profileDropdownMenu');
+                    dropdown.classList.remove('show');
+                });
+            });
         </script>
     </body>
 </html>

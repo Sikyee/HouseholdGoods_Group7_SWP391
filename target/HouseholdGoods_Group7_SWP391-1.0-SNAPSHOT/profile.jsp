@@ -214,10 +214,6 @@
                 display: block;
             }
 
-            .profile-page .password-section {
-                margin-top: 80px;
-            }
-
             .profile-page .error-message {
                 font-size: 12px;
                 color: red;
@@ -235,6 +231,12 @@
 
             .profile-page .required {
                 color: red;
+            }
+
+            .profile-page .form-helper {
+                font-size: 12px;
+                color: #666;
+                margin-top: 5px;
             }
 
             /* Modal styles */
@@ -292,70 +294,6 @@
                 color: #333;
             }
 
-            /* Toast notification styles */
-            .profile-page .toast {
-                position: fixed;
-                top: 70px;
-                right: 20px;
-                background-color: #333;
-                color: white;
-                padding: 15px 20px;
-                border-radius: 5px;
-                z-index: 1050;
-                transform: translateX(100%);
-                transition: transform 0.3s ease;
-                max-width: 350px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            }
-
-            .profile-page .toast.show {
-                transform: translateX(0);
-            }
-
-            .profile-page .toast.success {
-                background-color: #27ae60;
-            }
-
-            .profile-page .toast.error {
-                background-color: #e74c3c;
-            }
-
-            .profile-page .toast.warning {
-                background-color: #f39c12;
-            }
-
-            .profile-page .toast.info {
-                background-color: #3498db;
-            }
-
-            .profile-page .toast-icon {
-                display: inline-block;
-                margin-right: 10px;
-                font-size: 16px;
-            }
-
-            .profile-page .toast-message {
-                display: inline-block;
-                font-size: 14px;
-            }
-
-            .profile-page .toast-close {
-                position: absolute;
-                top: 5px;
-                right: 10px;
-                background: none;
-                border: none;
-                color: white;
-                font-size: 18px;
-                cursor: pointer;
-                padding: 0;
-                width: 20px;
-                height: 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
             @media (max-width: 768px) {
                 .profile-page .profile-grid {
                     flex-direction: column;
@@ -374,16 +312,6 @@
                     flex-direction: column;
                 }
 
-                .profile-page .toast {
-                    right: 10px;
-                    left: 10px;
-                    max-width: none;
-                    transform: translateY(-100%);
-                }
-
-                .profile-page .toast.show {
-                    transform: translateY(0);
-                }
                 .profile-page .alert,
                 .profile-page .notification {
                     z-index: 1050 !important;
@@ -410,35 +338,46 @@
                         <form id="profileForm" method="post" action="profile">
                             <div class="form-group">
                                 <label>Full Name <span class="required">*</span></label>
-                                <input type="text" id="fullName" name="fullName" value="<%= user != null ? user.getFullName() : ""%>" required>
+                                <input type="text" id="fullName" name="fullName" 
+                                       value="<%= request.getAttribute("preservedFullName") != null ? request.getAttribute("preservedFullName") : (user != null ? user.getFullName() : "")%>" required>
                                 <div class="error-message" id="fullNameError">Full name is required</div>
                             </div>
 
                             <div class="form-group">
                                 <label>Email Address <span class="required">*</span></label>
-                                <input type="email" id="email" name="email" value="<%= user != null ? user.getEmail() : ""%>" required>
+                                <input type="email" id="email" name="email" 
+                                       value="<%= request.getAttribute("preservedEmail") != null ? request.getAttribute("preservedEmail") : (user != null ? user.getEmail() : "")%>" required>
                                 <div class="error-message" id="emailError">Valid email is required</div>
                             </div>
 
                             <div class="form-group">
                                 <label>Phone Number <span class="required">*</span></label>
-                                <input type="tel" id="phone" name="phone" value="<%= user != null ? user.getPhone() : ""%>" required>
+                                <input type="tel" id="phone" name="phone" 
+                                       value="<%= request.getAttribute("preservedPhone") != null ? request.getAttribute("preservedPhone") : (user != null && user.getPhone() != null ? user.getPhone() : "")%>" 
+                                       maxlength="15" required>
                                 <div class="error-message" id="phoneError">Phone number is required</div>
                             </div>
 
                             <div class="form-group">
-                                <label>Date of Birth</label>
-                                <input type="date" name="dob" value="<%= (user != null && user.getDob() != null) ? user.getDob().toString() : ""%>">
+                                <label>Date of Birth <span class="required">*</span></label>
+                                <input type="date" name="dob" 
+                                       value="<%= request.getAttribute("preservedDob") != null ? request.getAttribute("preservedDob") : ((user != null && user.getDob() != null) ? user.getDob().toString() : "")%>" required>
+                                <div class="error-message" id="dobError">Date of birth is required</div>
                             </div>
 
                             <div class="form-group">
-                                <label>Gender</label>
-                                <select name="gender">
+                                <label>Gender <span class="required">*</span></label>
+                                <select name="gender" id="gender" required>
                                     <option value="">Select Gender</option>
-                                    <option value="Male" <%= user != null && "Male".equals(user.getGender()) ? "selected" : ""%>>Male</option>
-                                    <option value="Female" <%= user != null && "Female".equals(user.getGender()) ? "selected" : ""%>>Female</option>
-                                    <option value="Other" <%= user != null && "Other".equals(user.getGender()) ? "selected" : ""%>>Other</option>
+                                    <%
+                                        String preservedGender = (String) request.getAttribute("preservedGender");
+                                        String currentGender = preservedGender != null ? preservedGender : (user != null ? user.getGender() : "");
+                                    %>
+                                    <option value="Nam" <%= "Nam".equals(currentGender) ? "selected" : ""%>>Nam</option>
+                                    <option value="Nữ" <%= "Nữ".equals(currentGender) ? "selected" : ""%>>Nữ</option>
+                                    <option value="Khác" <%= "Khác".equals(currentGender) ? "selected" : ""%>>Khác</option>
                                 </select>
+                                <div class="error-message" id="genderError">Please select your gender</div>
                             </div>
 
                             <button type="submit" class="btn">Update Profile</button>
@@ -469,7 +408,6 @@
                                     <a href="profile?action=edit&addressID=<%= addr.getAddressID()%>" class="btn btn-small">Edit</a>
                                     <% if (!addr.isDefault()) {%>
                                     <a href="profile?action=set-default&addressID=<%= addr.getAddressID()%>" 
-                                       onclick="showToast('Setting default address...', 'info'); return true;" 
                                        class="btn btn-small btn-success">Set Default</a>
                                     <% }%>
                                     <a href="profile?action=delete&addressID=<%= addr.getAddressID()%>" 
@@ -481,7 +419,7 @@
                                 <% if (editAddress != null && editAddress.getAddressID() == addr.getAddressID()) {%>
                                 <div class="add-address-form show" style="margin-top: 20px; background: rgba(46, 204, 113, 0.1); border-color: #2ecc71;">
                                     <h4 style="color: #27ae60; margin-bottom: 20px;">✏️ Edit Address</h4>
-                                    <form method="post" action="profile" onsubmit="showToast('Updating address...', 'info');">
+                                    <form method="post" action="profile">
                                         <input type="hidden" name="action" value="update-address">
                                         <input type="hidden" name="addressID" value="<%= editAddress.getAddressID()%>">
 
@@ -502,7 +440,13 @@
 
                                         <div class="form-group">
                                             <label>Address Detail <span class="required">*</span></label>
-                                            <textarea name="addressDetail" rows="3" required><%= editAddress.getAddressDetail() != null ? editAddress.getAddressDetail() : ""%></textarea>
+                                            <textarea name="addressDetail" rows="4" required><%= editAddress.getAddressDetail() != null ? editAddress.getAddressDetail() : ""%></textarea>
+                                            <div class="form-helper">Include full address: street, district, city/province</div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Address Type</label>
+                                            <input type="text" name="addressType" value="<%= editAddress.getAddressType() != null ? editAddress.getAddressType() : ""%>" placeholder="e.g., Home, Office">
                                         </div>
 
                                         <div class="form-group">
@@ -537,32 +481,45 @@
                         <!-- Add Address Form -->
                         <div id="addressForm" class="add-address-form">
                             <h4 style="color: #667eea; margin-bottom: 20px;">Add New Address</h4>
-                            <form method="post" action="profile" onsubmit="showToast('Adding new address...', 'info');">
+                            <form method="post" action="profile">
                                 <input type="hidden" name="action" value="add-address">
 
                                 <div class="form-group">
                                     <label>Address Name <span class="required">*</span></label>
-                                    <input type="text" name="addressName" required>
+                                    <input type="text" name="addressName" 
+                                           value="<%= request.getAttribute("preservedAddressName") != null ? request.getAttribute("preservedAddressName") : ""%>" required>
                                 </div>
 
                                 <div class="form-group">
                                     <label>Recipient Name <span class="required">*</span></label>
-                                    <input type="text" name="recipientName" required>
+                                    <input type="text" name="recipientName" 
+                                           value="<%= request.getAttribute("preservedRecipientName") != null ? request.getAttribute("preservedRecipientName") : ""%>" required>
                                 </div>
 
                                 <div class="form-group">
                                     <label>Phone <span class="required">*</span></label>
-                                    <input type="tel" name="phone" required>
+                                    <input type="tel" name="phone" 
+                                           value="<%= request.getAttribute("preservedPhone") != null ? request.getAttribute("preservedPhone") : ""%>" required>
                                 </div>
 
                                 <div class="form-group">
                                     <label>Address Detail <span class="required">*</span></label>
-                                    <textarea name="addressDetail" rows="3" required></textarea>
+                                    <textarea name="addressDetail" rows="4" required><%= request.getAttribute("preservedAddressDetail") != null ? request.getAttribute("preservedAddressDetail") : ""%></textarea>
+                                    <div class="form-helper">Include full address: street, district, city/province</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Address Type</label>
+                                    <input type="text" name="addressType" 
+                                           value="<%= request.getAttribute("preservedAddressType") != null ? request.getAttribute("preservedAddressType") : ""%>" 
+                                           placeholder="e.g., Home, Office">
                                 </div>
 
                                 <div class="form-group">
                                     <label>
-                                        <input type="checkbox" name="isDefault" value="1" style="width: auto; margin-right: 8px;">
+                                        <input type="checkbox" name="isDefault" value="1" 
+                                               <%= request.getAttribute("preservedIsDefault") != null && (Boolean) request.getAttribute("preservedIsDefault") ? "checked" : ""%>
+                                               style="width: auto; margin-right: 8px;">
                                         Set as default address
                                     </label>
                                 </div>
@@ -573,28 +530,6 @@
                                 </div>
                             </form>
                         </div>
-                    </div>
-
-                    <!-- Change Password Section -->
-                    <div class="profile-card password-section">
-                        <h2 class="card-title">Change Password</h2>
-                        <form method="post" action="change-password" onsubmit="showToast('Changing password...', 'info');">
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                                <div class="form-group">
-                                    <label>Current Password <span class="required">*</span></label>
-                                    <input type="password" name="currentPassword" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>New Password <span class="required">*</span></label>
-                                    <input type="password" name="newPassword" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Confirm New Password <span class="required">*</span></label>
-                                    <input type="password" name="confirmPassword" required>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn">Change Password</button>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -623,57 +558,10 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Toast Container -->
-            <div id="toastContainer"></div>
         </div>
 
         <!-- JavaScript for handling notifications and UI interaction -->
         <script>
-            // Toast notification system
-            function showToast(message, type = 'success', duration = 3000) {
-                const toastContainer = document.getElementById('toastContainer');
-
-                const toast = document.createElement('div');
-                toast.className = `toast ${type}`;
-
-                const iconMap = {
-                    success: '✅',
-                    error: '❌',
-                    warning: '⚠️',
-                    info: 'ℹ️'
-                };
-
-                toast.innerHTML = `
-                    <span class="toast-icon">${iconMap[type] || '📢'}</span>
-                    <span class="toast-message">${message}</span>
-                    <button class="toast-close" onclick="closeToast(this.parentElement)">×</button>
-                `;
-
-                toastContainer.appendChild(toast);
-
-                // Show toast
-                setTimeout(() => {
-                    toast.classList.add('show');
-                }, 100);
-
-                // Auto hide toast
-                setTimeout(() => {
-                    closeToast(toast);
-                }, duration);
-
-                return toast;
-            }
-
-            function closeToast(toast) {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (toast.parentElement) {
-                        toast.parentElement.removeChild(toast);
-                    }
-                }, 300);
-            }
-
             // Enhanced modal handling
             function showModal(message, type = 'success') {
                 const modal = document.getElementById('messageModal');
@@ -699,7 +587,7 @@
                     title.textContent = 'Information';
                 }
 
-                messageEl.textContent = message;
+                messageEl.innerHTML = message;
                 modal.classList.add('show');
 
                 // Auto close after 4 seconds
@@ -714,7 +602,7 @@
                 document.getElementById('confirmModal').classList.remove('show');
             }
 
-            // Enhanced confirm delete with toast notification
+            // Enhanced confirm delete
             function confirmDelete(element, message = 'Are you sure?') {
                 const modal = document.getElementById('confirmModal');
                 const messageEl = document.getElementById('confirmMessage');
@@ -724,12 +612,8 @@
 
                 confirmYes.onclick = () => {
                     closeConfirmModal();
-                    showToast('Deleting address...', 'warning');
-
-                    // Simulate a small delay before redirect
-                    setTimeout(() => {
-                        window.location.href = element.href;
-                    }, 500);
+                    // Redirect to delete URL
+                    window.location.href = element.href;
                 };
 
                 modal.classList.add('show');
@@ -743,6 +627,7 @@
                     const fullName = document.getElementById("fullName").value.trim();
                     const email = document.getElementById("email").value.trim();
                     const phone = document.getElementById("phone").value.trim();
+                    const gender = document.getElementById("gender").value;
                     let isValid = true;
 
                     // Validate full name
@@ -767,7 +652,9 @@
                     }
 
                     // Validate phone
-                    if (!phone) {
+                    const phoneRegex = /^(\+84|84|0)(3|5|7|8|9)[0-9]{8}$/;
+                    if (!phone || !phoneRegex.test(phone.replace(/\s/g, ''))) {
+                        document.getElementById("phoneError").textContent = "Please enter a valid Vietnamese phone number";
                         document.getElementById("phoneError").classList.add("show");
                         document.getElementById("phone").classList.add("error");
                         isValid = false;
@@ -776,41 +663,19 @@
                         document.getElementById("phone").classList.remove("error");
                     }
 
+                    // Validate gender
+                    if (!gender) {
+                        document.getElementById("genderError").classList.add("show");
+                        document.getElementById("gender").classList.add("error");
+                        isValid = false;
+                    } else {
+                        document.getElementById("genderError").classList.remove("show");
+                        document.getElementById("gender").classList.remove("error");
+                    }
+
                     if (!isValid) {
                         e.preventDefault();
-                        showToast('Please fix the errors in the form', 'error');
-                        return false;
-                    }
-
-                    // Show processing notification
-                    showToast('Updating profile...', 'info');
-                    return true;
-                });
-            }
-
-            // Enhanced change password form validation
-            const changePasswordForm = document.querySelector('form[action="change-password"]');
-            if (changePasswordForm) {
-                changePasswordForm.addEventListener('submit', function (e) {
-                    const currentPassword = document.querySelector('input[name="currentPassword"]').value;
-                    const newPassword = document.querySelector('input[name="newPassword"]').value;
-                    const confirmPassword = document.querySelector('input[name="confirmPassword"]').value;
-
-                    if (!currentPassword) {
-                        e.preventDefault();
-                        showToast('Please enter your current password', 'error');
-                        return false;
-                    }
-
-                    if (newPassword.length < 6) {
-                        e.preventDefault();
-                        showToast('New password must be at least 6 characters long', 'error');
-                        return false;
-                    }
-
-                    if (newPassword !== confirmPassword) {
-                        e.preventDefault();
-                        showToast('New password and confirm password do not match', 'error');
+                        showModal('Please fix the errors in the form', 'error');
                         return false;
                     }
 
@@ -825,11 +690,8 @@
 
                 if (isVisible) {
                     form.classList.remove('show');
-                    showToast('Add address form closed', 'info');
                 } else {
                     form.classList.add('show');
-                    showToast('Add address form opened', 'info');
-
                     // Focus on first input
                     setTimeout(() => {
                         const firstInput = form.querySelector('input[name="addressName"]');
@@ -840,110 +702,43 @@
                 }
             }
 
-            // Display server messages - COMPLETELY FIXED VERSION
+            // Display server messages
             <%
-    // Server-side validation before sending to JavaScript
-    String cleanMessage = null;
-    String cleanMessageType = "success";
+                // Server-side validation before sending to JavaScript
+                String cleanMessage = null;
+                String cleanMessageType = "success";
 
-    if (message != null) {
-        String msgStr = message.toString().trim();
-        if (!msgStr.isEmpty()
-                && !msgStr.equals("null")
-                && !msgStr.equals("undefined")
-                && !msgStr.equals("false")
-                && !msgStr.equals("true")) {
-            cleanMessage = msgStr;
-        }
-    }
+                if (message != null) {
+                    String msgStr = message.toString().trim();
+                    if (!msgStr.isEmpty()
+                            && !msgStr.equals("null")
+                            && !msgStr.equals("undefined")
+                            && !msgStr.equals("false")
+                            && !msgStr.equals("true")) {
+                        cleanMessage = msgStr;
+                    }
+                }
 
-    if (messageType != null) {
-        String typeStr = messageType.toString().trim();
-        if (!typeStr.isEmpty()
-                && !typeStr.equals("null")
-                && !typeStr.equals("undefined")) {
-            cleanMessageType = typeStr;
-        }
-    }
+                if (messageType != null) {
+                    String typeStr = messageType.toString().trim();
+                    if (!typeStr.isEmpty()
+                            && !typeStr.equals("null")
+                            && !typeStr.equals("undefined")) {
+                        cleanMessageType = typeStr;
+                    }
+                }
             %>
 
             <% if (cleanMessage != null) {%>
             window.addEventListener('DOMContentLoaded', function () {
-                const messageText = '<%= cleanMessage.replaceAll("'", "\\'").replaceAll("\"", "\\\"")%>';
+                const messageText = '<%= cleanMessage.replaceAll("'", "\\'").replaceAll("\"", "\\\"").replaceAll("<br>", "\\n")%>';
                 const messageType = '<%= cleanMessageType%>';
 
                 if (messageText && messageText.length > 0) {
-                    showToast(messageText, messageType, 5000);
-
-                    if (messageType === 'error') {
-                        setTimeout(() => {
-                            showModal(messageText, messageType);
-                        }, 1000);
-                    }
+                    showModal(messageText, messageType);
                 }
             });
             <% }%>
-            // Add loading indicators for buttons
-            function addLoadingState(button, originalText) {
-                button.disabled = true;
-                button.innerHTML = '<span style="display: inline-block; animation: spin 1s linear infinite;">⌛</span> Processing...';
-
-                setTimeout(() => {
-                    button.disabled = false;
-                    button.innerHTML = originalText;
-                }, 3000);
-            }
-
-            // Enhanced form submission with loading states
-            document.addEventListener('DOMContentLoaded', function () {
-                // Add loading state to all form submissions
-                const forms = document.querySelectorAll('form');
-                forms.forEach(form => {
-                    form.addEventListener('submit', function (e) {
-                        const submitBtn = form.querySelector('button[type="submit"]');
-                        if (submitBtn && !submitBtn.disabled) {
-                            const originalText = submitBtn.innerHTML;
-                            addLoadingState(submitBtn, originalText);
-                        }
-                    });
-                });
-
-                // Add click handlers for action links
-                const actionLinks = document.querySelectorAll('.address-actions a');
-                actionLinks.forEach(link => {
-                    if (link.textContent.includes('Edit')) {
-                        link.addEventListener('click', function () {
-                            showToast('Loading edit form...', 'info');
-                        });
-                    } else if (link.textContent.includes('Set Default')) {
-                        link.addEventListener('click', function () {
-                            showToast('Setting as default address...', 'info');
-                        });
-                    }
-                });
-
-                // Show welcome message on page load
-                showToast('Profile page loaded successfully', 'success', 2000);
-            });
-
-            // Add CSS animation for loading spinner
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-                
-                .profile-page .btn:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                }
-                
-                .profile-page .btn:disabled:hover {
-                    background-color: #333;
-                }
-            `;
-            document.head.appendChild(style);
 
             // Add keyboard shortcuts for better UX
             document.addEventListener('keydown', function (e) {
@@ -951,10 +746,6 @@
                 if (e.key === 'Escape') {
                     closeModal();
                     closeConfirmModal();
-
-                    // Also close toast notifications
-                    const toasts = document.querySelectorAll('.toast');
-                    toasts.forEach(toast => closeToast(toast));
                 }
 
                 // Ctrl+S to save profile (prevent default browser save)
@@ -962,63 +753,9 @@
                     e.preventDefault();
                     const profileForm = document.getElementById('profileForm');
                     if (profileForm) {
-                        showToast('Saving profile...', 'info');
                         profileForm.submit();
                     }
                 }
-            });
-
-            // Add form auto-save draft functionality (optional)
-            function autoSaveDraft() {
-                const forms = document.querySelectorAll('form');
-                forms.forEach(form => {
-                    const inputs = form.querySelectorAll('input, textarea, select');
-                    inputs.forEach(input => {
-                        input.addEventListener('input', function () {
-                            // Save to sessionStorage (if available)
-                            if (typeof (Storage) !== "undefined") {
-                                sessionStorage.setItem(input.name + '_draft', input.value);
-                            }
-                        });
-                    });
-                });
-            }
-
-            // Load draft values on page load
-            function loadDraftValues() {
-                if (typeof (Storage) !== "undefined") {
-                    const inputs = document.querySelectorAll('input, textarea, select');
-                    inputs.forEach(input => {
-                        const draftValue = sessionStorage.getItem(input.name + '_draft');
-                        if (draftValue && !input.value) {
-                            input.value = draftValue;
-                            showToast('Draft restored for ' + input.name, 'info', 1500);
-                        }
-                    });
-                }
-            }
-
-            // Clear draft values after successful submission
-            function clearDraftValues() {
-                if (typeof (Storage) !== "undefined") {
-                    const keys = Object.keys(sessionStorage);
-                    keys.forEach(key => {
-                        if (key.endsWith('_draft')) {
-                            sessionStorage.removeItem(key);
-                        }
-                    });
-                }
-            }
-
-            // Initialize draft functionality
-            autoSaveDraft();
-            loadDraftValues();
-
-            // Add success callback for form submissions
-            window.addEventListener('beforeunload', function () {
-                // Clear any pending notifications
-                const toasts = document.querySelectorAll('.toast');
-                toasts.forEach(toast => closeToast(toast));
             });
 
             // Add notification for unsaved changes

@@ -1,4 +1,3 @@
-<%@ page contentType="text/html;charset=UTF-8" %>
 <%@ page import="Model.User" %>
 
 <%
@@ -25,7 +24,7 @@
             </a>
         </li>
 
-        <!-- ✅ Quản lý Người Dùng -->
+        <!-- ? Qu?n l� Ng??i D�ng -->
         <% if (roleID == 1) { %> <!-- Admin -->
         <li class="nav-item mb-1">
             <a href="User?type=staff" class="nav-link text-dark">
@@ -41,7 +40,7 @@
         </li>
         <% }%>
 
-        <!-- Danh mục -->
+        <!-- Danh m?c -->
         <li class="nav-item mb-1">
             <a href="#!" class="nav-link text-black" id="categoryToggle">
                 <i class="fas fa-list"></i> Category
@@ -59,13 +58,13 @@
             </a>
         </li>
         <li class="nav-item mb-1">
-            <a href="order" class="nav-link text-dark">
-                <i class="fas fa-comments me-2"></i> Order
+            <a href="Order" class="nav-link text-dark">
+                <i class="fas fa-receipt me-2"></i> Order
             </a>
         </li>
         <li class="nav-item mb-1">
             <a href="Promotion" class="nav-link text-dark">
-                <i class="fas fa-tags me-2"></i> Promotion
+                <i class="fas fa-bullhorn me-2"></i> Promotion
             </a>
         </li>
         <li class="nav-item mb-1">

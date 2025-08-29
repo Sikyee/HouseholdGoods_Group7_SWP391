@@ -339,7 +339,9 @@ public class OrderDAO {
         } catch (Exception ex) {
             Logger.getLogger(OrderDAO.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return list;
     }
+
     // Lấy danh sách đơn hàng theo userID
     public List<Order> getOrdersByUser(int userID) {
         List<Order> list = new ArrayList<>();
@@ -410,7 +412,9 @@ public class OrderDAO {
         } catch (Exception ex) {
             Logger.getLogger(OrderDAO.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return list;
     }
+
     // Lấy chi tiết sản phẩm trong 1 đơn
     public List<OrderDetail> getOrderDetailsByOrder(int orderID) {
         List<OrderDetail> list = new ArrayList<>();

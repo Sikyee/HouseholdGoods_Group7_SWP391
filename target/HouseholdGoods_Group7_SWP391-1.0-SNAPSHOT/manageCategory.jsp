@@ -1,4 +1,4 @@
-<<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
 <%
     HttpSession s = request.getSession(false);
     Model.User u = (Model.User) (s != null ? s.getAttribute("user") : null);
