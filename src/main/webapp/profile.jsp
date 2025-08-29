@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="Model.User, java.util.List, Model.Address" %>
+<%@ page import="Model.User" %>
 
 <%
     User sessionUser = (User) session.getAttribute("user");
@@ -9,8 +9,6 @@
     }
 
     User user = (User) request.getAttribute("user");
-    List<Address> addressList = (List<Address>) request.getAttribute("addressList");
-    Address editAddress = (Address) request.getAttribute("editAddress");
 
     // Try to get from request first, then session
     String message = (String) request.getAttribute("message");
@@ -51,13 +49,13 @@
             }
 
             .profile-page .container {
-                max-width: 1000px;
+                max-width: 800px;
                 margin: auto;
             }
 
             .profile-page .profile-header {
                 text-align: center;
-                margin-bottom: 20px;
+                margin-bottom: 30px;
             }
 
             .profile-page .profile-header h1 {
@@ -70,18 +68,12 @@
                 color: #666;
             }
 
-            .profile-page .profile-grid {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 20px;
-            }
-
             .profile-page .profile-card {
                 background-color: #fff;
                 padding: 20px;
                 border: 1px solid #ddd;
-                flex: 1 1 100%;
                 border-radius: 5px;
+                margin-bottom: 20px;
             }
 
             .profile-page .card-title {
@@ -101,7 +93,7 @@
                 font-weight: bold;
             }
 
-            .profile-page input, .profile-page select, .profile-page textarea {
+            .profile-page input, .profile-page select {
                 width: 100%;
                 padding: 8px;
                 border: 1px solid #ccc;
@@ -117,6 +109,8 @@
                 border-radius: 4px;
                 text-decoration: none;
                 cursor: pointer;
+                margin-right: 10px;
+                margin-bottom: 10px;
             }
 
             .profile-page .btn:hover {
@@ -124,94 +118,11 @@
             }
 
             .profile-page .btn-secondary {
-                background-color: #aaa;
+                background-color: #6c757d;
             }
 
             .profile-page .btn-secondary:hover {
-                background-color: #888;
-            }
-
-            .profile-page .btn-danger {
-                background-color: #c0392b;
-            }
-
-            .profile-page .btn-danger:hover {
-                background-color: #a93226;
-            }
-
-            .profile-page .btn-success {
-                background-color: #27ae60;
-            }
-
-            .profile-page .btn-success:hover {
-                background-color: #1e8449;
-            }
-
-            .profile-page .btn-small {
-                font-size: 14px;
-                padding: 6px 12px;
-            }
-
-            .profile-page .address-item {
-                border: 1px solid #ddd;
-                padding: 15px;
-                border-radius: 5px;
-                margin-bottom: 10px;
-                background-color: #fafafa;
-            }
-
-            .profile-page .address-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 10px;
-            }
-
-            .profile-page .address-name {
-                font-weight: bold;
-                font-size: 16px;
-            }
-
-            .profile-page .default-badge {
-                font-size: 12px;
-                color: #fff;
-                background-color: #f39c12;
-                padding: 2px 8px;
-                border-radius: 10px;
-            }
-
-            .profile-page .address-info {
-                font-size: 14px;
-                color: #555;
-                margin-bottom: 10px;
-            }
-
-            .profile-page .address-actions {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-
-            .profile-page .empty-state {
-                text-align: center;
-                color: #777;
-                padding: 30px;
-                background-color: #fff;
-                border: 1px dashed #ccc;
-                border-radius: 5px;
-            }
-
-            .profile-page .add-address-form {
-                margin-top: 15px;
-                padding: 15px;
-                border: 1px solid #bbb;
-                background-color: #f9f9f9;
-                border-radius: 5px;
-                display: none;
-            }
-
-            .profile-page .add-address-form.show {
-                display: block;
+                background-color: #5a6268;
             }
 
             .profile-page .error-message {
@@ -224,7 +135,7 @@
                 display: block;
             }
 
-            .profile-page input.error, .profile-page textarea.error {
+            .profile-page input.error {
                 border-color: red;
                 background-color: #ffeaea;
             }
@@ -233,10 +144,51 @@
                 color: red;
             }
 
-            .profile-page .form-helper {
+            .profile-page .quick-links {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+                margin-bottom: 30px;
+            }
+
+            .profile-page .quick-link {
+                display: flex;
+                align-items: center;
+                padding: 15px 20px;
+                background-color: #fff;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                text-decoration: none;
+                color: #333;
+                transition: all 0.3s;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .profile-page .quick-link:hover {
+                background-color: #f8f9fa;
+                border-color: #007bff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                color: #007bff;
+            }
+
+            .profile-page .quick-link .icon {
+                font-size: 24px;
+                margin-right: 15px;
+                width: 40px;
+                text-align: center;
+            }
+
+            .profile-page .quick-link .content h3 {
+                font-size: 16px;
+                margin-bottom: 5px;
+                font-weight: 600;
+            }
+
+            .profile-page .quick-link .content p {
                 font-size: 12px;
                 color: #666;
-                margin-top: 5px;
+                margin: 0;
             }
 
             /* Modal styles */
@@ -295,26 +247,19 @@
             }
 
             @media (max-width: 768px) {
-                .profile-page .profile-grid {
-                    flex-direction: column;
+                .profile-page .quick-links {
+                    grid-template-columns: 1fr;
                 }
 
                 .profile-page .btn {
                     width: 100%;
                     text-align: center;
-                }
-
-                .profile-page .address-actions {
-                    flex-direction: column;
+                    margin-bottom: 10px;
+                    margin-right: 0;
                 }
 
                 .profile-page .modal-actions {
                     flex-direction: column;
-                }
-
-                .profile-page .alert,
-                .profile-page .notification {
-                    z-index: 1050 !important;
                 }
             }
         </style>
@@ -326,211 +271,95 @@
             <div class="container">
                 <!-- Profile Header -->
                 <div class="profile-header">
-                    <h1>👤 User Profile</h1>
-                    <p>Manage your personal information and addresses</p>
+                    <h1>User Profile</h1>
+                    <p>Manage your personal information and account settings</p>
                 </div>
 
-                <!-- Profile Grid -->
-                <div class="profile-grid">
-                    <!-- Personal Information -->
-                    <div class="profile-card">
-                        <h2 class="card-title">Personal Information</h2>
-                        <form id="profileForm" method="post" action="profile">
-                            <div class="form-group">
-                                <label>Full Name <span class="required">*</span></label>
-                                <input type="text" id="fullName" name="fullName" 
-                                       value="<%= request.getAttribute("preservedFullName") != null ? request.getAttribute("preservedFullName") : (user != null ? user.getFullName() : "")%>" required>
-                                <div class="error-message" id="fullNameError">Full name is required</div>
-                            </div>
+                <!-- Quick Links -->
+                <div class="quick-links">
+                    <a href="address" class="quick-link">
+                        <div class="icon">📍</div>
+                        <div class="content">
+                            <h3>My Addresses</h3>
+                            <p>Manage delivery addresses</p>
+                        </div>
+                    </a>
 
-                            <div class="form-group">
-                                <label>Email Address <span class="required">*</span></label>
-                                <input type="email" id="email" name="email" 
-                                       value="<%= request.getAttribute("preservedEmail") != null ? request.getAttribute("preservedEmail") : (user != null ? user.getEmail() : "")%>" required>
-                                <div class="error-message" id="emailError">Valid email is required</div>
-                            </div>
+                    <a href="order" class="quick-link">
+                        <div class="icon">📦</div>
+                        <div class="content">
+                            <h3>My Orders</h3>
+                            <p>View order history</p>
+                        </div>
+                    </a>
 
-                            <div class="form-group">
-                                <label>Phone Number <span class="required">*</span></label>
-                                <input type="tel" id="phone" name="phone" 
-                                       value="<%= request.getAttribute("preservedPhone") != null ? request.getAttribute("preservedPhone") : (user != null && user.getPhone() != null ? user.getPhone() : "")%>" 
-                                       maxlength="15" required>
-                                <div class="error-message" id="phoneError">Phone number is required</div>
-                            </div>
+                    <a href="changePassword" class="quick-link">
+                        <div class="icon">🔐</div>
+                        <div class="content">
+                            <h3>Change Password</h3>
+                            <p>Update your password</p>
+                        </div>
+                    </a>
 
-                            <div class="form-group">
-                                <label>Date of Birth <span class="required">*</span></label>
-                                <input type="date" name="dob" 
-                                       value="<%= request.getAttribute("preservedDob") != null ? request.getAttribute("preservedDob") : ((user != null && user.getDob() != null) ? user.getDob().toString() : "")%>" required>
-                                <div class="error-message" id="dobError">Date of birth is required</div>
-                            </div>
+                    <a href="ViewFeedbackOrders" class="quick-link">
+                        <div class="icon">✍️</div>
+                        <div class="content">
+                            <h3>My Feedback</h3>
+                            <p>View and manage reviews</p>
+                        </div>
+                    </a>
+                </div>
 
-                            <div class="form-group">
-                                <label>Gender <span class="required">*</span></label>
-                                <select name="gender" id="gender" required>
-                                    <option value="">Select Gender</option>
-                                    <%
-                                        String preservedGender = (String) request.getAttribute("preservedGender");
-                                        String currentGender = preservedGender != null ? preservedGender : (user != null ? user.getGender() : "");
-                                    %>
-                                    <option value="Nam" <%= "Nam".equals(currentGender) ? "selected" : ""%>>Nam</option>
-                                    <option value="Nữ" <%= "Nữ".equals(currentGender) ? "selected" : ""%>>Nữ</option>
-                                    <option value="Khác" <%= "Khác".equals(currentGender) ? "selected" : ""%>>Khác</option>
-                                </select>
-                                <div class="error-message" id="genderError">Please select your gender</div>
-                            </div>
-
-                            <button type="submit" class="btn">Update Profile</button>
-                        </form>
-                    </div>
-
-                    <!-- Address Management -->
-                    <div class="profile-card">
-                        <h2 class="card-title">Address Management</h2>
-
-                        <div class="address-list">
-                            <% if (addressList != null && !addressList.isEmpty()) { %>
-                            <% for (Address addr : addressList) {%>
-                            <div class="address-item <%= addr.isDefault() ? "default" : ""%>">
-                                <div class="address-header">
-                                    <span class="address-name"><%= addr.getAddressName()%></span>
-                                    <% if (addr.isDefault()) { %>
-                                    <span class="default-badge">Default</span>
-                                    <% }%>
-                                </div>
-
-                                <div class="address-info">
-                                    <strong><%= addr.getRecipientName()%></strong> - <%= addr.getPhone()%><br>
-                                    <%= addr.getAddressDetail()%>
-                                </div>
-
-                                <div class="address-actions">
-                                    <a href="profile?action=edit&addressID=<%= addr.getAddressID()%>" class="btn btn-small">Edit</a>
-                                    <% if (!addr.isDefault()) {%>
-                                    <a href="profile?action=set-default&addressID=<%= addr.getAddressID()%>" 
-                                       class="btn btn-small btn-success">Set Default</a>
-                                    <% }%>
-                                    <a href="profile?action=delete&addressID=<%= addr.getAddressID()%>" 
-                                       onclick="return confirmDelete(this, 'Delete this address?');" 
-                                       class="btn btn-small btn-danger">Delete</a>
-                                </div>
-
-                                <!-- Edit Form -->
-                                <% if (editAddress != null && editAddress.getAddressID() == addr.getAddressID()) {%>
-                                <div class="add-address-form show" style="margin-top: 20px; background: rgba(46, 204, 113, 0.1); border-color: #2ecc71;">
-                                    <h4 style="color: #27ae60; margin-bottom: 20px;">✏️ Edit Address</h4>
-                                    <form method="post" action="profile">
-                                        <input type="hidden" name="action" value="update-address">
-                                        <input type="hidden" name="addressID" value="<%= editAddress.getAddressID()%>">
-
-                                        <div class="form-group">
-                                            <label>Address Name <span class="required">*</span></label>
-                                            <input type="text" name="addressName" value="<%= editAddress.getAddressName() != null ? editAddress.getAddressName() : ""%>" required>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label>Recipient Name <span class="required">*</span></label>
-                                            <input type="text" name="recipientName" value="<%= editAddress.getRecipientName() != null ? editAddress.getRecipientName() : ""%>" required>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label>Phone <span class="required">*</span></label>
-                                            <input type="tel" name="phone" value="<%= editAddress.getPhone() != null ? editAddress.getPhone() : ""%>" required>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label>Address Detail <span class="required">*</span></label>
-                                            <textarea name="addressDetail" rows="4" required><%= editAddress.getAddressDetail() != null ? editAddress.getAddressDetail() : ""%></textarea>
-                                            <div class="form-helper">Include full address: street, district, city/province</div>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label>Address Type</label>
-                                            <input type="text" name="addressType" value="<%= editAddress.getAddressType() != null ? editAddress.getAddressType() : ""%>" placeholder="e.g., Home, Office">
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label>
-                                                <input type="checkbox" name="isDefault" value="1" <%= editAddress.isDefault() ? "checked" : ""%> style="width: auto; margin-right: 8px;">
-                                                Set as default address
-                                            </label>
-                                        </div>
-
-                                        <div style="display: flex; gap: 10px;">
-                                            <button type="submit" class="btn btn-success">💾 Update</button>
-                                            <a href="profile" class="btn btn-secondary">❌ Cancel</a>
-                                        </div>
-                                    </form>
-                                </div>
-                                <% } %>
-                            </div>
-                            <% } %>
-                            <% } else { %>
-                            <div class="empty-state">
-                                <div style="font-size: 3rem; margin-bottom: 15px;">📍</div>
-                                <p><strong>No addresses found</strong></p>
-                                <p>Add your first address to get started</p>
-                            </div>
-                            <% } %>
+                <!-- Personal Information -->
+                <div class="profile-card">
+                    <h2 class="card-title">Personal Information</h2>
+                    <form id="profileForm" method="post" action="profile">
+                        <div class="form-group">
+                            <label>Full Name <span class="required">*</span></label>
+                            <input type="text" id="fullName" name="fullName" 
+                                   value="<%= request.getAttribute("preservedFullName") != null ? request.getAttribute("preservedFullName") : (user != null ? user.getFullName() : "")%>" required>
+                            <div class="error-message" id="fullNameError">Full name is required</div>
                         </div>
 
-                        <% if (editAddress == null) { %>
-                        <button type="button" class="btn" onclick="toggleAddressForm()">Add New Address</button>
-                        <% }%>
-
-                        <!-- Add Address Form -->
-                        <div id="addressForm" class="add-address-form">
-                            <h4 style="color: #667eea; margin-bottom: 20px;">Add New Address</h4>
-                            <form method="post" action="profile">
-                                <input type="hidden" name="action" value="add-address">
-
-                                <div class="form-group">
-                                    <label>Address Name <span class="required">*</span></label>
-                                    <input type="text" name="addressName" 
-                                           value="<%= request.getAttribute("preservedAddressName") != null ? request.getAttribute("preservedAddressName") : ""%>" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Recipient Name <span class="required">*</span></label>
-                                    <input type="text" name="recipientName" 
-                                           value="<%= request.getAttribute("preservedRecipientName") != null ? request.getAttribute("preservedRecipientName") : ""%>" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Phone <span class="required">*</span></label>
-                                    <input type="tel" name="phone" 
-                                           value="<%= request.getAttribute("preservedPhone") != null ? request.getAttribute("preservedPhone") : ""%>" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Address Detail <span class="required">*</span></label>
-                                    <textarea name="addressDetail" rows="4" required><%= request.getAttribute("preservedAddressDetail") != null ? request.getAttribute("preservedAddressDetail") : ""%></textarea>
-                                    <div class="form-helper">Include full address: street, district, city/province</div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Address Type</label>
-                                    <input type="text" name="addressType" 
-                                           value="<%= request.getAttribute("preservedAddressType") != null ? request.getAttribute("preservedAddressType") : ""%>" 
-                                           placeholder="e.g., Home, Office">
-                                </div>
-
-                                <div class="form-group">
-                                    <label>
-                                        <input type="checkbox" name="isDefault" value="1" 
-                                               <%= request.getAttribute("preservedIsDefault") != null && (Boolean) request.getAttribute("preservedIsDefault") ? "checked" : ""%>
-                                               style="width: auto; margin-right: 8px;">
-                                        Set as default address
-                                    </label>
-                                </div>
-
-                                <div style="display: flex; gap: 10px;">
-                                    <button type="submit" class="btn">Add Address</button>
-                                    <button type="button" class="btn btn-secondary" onclick="toggleAddressForm()">Cancel</button>
-                                </div>
-                            </form>
+                        <div class="form-group">
+                            <label>Email Address <span class="required">*</span></label>
+                            <input type="email" id="email" name="email" 
+                                   value="<%= request.getAttribute("preservedEmail") != null ? request.getAttribute("preservedEmail") : (user != null ? user.getEmail() : "")%>" required>
+                            <div class="error-message" id="emailError">Valid email is required</div>
                         </div>
-                    </div>
+
+                        <div class="form-group">
+                            <label>Phone Number <span class="required">*</span></label>
+                            <input type="tel" id="phone" name="phone" 
+                                   value="<%= request.getAttribute("preservedPhone") != null ? request.getAttribute("preservedPhone") : (user != null && user.getPhone() != null ? user.getPhone() : "")%>" 
+                                   maxlength="15" required>
+                            <div class="error-message" id="phoneError">Phone number is required</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Date of Birth <span class="required">*</span></label>
+                            <input type="date" name="dob" 
+                                   value="<%= request.getAttribute("preservedDob") != null ? request.getAttribute("preservedDob") : ((user != null && user.getDob() != null) ? user.getDob().toString() : "")%>" required>
+                            <div class="error-message" id="dobError">Date of birth is required</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Gender <span class="required">*</span></label>
+                            <select name="gender" id="gender" required>
+                                <option value="">Select Gender</option>
+                                <%
+                                    String preservedGender = (String) request.getAttribute("preservedGender");
+                                    String currentGender = preservedGender != null ? preservedGender : (user != null ? user.getGender() : "");
+                                %>
+                                <option value="Nam" <%= "Nam".equals(currentGender) ? "selected" : ""%>>Nam</option>
+                                <option value="Nữ" <%= "Nữ".equals(currentGender) ? "selected" : ""%>>Nữ</option>
+                                <option value="Khác" <%= "Khác".equals(currentGender) ? "selected" : ""%>>Khác</option>
+                            </select>
+                            <div class="error-message" id="genderError">Please select your gender</div>
+                        </div>
+
+                        <button type="submit" class="btn">Update Profile</button>
+                    </form>
                 </div>
             </div>
 
@@ -545,24 +374,11 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Confirmation Modal -->
-            <div class="modal" id="confirmModal">
-                <div class="modal-content">
-                    <div class="modal-icon">⚠️</div>
-                    <div class="modal-title">Confirm Action</div>
-                    <div class="modal-message" id="confirmMessage">Are you sure?</div>
-                    <div class="modal-actions">
-                        <button class="btn btn-danger" id="confirmYes">Yes</button>
-                        <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- JavaScript for handling notifications and UI interaction -->
         <script>
-            // Enhanced modal handling
+            // Modal handling
             function showModal(message, type = 'success') {
                 const modal = document.getElementById('messageModal');
                 const icon = document.getElementById('modalIcon');
@@ -598,29 +414,7 @@
                 document.getElementById('messageModal').classList.remove('show');
             }
 
-            function closeConfirmModal() {
-                document.getElementById('confirmModal').classList.remove('show');
-            }
-
-            // Enhanced confirm delete
-            function confirmDelete(element, message = 'Are you sure?') {
-                const modal = document.getElementById('confirmModal');
-                const messageEl = document.getElementById('confirmMessage');
-                const confirmYes = document.getElementById('confirmYes');
-
-                messageEl.textContent = message;
-
-                confirmYes.onclick = () => {
-                    closeConfirmModal();
-                    // Redirect to delete URL
-                    window.location.href = element.href;
-                };
-
-                modal.classList.add('show');
-                return false;
-            }
-
-            // Enhanced profile form handling
+            // Profile form handling
             const profileForm = document.getElementById("profileForm");
             if (profileForm) {
                 profileForm.addEventListener("submit", function (e) {
@@ -683,25 +477,6 @@
                 });
             }
 
-            // Toggle address form
-            function toggleAddressForm() {
-                const form = document.getElementById('addressForm');
-                const isVisible = form.classList.contains('show');
-
-                if (isVisible) {
-                    form.classList.remove('show');
-                } else {
-                    form.classList.add('show');
-                    // Focus on first input
-                    setTimeout(() => {
-                        const firstInput = form.querySelector('input[name="addressName"]');
-                        if (firstInput) {
-                            firstInput.focus();
-                        }
-                    }, 300);
-                }
-            }
-
             // Display server messages
             <%
                 // Server-side validation before sending to JavaScript
@@ -740,12 +515,11 @@
             });
             <% }%>
 
-            // Add keyboard shortcuts for better UX
+            // Keyboard shortcuts
             document.addEventListener('keydown', function (e) {
                 // Escape key closes modals
                 if (e.key === 'Escape') {
                     closeModal();
-                    closeConfirmModal();
                 }
 
                 // Ctrl+S to save profile (prevent default browser save)
