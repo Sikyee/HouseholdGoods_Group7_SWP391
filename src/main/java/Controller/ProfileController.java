@@ -1,8 +1,6 @@
 package Controller;
 
-import DAO.AddressDAO;
 import DAO.UserDAO;
-import Model.Address;
 import Model.User;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
@@ -14,11 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-@WebServlet("/profile")
-public class ProfileController extends HttpServlet {
+@WebServlet("/profile")   // Đổi từ /user-profile thành /profile
+public class ProfileController extends HttpServlet {   // Đổi tên class
 
     private UserDAO userDAO = new UserDAO();
-    private AddressDAO addressDAO = new AddressDAO();
 
     // Regex patterns for validation
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
@@ -45,31 +42,15 @@ public class ProfileController extends HttpServlet {
             return;
         }
 
-        String action = request.getParameter("action");
-        String addressIDStr = request.getParameter("addressID");
-
         try {
-            if (action != null) {
-                switch (action) {
-                    case "edit":
-                        handleEditAddress(request, sessionUser, addressIDStr);
-                        break;
-                    case "delete":
-                        handleDeleteAddress(request, sessionUser, addressIDStr);
-                        break;
-                    case "set-default":
-                        handleSetDefaultAddress(request, sessionUser, addressIDStr);
-                        break;
-                }
-            }
-            loadProfileData(request, sessionUser);
-
+            loadUserProfileData(request, sessionUser);
         } catch (Exception e) {
             request.setAttribute("message", "Error: " + e.getMessage());
             request.setAttribute("messageType", "error");
-            loadProfileData(request, sessionUser);
+            loadUserProfileData(request, sessionUser);
         }
 
+        // Đổi JSP sang profile.jsp
         request.getRequestDispatcher("profile.jsp").forward(request, response);
     }
 
@@ -85,175 +66,15 @@ public class ProfileController extends HttpServlet {
             return;
         }
 
-        String action = request.getParameter("action");
-
         try {
-            if ("add-address".equals(action)) {
-                handleAddAddress(request, sessionUser);
-            } else if ("update-address".equals(action)) {
-                handleUpdateAddress(request, sessionUser);
-            } else {
-                handleUpdateProfile(request, sessionUser);
-            }
-
+            handleUpdateProfile(request, sessionUser);
         } catch (Exception e) {
             request.setAttribute("message", "Error: " + e.getMessage());
             request.setAttribute("messageType", "error");
         }
 
-        loadProfileData(request, sessionUser);
+        loadUserProfileData(request, sessionUser);
         request.getRequestDispatcher("profile.jsp").forward(request, response);
-    }
-
-    private void handleEditAddress(HttpServletRequest request, User user, String addressIDStr) {
-        if (addressIDStr != null) {
-            try {
-                int addressID = Integer.parseInt(addressIDStr);
-                Address address = addressDAO.getAddressByID(addressID);
-
-                if (address != null && address.getUserID() == user.getUserID()) {
-                    request.setAttribute("editAddress", address);
-                } else {
-                    request.setAttribute("message", "Địa chỉ không tồn tại.");
-                    request.setAttribute("messageType", "error");
-                }
-            } catch (Exception e) {
-                request.setAttribute("message", "ID địa chỉ không hợp lệ.");
-                request.setAttribute("messageType", "error");
-            }
-        }
-    }
-
-    private void handleDeleteAddress(HttpServletRequest request, User user, String addressIDStr) {
-        if (addressIDStr != null) {
-            try {
-                int addressID = Integer.parseInt(addressIDStr);
-                Address address = addressDAO.getAddressByID(addressID);
-
-                if (address != null && address.getUserID() == user.getUserID()) {
-                    // Pass userID parameter to match AddressDAO.deleteAddress(int addressID, int userID)
-                    boolean deleted = addressDAO.deleteAddress(addressID, user.getUserID());
-                    if (deleted) {
-                        request.setAttribute("message", "Xóa địa chỉ thành công.");
-                        request.setAttribute("messageType", "success");
-                    } else {
-                        request.setAttribute("message", "Xóa địa chỉ thất bại.");
-                        request.setAttribute("messageType", "error");
-                    }
-                } else {
-                    request.setAttribute("message", "Địa chỉ không tồn tại.");
-                    request.setAttribute("messageType", "error");
-                }
-            } catch (Exception e) {
-                request.setAttribute("message", "Lỗi khi xóa địa chỉ.");
-                request.setAttribute("messageType", "error");
-            }
-        }
-    }
-
-    private void handleSetDefaultAddress(HttpServletRequest request, User user, String addressIDStr) {
-        if (addressIDStr != null) {
-            try {
-                int addressID = Integer.parseInt(addressIDStr);
-                Address address = addressDAO.getAddressByID(addressID);
-
-                if (address != null && address.getUserID() == user.getUserID()) {
-                    boolean updated = addressDAO.setDefaultAddress(user.getUserID(), addressID);
-                    if (updated) {
-                        request.setAttribute("message", "Cập nhật địa chỉ mặc định thành công.");
-                        request.setAttribute("messageType", "success");
-                    } else {
-                        request.setAttribute("message", "Cập nhật địa chỉ mặc định thất bại.");
-                        request.setAttribute("messageType", "error");
-                    }
-                } else {
-                    request.setAttribute("message", "Địa chỉ không tồn tại.");
-                    request.setAttribute("messageType", "error");
-                }
-            } catch (Exception e) {
-                request.setAttribute("message", "Lỗi khi cập nhật địa chỉ mặc định.");
-                request.setAttribute("messageType", "error");
-            }
-        }
-    }
-
-    private void handleAddAddress(HttpServletRequest request, User user) {
-        String addressName = request.getParameter("addressName");
-        String recipientName = request.getParameter("recipientName");
-        String phone = request.getParameter("phone");
-        String addressDetail = request.getParameter("addressDetail");
-        String addressType = request.getParameter("addressType");
-        boolean isDefault = "1".equals(request.getParameter("isDefault"));
-
-        // Create Address object with required fields (removed province, district, ward)
-        Address address = new Address();
-        address.setUserID(user.getUserID());
-        address.setAddressName(addressName != null ? addressName.trim() : "");
-        address.setRecipientName(recipientName != null ? recipientName.trim() : "");
-        address.setPhone(phone != null ? phone.trim() : "");
-        address.setAddressDetail(addressDetail != null ? addressDetail.trim() : "");
-        address.setAddressType(addressType != null ? addressType.trim() : "");
-        address.setDefault(isDefault);
-
-        boolean added = addressDAO.addAddress(address);
-        if (added) {
-            request.setAttribute("message", "Thêm địa chỉ thành công.");
-            request.setAttribute("messageType", "success");
-        } else {
-            request.setAttribute("message", "Thêm địa chỉ thất bại.");
-            request.setAttribute("messageType", "error");
-            // Preserve form data
-            preserveAddressFormData(request, addressName, recipientName, phone, addressDetail, addressType, isDefault);
-        }
-    }
-
-    private void handleUpdateAddress(HttpServletRequest request, User user) {
-        String addressIDStr = request.getParameter("addressID");
-
-        if (isEmpty(addressIDStr)) {
-            request.setAttribute("message", "ID địa chỉ không hợp lệ.");
-            request.setAttribute("messageType", "error");
-            return;
-        }
-
-        try {
-            int addressID = Integer.parseInt(addressIDStr);
-            Address address = addressDAO.getAddressByID(addressID);
-
-            if (address == null || address.getUserID() != user.getUserID()) {
-                request.setAttribute("message", "Địa chỉ không tồn tại.");
-                request.setAttribute("messageType", "error");
-                return;
-            }
-
-            String addressName = request.getParameter("addressName");
-            String recipientName = request.getParameter("recipientName");
-            String phone = request.getParameter("phone");
-            String addressDetail = request.getParameter("addressDetail");
-            String addressType = request.getParameter("addressType");
-            boolean isDefault = "1".equals(request.getParameter("isDefault"));
-
-            // Update fields (removed province, district, ward)
-            address.setAddressName(addressName != null ? addressName.trim() : "");
-            address.setRecipientName(recipientName != null ? recipientName.trim() : "");
-            address.setPhone(phone != null ? phone.trim() : "");
-            address.setAddressDetail(addressDetail != null ? addressDetail.trim() : "");
-            address.setAddressType(addressType != null ? addressType.trim() : "");
-            address.setDefault(isDefault);
-
-            boolean updated = addressDAO.updateAddress(address);
-            if (updated) {
-                request.setAttribute("message", "Cập nhật địa chỉ thành công.");
-                request.setAttribute("messageType", "success");
-            } else {
-                request.setAttribute("message", "Cập nhật địa chỉ thất bại.");
-                request.setAttribute("messageType", "error");
-            }
-
-        } catch (NumberFormatException e) {
-            request.setAttribute("message", "ID địa chỉ không hợp lệ.");
-            request.setAttribute("messageType", "error");
-        }
     }
 
     private void handleUpdateProfile(HttpServletRequest request, User user) {
@@ -288,7 +109,7 @@ public class ProfileController extends HttpServlet {
         user.setFullName(fullName.trim());
         user.setEmail(email.trim());
         user.setPhone(phone.trim());
-        user.setGender(gender.trim()); // Now required, so no null check needed
+        user.setGender(gender.trim());
 
         // Parse date of birth - now required
         try {
@@ -379,23 +200,14 @@ public class ProfileController extends HttpServlet {
         return errors;
     }
 
-    // Helper methods to preserve form data
-    private void preserveProfileFormData(HttpServletRequest request, String fullName, String email, String phone, String dobStr, String gender) {
+    // Helper method to preserve form data
+    private void preserveProfileFormData(HttpServletRequest request, String fullName, String email,
+            String phone, String dobStr, String gender) {
         request.setAttribute("preservedFullName", fullName);
         request.setAttribute("preservedEmail", email);
         request.setAttribute("preservedPhone", phone);
         request.setAttribute("preservedDob", dobStr);
         request.setAttribute("preservedGender", gender);
-    }
-
-    private void preserveAddressFormData(HttpServletRequest request, String addressName, String recipientName,
-            String phone, String addressDetail, String addressType, boolean isDefault) {
-        request.setAttribute("preservedAddressName", addressName);
-        request.setAttribute("preservedRecipientName", recipientName);
-        request.setAttribute("preservedPhone", phone);
-        request.setAttribute("preservedAddressDetail", addressDetail);
-        request.setAttribute("preservedAddressType", addressType);
-        request.setAttribute("preservedIsDefault", isDefault);
     }
 
     // Security enhancement: Sanitize input to prevent XSS
@@ -410,7 +222,7 @@ public class ProfileController extends HttpServlet {
                 .replaceAll("/", "&#x2F;");
     }
 
-    private void loadProfileData(HttpServletRequest request, User user) {
+    private void loadUserProfileData(HttpServletRequest request, User user) {
         try {
             User freshUser = userDAO.getUserByID(user.getUserID());
             if (freshUser != null) {
@@ -419,10 +231,6 @@ public class ProfileController extends HttpServlet {
             } else {
                 request.setAttribute("user", user);
             }
-
-            List<Address> addressList = addressDAO.getAddressesByUserID(user.getUserID());
-            request.setAttribute("addressList", addressList);
-
         } catch (Exception e) {
             request.setAttribute("user", user);
             request.setAttribute("message", "Lỗi khi tải dữ liệu.");
