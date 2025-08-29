@@ -2,12 +2,14 @@ package Controller;
 
 import DAO.BrandDAO;
 import DAO.CartDAO;
+import DAO.FeedbackDAO;
 import DAO.ProductDAO;
 import DAO.SubCategoryDAO;
 import Model.Product;
 import Model.Attribute;
 import Model.Brand;
 import Model.Cart;
+import Model.Feedback;
 import Model.SubCategory;
 
 import jakarta.servlet.ServletException;
@@ -69,6 +71,11 @@ public class ProductController extends HttpServlet {
                 Product productDetail = dao.getProductById(id);
                 List<Attribute> attributes = dao.getAttributesByProductId(id);
                 productDetail.setAttributes(attributes);
+                // Lấy feedback cho sản phẩm
+    FeedbackDAO feedbackDAO = new FeedbackDAO();
+    List<Feedback> feedbackList = feedbackDAO.getFeedbackByProductID(id);
+
+
 
                 HttpSession session = request.getSession();
                 Object userObj = request.getSession().getAttribute("userID");
@@ -80,6 +87,8 @@ public class ProductController extends HttpServlet {
                 int userID = (int) userObj;
                 List<Cart> cartList = cartDAO.getProductInCart(userID);
                 session.setAttribute("cartQuantity", cartList.size());
+// set xuống JSP
+    request.setAttribute("feedbackList", feedbackList);
 
                 request.setAttribute("productDetail", productDetail);
                 request.getRequestDispatcher("productDetail.jsp").forward(request, response);
@@ -110,18 +119,19 @@ public class ProductController extends HttpServlet {
             // ✅ Validate Price
             try {
                 long price = Long.parseLong(request.getParameter("price"));
-                if (price < 0) {
-                    errors.put("price", "Price must be non-negative");
+                if (price <= 0) { // sửa < 0 thành <= 0
+                    errors.put("price", "Price must be greater than 0");
                 }
                 p.setPrice(price);
             } catch (NumberFormatException e) {
                 errors.put("price", "Invalid price format");
             }
 
+// ✅ Validate Stock Quantity
             try {
                 int quantity = Integer.parseInt(request.getParameter("stockQuantity"));
-                if (quantity < 0) {
-                    errors.put("stockQuantity", "Stock must be non-negative");
+                if (quantity <= 0) { // sửa < 0 thành <= 0
+                    errors.put("stockQuantity", "Stock must be greater than 0");
                 }
                 p.setStonkQuantity(quantity);
             } catch (NumberFormatException e) {
@@ -155,8 +165,9 @@ public class ProductController extends HttpServlet {
                 String fileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
                 String contentType = filePart.getContentType();
 
-                if (!contentType.startsWith("image/")) {
-                    errors.put("imageFile", "Only image files are allowed.");
+                // ✅ chỉ cho jpg và png
+                if (!(contentType.equals("image/jpeg") || contentType.equals("image/png"))) {
+                    errors.put("imageFile", "Only JPG and PNG images are allowed.");
                 } else {
                     String uploadPath = getServletContext().getRealPath("/images");
                     File uploadDir = new File(uploadPath);
@@ -215,7 +226,7 @@ public class ProductController extends HttpServlet {
             if (attributeNames != null && attributeValues != null) {
                 dao.updateProductAttributes(productID, attributeNames, attributeValues);
             }
-
+           
         } catch (Exception e) {
             e.printStackTrace();
         }
