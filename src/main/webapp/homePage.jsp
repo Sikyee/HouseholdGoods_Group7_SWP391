@@ -52,7 +52,7 @@
         .hero-title { font-size: 3rem; }
         .hero-subtitle { font-size: 1.25rem; }
         .section-title { text-align: center; margin-top: 3rem; margin-bottom: 2rem; font-size: 2rem; font-weight: bold; }
-        .product-card { border: 1px solid #dee2e6; padding: 10px; border-radius: 10px; background-color: #ffffff; }
+        .product-card { border: 1px solid #dee2e6; padding: 10px; border-radius: 10px; background-color: #ffffff; position: relative; }
         .product-card img { height: 250px; object-fit: cover; }
         .price { font-size: 1.25rem; font-weight: bold; color: #007bff; }
         .price-old { text-decoration: line-through; color: #6c757d; margin: 0; }
@@ -64,6 +64,23 @@
         .btn-add:hover { background-color: #157347; }
         .btn-buy { background-color: #dc3545; color: white; }
         .btn-buy:hover { background-color: #bb2d3b; }
+
+        /* Wishlist overlay */
+        .wishlist-form { position: absolute; top: 10px; left: 10px; z-index: 10; }
+        .wishlist-btn {
+            border: 2px solid red;
+            background-color: black;
+            color: red;
+            font-size: 28px;
+            width: 40px;
+            height: 40px;
+            display: none;               /* ẩn mặc định */
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        .product-card:hover .wishlist-btn { display: flex; } /* hiện khi hover */
     </style>
 </head>
 <body>
@@ -190,6 +207,13 @@
         %>
         <div class="col-lg-3 col-md-6 p-2">
             <div class="card product-card h-100">
+                <!-- Wishlist -->
+                <form action="<%= request.getContextPath() %>/Wishlist" method="post" class="wishlist-form">
+                    <input type="hidden" name="action" value="add"/>
+                    <input type="hidden" name="productID" value="<%= p.getProductID() %>"/>
+                    <button type="submit" class="wishlist-btn" title="Add to wishlist">♡️</button>
+                </form>
+
                 <img src="/HouseholdGoods_Group7_SWP391/images/<%= p.getImage()%>" class="card-img-top" alt="<%= p.getProductName()%>">
                 <div class="card-body">
                     <a class="card-title" href="<%= context%>/Product?action=productDetail&id=<%= p.getProductID()%>"><%= p.getProductName()%></a>
@@ -203,14 +227,38 @@
                                promoLabel = "-" + String.format("%,d", bestPromo.getDiscountValue()) + "₫";
                            }
                     %>
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 mb-1">
                             <span class="price-old"><%= String.format("%,d", price) %>₫</span>
                             <span class="price-new"><%= String.format("%,d", bestPrice) %>₫</span>
                             <span class="badge bg-danger promo-badge"><%= promoLabel %></span>
                         </div>
                     <% } else { %>
-                        <p class="price"><%= String.format("%,d", price)%>₫</p>
+                        <p class="price mb-1"><%= String.format("%,d", price)%>₫</p>
                     <% } %>
+
+                    <!-- Rating trung bình -->
+                    <%
+                        Double avgRating = null;
+                        try { avgRating = (Double) Product.class.getMethod("getAverageRating").invoke(p); } catch (Exception ignore) {}
+                    %>
+                    <div class="mb-2">
+                        <% if (avgRating != null && avgRating > 0) { %>
+                            <span class="text-warning">
+                                <% for (int i = 1; i <= 5; i++) {
+                                       if (i <= avgRating) { %>
+                                           <i class="fas fa-star"></i>
+                                <%     } else if (i - avgRating < 1) { %>
+                                           <i class="fas fa-star-half-alt"></i>
+                                <%     } else { %>
+                                           <i class="far fa-star"></i>
+                                <%     }
+                                   } %>
+                            </span>
+                            <small>(<%= String.format("%.1f", avgRating) %>/5)</small>
+                        <% } else { %>
+                            <small class="text-muted">No rating yet</small>
+                        <% } %>
+                    </div>
                 </div>
 
                 <div class="btn-layout">
@@ -247,19 +295,21 @@
                 int totalPages = (int) request.getAttribute("totalPages");
 
                 // Previous
-                if (currentPage > 1) {%>
+                if (currentPage > 1) {
+            %>
             <li class="page-item">
                 <a class="page-link" href="?page=<%= currentPage - 1%>">Previous</a>
             </li>
             <% } else { %>
             <li class="page-item disabled"><span class="page-link">Previous</span></li>
-                <% }
+            <% }
 
-                    // page numbers
-                    for (int i = 1; i <= totalPages; i++) {
-                        if (i == currentPage) {%>
+                // page numbers
+                for (int i = 1; i <= totalPages; i++) {
+                    if (i == currentPage) {
+            %>
             <li class="page-item active"><span class="page-link"><%= i%></span></li>
-                <%      } else {%>
+            <%      } else { %>
             <li class="page-item">
                 <a class="page-link" href="?page=<%= i%>"><%= i%></a>
             </li>
@@ -267,13 +317,14 @@
                 }
 
                 // Next
-                if (currentPage < totalPages) {%>
+                if (currentPage < totalPages) {
+            %>
             <li class="page-item">
                 <a class="page-link" href="?page=<%= currentPage + 1%>">Next</a>
             </li>
             <% } else { %>
             <li class="page-item disabled"><span class="page-link">Next</span></li>
-                <% } %>
+            <% } %>
         </ul>
     </nav>
 </div>

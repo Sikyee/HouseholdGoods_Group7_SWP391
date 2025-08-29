@@ -1,3 +1,7 @@
+<%@page import="java.util.HashMap"%>
+<%@page import="Model.Promotion"%>
+<%@page import="DAO.PromotionDAO"%>
+<%@page import="java.util.Map"%>
 <%@page import="java.time.LocalDate"%>
 <%@page import="Model.Voucher"%>
 <%@page import="Model.User"%>
@@ -156,7 +160,67 @@
                 Float finalTotal = (Float) request.getAttribute("finalTotal");
                 Float discountValue = (Float) request.getAttribute("discountValue");
                 System.out.println("discount value:" + selectedPromotionID);
-                int totalAll = 0;
+
+                // subtotal sau promotion từ server (ưu tiên)
+                Long subtotalAttr = (Long) request.getAttribute("subtotal");
+                long totalAll = (subtotalAttr != null) ? subtotalAttr.longValue() : 0L;
+
+                // build map promotion theo brand (để hiển thị old/new price)
+                Map<Integer, java.util.List<Promotion>> promosByBrand = new HashMap<>();
+                try {
+                    PromotionDAO promoDao = new PromotionDAO();
+                    java.util.List<Promotion> promos = promoDao.getAllPromotions();
+
+                    // Java 7: thay groupingBy bằng vòng for
+                    promosByBrand = new java.util.HashMap<Integer, java.util.List<Promotion>>();
+                    for (Promotion pr : promos) {
+                        Integer brandId = pr.getBrandID();
+                        if (brandId == null) {
+                            continue;
+                        }
+
+                        java.util.List<Promotion> list = promosByBrand.get(brandId);
+                        if (list == null) {
+                            list = new java.util.ArrayList<Promotion>();
+                            promosByBrand.put(brandId, list);
+                        }
+                        list.add(pr);
+                    }
+                } catch (Exception e) {
+                    // Tránh "nuốt" lỗi hoàn toàn để còn lần theo khi cần
+                    // Ít nhất nên log, và gán map rỗng để không NPE ở nơi khác
+                    // java.util.logging (có sẵn JDK):
+                    java.util.logging.Logger.getLogger(getClass().getName()).log(java.util.logging.Level.WARNING,
+                            "Failed to build promosByBrand", e);
+
+                    promosByBrand = new java.util.HashMap<Integer, java.util.List<Promotion>>();
+                }
+            %>
+            <%!
+                // helper: tính đơn giá đã áp KM tốt nhất theo brand
+                long bestUnit(long base, Integer brandId, java.util.Map<Integer, java.util.List<Model.Promotion>> promosByBrand) {
+                    if (brandId == null || promosByBrand == null) {
+                        return base;
+                    }
+                    java.util.List<Model.Promotion> list = promosByBrand.get(brandId);
+                    if (list == null || list.isEmpty()) {
+                        return base;
+                    }
+                    long best = base;
+                    for (Model.Promotion pr : list) {
+                        long discounted = base;
+                        String t = pr.getDiscountType();
+                        if ("percentage".equalsIgnoreCase(t)) {
+                            discounted = Math.round(base * (100.0 - pr.getDiscountValue()) / 100.0);
+                        } else if ("fixed".equalsIgnoreCase(t)) {
+                            discounted = Math.max(0L, base - pr.getDiscountValue());
+                        }
+                        if (discounted < best) {
+                            best = discounted;
+                        }
+                    }
+                    return best;
+                }
             %>
             <div class="row">
                 <!-- Cart -->       
@@ -164,25 +228,37 @@
                     <div class="cart-box">
                         <h5 class="cart-title">Your Cart</h5>
                         <ul class="list-group mb-3">
-                            <%
-                                if (cart != null) {
+                            <%                                if (cart != null) {
                                     for (Cart c : cart) {
                                         Product p = c.getProduct();
-                                        long total = (long) (p.getPrice() * c.getQuantity());
-                                        totalAll += total;
+                                        long base = p.getPrice();
+                                        Integer brandId = p.getBrandID();
+                                        long unitEff = bestUnit(base, brandId, promosByBrand);
+                                        long lineTotal = unitEff * c.getQuantity();
                             %>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
-                                    <%= p.getProductName()%> 
+                                    <%= p.getProductName()%>
                                     <small class="text-muted">x <%= c.getQuantity()%></small>
+                                    <div>
+                                        <% if (unitEff < base) {%>
+                                        <small class="text-muted" style="text-decoration: line-through;">
+                                            <%= String.format("%,d", base)%>₫
+                                        </small>
+                                        <small class="text-danger font-weight-bold">
+                                            <%= String.format("%,d", unitEff)%>₫
+                                        </small>
+                                        <% } else {%>
+                                        <small><%= String.format("%,d", base)%>₫</small>
+                                        <% }%>
+                                    </div>
                                 </div>
-                                <span><%= String.format("%,d", total)%>₫</span>
+                                <span><%= String.format("%,d", lineTotal)%>₫</span>
                             </li>
                             <%
-                                    } // end for
-                                } // end if
+                                    }
+                                }
                             %>
-
                             <li class="list-group-item">
                                 <label for="promoSelect" class="font-weight-bold mb-2 d-block">🎁 Apply Voucher</label>
                                 <select id="promoSelect" name="promotionID" class="form-control">

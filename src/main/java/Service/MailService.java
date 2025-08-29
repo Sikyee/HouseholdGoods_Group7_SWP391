@@ -7,7 +7,8 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- * Simplified MailService for development
+ * MailService: gửi email xác thực, chào mừng, đặt lại mật khẩu, gửi mật khẩu mới,
+ * xác nhận đổi mật khẩu, và gửi thông tin tài khoản nhân viên.
  *
  * @author LoiDH
  */
@@ -15,19 +16,19 @@ public class MailService {
 
     private static final Logger logger = Logger.getLogger(MailService.class.getName());
 
-    // Cấu hình email trực tiếp (có thể thay đổi theo nhu cầu)
+    // Cấu hình email (khuyến nghị đọc từ ENV trong production)
     private static final String FROM_EMAIL = "danghuuloi2312@gmail.com";
-    private static final String APP_PASSWORD = "uwnv muzf jlkg azxq";
+    private static final String APP_PASSWORD = "uwnv muzf jlkg azxq"; // TODO: đọc từ biến môi trường trong production
     private static final String SMTP_HOST = "smtp.gmail.com";
     private static final String SMTP_PORT = "587";
 
     /**
-     * Send verification code email with improved template
+     * Gửi mã xác thực đăng ký
      *
-     * @param toEmail Recipient email
-     * @param code Verification code
-     * @param fullName Recipient full name (optional)
-     * @return true if sent successfully
+     * @param toEmail  Email người nhận
+     * @param code     Mã xác thực
+     * @param fullName Tên người nhận (tùy chọn)
+     * @return true nếu gửi thành công
      */
     public static boolean sendVerificationCode(String toEmail, String code, String fullName) {
         try {
@@ -39,7 +40,6 @@ public class MailService {
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
             message.setSubject("Account Verification Code");
 
-            // Create plain text email content
             String textContent = createVerificationEmailTemplate(fullName != null ? fullName : "User", code);
             message.setContent(textContent, "text/plain; charset=utf-8");
 
@@ -54,18 +54,14 @@ public class MailService {
     }
 
     /**
-     * Send verification code (backward compatibility)
+     * Backward compatibility
      */
     public static boolean sendVerificationCode(String toEmail, String code) {
         return sendVerificationCode(toEmail, code, null);
     }
 
     /**
-     * Send welcome email after successful registration
-     *
-     * @param toEmail User email
-     * @param fullName User full name
-     * @return true if sent successfully
+     * Gửi email chào mừng sau khi đăng ký thành công
      */
     public static boolean sendWelcomeEmail(String toEmail, String fullName) {
         try {
@@ -91,12 +87,7 @@ public class MailService {
     }
 
     /**
-     * Send password reset verification code
-     *
-     * @param toEmail User email
-     * @param code Reset verification code
-     * @param fullName User full name
-     * @return true if sent successfully
+     * Gửi mã xác thực đặt lại mật khẩu
      */
     public static boolean sendPasswordResetCode(String toEmail, String code, String fullName) {
         try {
@@ -122,12 +113,7 @@ public class MailService {
     }
 
     /**
-     * Send new password to user after successful reset
-     *
-     * @param toEmail User email
-     * @param newPassword New generated password
-     * @param fullName User full name
-     * @return true if sent successfully
+     * Gửi mật khẩu mới sau khi reset thành công
      */
     public static boolean sendNewPassword(String toEmail, String newPassword, String fullName) {
         try {
@@ -153,11 +139,7 @@ public class MailService {
     }
 
     /**
-     * Send password reset confirmation email
-     *
-     * @param toEmail User email
-     * @param fullName User full name
-     * @return true if sent successfully
+     * Gửi email xác nhận đổi mật khẩu thành công
      */
     public static boolean sendPasswordResetConfirmation(String toEmail, String fullName) {
         try {
@@ -169,7 +151,7 @@ public class MailService {
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
             message.setSubject("Password Successfully Changed");
 
-            String textContent = createPasswordResetConfirmationTemplate(fullName);
+            String textContent = createPasswordResetConfirmationTemplate(fullName != null ? fullName : "User");
             message.setContent(textContent, "text/plain; charset=utf-8");
 
             Transport.send(message);
@@ -181,6 +163,34 @@ public class MailService {
             return false;
         }
     }
+
+    /**
+     * Gửi thông tin tài khoản nhân viên (username & password)
+     */
+    public static boolean sendAccountInfo(String toEmail, String username, String password) {
+        try {
+            Properties props = createSMTPProperties();
+            Session session = createAuthenticatedSession(props);
+
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(FROM_EMAIL, "Staff Management System"));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
+            message.setSubject("Your Staff Account Information");
+
+            String textContent = createAccountInfoEmailTemplate(username, password);
+            message.setContent(textContent, "text/plain; charset=utf-8");
+
+            Transport.send(message);
+            logger.info("Account info email sent successfully to: " + toEmail);
+            return true;
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to send account info email to: " + toEmail, e);
+            return false;
+        }
+    }
+
+    // ====================== PRIVATE HELPER METHODS ======================
 
     private static Properties createSMTPProperties() {
         Properties props = new Properties();
@@ -299,5 +309,36 @@ public class MailService {
                 + "Best regards,\n"
                 + "Security Team\n\n"
                 + "==========================================";
+    }
+
+    private static String createAccountInfoEmailTemplate(String username, String password) {
+        return "STAFF ACCOUNT INFORMATION\n"
+                + "==========================================\n\n"
+                + "Hello,\n\n"
+                + "Your staff account has been created successfully.\n\n"
+                + "LOGIN CREDENTIALS:\n"
+                + "- Username: " + username + "\n"
+                + "- Password: " + password + "\n\n"
+                + "IMPORTANT SECURITY INSTRUCTIONS:\n"
+                + "1. Please log in immediately using these credentials\n"
+                + "2. We strongly recommend changing your password after first login\n"
+                + "3. Keep your credentials secure and do not share them with anyone\n"
+                + "4. Delete this email after you have successfully logged in\n\n"
+                + "Account Creation Details:\n"
+                + "- Time: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) + "\n"
+                + "- Role: Staff Member\n"
+                + "- Status: Active\n\n"
+                + "SECURITY NOTICE:\n"
+                + "If you did not expect to receive this account information, please contact our support team immediately.\n\n"
+                + "For your account security:\n"
+                + "- Change your password after first login\n"
+                + "- Use a strong, unique password\n"
+                + "- Log out from public computers\n"
+                + "- Never share your login credentials\n\n"
+                + "If you have any questions about your account or need assistance, please contact our support team.\n\n"
+                + "Best regards,\n"
+                + "Staff Management Team\n\n"
+                + "==========================================\n"
+                + "This email was sent automatically, please do not reply.";
     }
 }

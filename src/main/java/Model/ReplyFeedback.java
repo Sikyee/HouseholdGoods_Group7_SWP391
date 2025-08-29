@@ -16,6 +16,7 @@ public class ReplyFeedback {
     private int replyID;
     private int feedbackID;
     private int userID;
+    private String userName;
     private String replyText;
     private Timestamp createdAt;
     private boolean isDeleted;
@@ -76,6 +77,15 @@ public class ReplyFeedback {
     public void setIsDeleted(boolean isDeleted) {
         this.isDeleted = isDeleted;
     }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
 
     
 }
