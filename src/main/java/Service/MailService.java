@@ -7,8 +7,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- * MailService: gửi email xác thực, chào mừng, đặt lại mật khẩu, gửi mật khẩu mới,
- * xác nhận đổi mật khẩu, và gửi thông tin tài khoản nhân viên.
+ * Comprehensive MailService with all email functionalities
  *
  * @author LoiDH
  */
@@ -16,21 +15,45 @@ public class MailService {
 
     private static final Logger logger = Logger.getLogger(MailService.class.getName());
 
-    // Cấu hình email (khuyến nghị đọc từ ENV trong production)
+    // Cấu hình email trực tiếp (có thể thay đổi theo nhu cầu)
     private static final String FROM_EMAIL = "danghuuloi2312@gmail.com";
-    private static final String APP_PASSWORD = "uwnv muzf jlkg azxq"; // TODO: đọc từ biến môi trường trong production
+    private static final String APP_PASSWORD = "uwnv muzf jlkg azxq";
     private static final String SMTP_HOST = "smtp.gmail.com";
     private static final String SMTP_PORT = "587";
 
     /**
-     * Gửi mã xác thực đăng ký
+     * Test email service connection before sending emails
      *
-     * @param toEmail  Email người nhận
-     * @param code     Mã xác thực
-     * @param fullName Tên người nhận (tùy chọn)
-     * @return true nếu gửi thành công
+     * @return true if connection is successful
+     */
+    public static boolean testConnection() {
+        try {
+            Properties props = createSMTPProperties();
+            Session session = createAuthenticatedSession(props);
+
+            // Test connection by creating transport and connecting
+            Transport transport = session.getTransport("smtp");
+            transport.connect(SMTP_HOST, FROM_EMAIL, APP_PASSWORD);
+            transport.close();
+
+            logger.info("Email service connection test successful");
+            return true;
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Email service connection test failed", e);
+            return false;
+        }
+    }
+
+    /**
+     * Send verification code email with improved template
+     *
+     * @param toEmail Recipient email
+     * @param code Verification code
+     * @param fullName Recipient full name (optional)
+     * @return true if sent successfully
      */
     public static boolean sendVerificationCode(String toEmail, String code, String fullName) {
+        Transport transport = null;
         try {
             Properties props = createSMTPProperties();
             Session session = createAuthenticatedSession(props);
@@ -40,30 +63,51 @@ public class MailService {
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
             message.setSubject("Account Verification Code");
 
+            // Create plain text email content
             String textContent = createVerificationEmailTemplate(fullName != null ? fullName : "User", code);
             message.setContent(textContent, "text/plain; charset=utf-8");
 
-            Transport.send(message);
+            // Use explicit transport with connection management
+            transport = session.getTransport("smtp");
+            transport.connect(SMTP_HOST, FROM_EMAIL, APP_PASSWORD);
+            transport.sendMessage(message, message.getAllRecipients());
+
             logger.info("Verification email sent successfully to: " + toEmail);
             return true;
 
+        } catch (MessagingException e) {
+            logger.log(Level.SEVERE, "MessagingException when sending verification email to: " + toEmail + " - " + e.getMessage(), e);
+            return false;
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to send verification email to: " + toEmail, e);
             return false;
+        } finally {
+            if (transport != null) {
+                try {
+                    transport.close();
+                } catch (MessagingException e) {
+                    logger.log(Level.WARNING, "Failed to close transport", e);
+                }
+            }
         }
     }
 
     /**
-     * Backward compatibility
+     * Send verification code (backward compatibility)
      */
     public static boolean sendVerificationCode(String toEmail, String code) {
         return sendVerificationCode(toEmail, code, null);
     }
 
     /**
-     * Gửi email chào mừng sau khi đăng ký thành công
+     * Send welcome email after successful registration
+     *
+     * @param toEmail User email
+     * @param fullName User full name
+     * @return true if sent successfully
      */
     public static boolean sendWelcomeEmail(String toEmail, String fullName) {
+        Transport transport = null;
         try {
             Properties props = createSMTPProperties();
             Session session = createAuthenticatedSession(props);
@@ -76,20 +120,40 @@ public class MailService {
             String textContent = createWelcomeEmailTemplate(fullName);
             message.setContent(textContent, "text/plain; charset=utf-8");
 
-            Transport.send(message);
+            transport = session.getTransport("smtp");
+            transport.connect(SMTP_HOST, FROM_EMAIL, APP_PASSWORD);
+            transport.sendMessage(message, message.getAllRecipients());
+
             logger.info("Welcome email sent successfully to: " + toEmail);
             return true;
 
+        } catch (MessagingException e) {
+            logger.log(Level.SEVERE, "MessagingException when sending welcome email to: " + toEmail + " - " + e.getMessage(), e);
+            return false;
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to send welcome email to: " + toEmail, e);
             return false;
+        } finally {
+            if (transport != null) {
+                try {
+                    transport.close();
+                } catch (MessagingException e) {
+                    logger.log(Level.WARNING, "Failed to close transport", e);
+                }
+            }
         }
     }
 
     /**
-     * Gửi mã xác thực đặt lại mật khẩu
+     * Send password reset verification code
+     *
+     * @param toEmail User email
+     * @param code Reset verification code
+     * @param fullName User full name
+     * @return true if sent successfully
      */
     public static boolean sendPasswordResetCode(String toEmail, String code, String fullName) {
+        Transport transport = null;
         try {
             Properties props = createSMTPProperties();
             Session session = createAuthenticatedSession(props);
@@ -102,20 +166,40 @@ public class MailService {
             String textContent = createPasswordResetEmailTemplate(fullName != null ? fullName : "User", code);
             message.setContent(textContent, "text/plain; charset=utf-8");
 
-            Transport.send(message);
+            transport = session.getTransport("smtp");
+            transport.connect(SMTP_HOST, FROM_EMAIL, APP_PASSWORD);
+            transport.sendMessage(message, message.getAllRecipients());
+
             logger.info("Password reset email sent successfully to: " + toEmail);
             return true;
 
+        } catch (MessagingException e) {
+            logger.log(Level.SEVERE, "MessagingException when sending password reset email to: " + toEmail + " - " + e.getMessage(), e);
+            return false;
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to send password reset email to: " + toEmail, e);
             return false;
+        } finally {
+            if (transport != null) {
+                try {
+                    transport.close();
+                } catch (MessagingException e) {
+                    logger.log(Level.WARNING, "Failed to close transport", e);
+                }
+            }
         }
     }
 
     /**
-     * Gửi mật khẩu mới sau khi reset thành công
+     * Send new password to user after successful reset
+     *
+     * @param toEmail User email
+     * @param newPassword New generated password
+     * @param fullName User full name
+     * @return true if sent successfully
      */
     public static boolean sendNewPassword(String toEmail, String newPassword, String fullName) {
+        Transport transport = null;
         try {
             Properties props = createSMTPProperties();
             Session session = createAuthenticatedSession(props);
@@ -128,20 +212,39 @@ public class MailService {
             String textContent = createNewPasswordEmailTemplate(fullName != null ? fullName : "User", newPassword);
             message.setContent(textContent, "text/plain; charset=utf-8");
 
-            Transport.send(message);
+            transport = session.getTransport("smtp");
+            transport.connect(SMTP_HOST, FROM_EMAIL, APP_PASSWORD);
+            transport.sendMessage(message, message.getAllRecipients());
+
             logger.info("New password email sent successfully to: " + toEmail);
             return true;
 
+        } catch (MessagingException e) {
+            logger.log(Level.SEVERE, "MessagingException when sending new password email to: " + toEmail + " - " + e.getMessage(), e);
+            return false;
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to send new password email to: " + toEmail, e);
             return false;
+        } finally {
+            if (transport != null) {
+                try {
+                    transport.close();
+                } catch (MessagingException e) {
+                    logger.log(Level.WARNING, "Failed to close transport", e);
+                }
+            }
         }
     }
 
     /**
-     * Gửi email xác nhận đổi mật khẩu thành công
+     * Send password reset confirmation email
+     *
+     * @param toEmail User email
+     * @param fullName User full name
+     * @return true if sent successfully
      */
     public static boolean sendPasswordResetConfirmation(String toEmail, String fullName) {
+        Transport transport = null;
         try {
             Properties props = createSMTPProperties();
             Session session = createAuthenticatedSession(props);
@@ -151,23 +254,43 @@ public class MailService {
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
             message.setSubject("Password Successfully Changed");
 
-            String textContent = createPasswordResetConfirmationTemplate(fullName != null ? fullName : "User");
+            String textContent = createPasswordResetConfirmationTemplate(fullName);
             message.setContent(textContent, "text/plain; charset=utf-8");
 
-            Transport.send(message);
+            transport = session.getTransport("smtp");
+            transport.connect(SMTP_HOST, FROM_EMAIL, APP_PASSWORD);
+            transport.sendMessage(message, message.getAllRecipients());
+
             logger.info("Password reset confirmation sent successfully to: " + toEmail);
             return true;
 
+        } catch (MessagingException e) {
+            logger.log(Level.SEVERE, "MessagingException when sending password reset confirmation to: " + toEmail + " - " + e.getMessage(), e);
+            return false;
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to send password reset confirmation to: " + toEmail, e);
             return false;
+        } finally {
+            if (transport != null) {
+                try {
+                    transport.close();
+                } catch (MessagingException e) {
+                    logger.log(Level.WARNING, "Failed to close transport", e);
+                }
+            }
         }
     }
 
     /**
-     * Gửi thông tin tài khoản nhân viên (username & password)
+     * Send staff account information (username & password)
+     *
+     * @param toEmail Staff email
+     * @param username Staff username
+     * @param password Staff password
+     * @return true if sent successfully
      */
     public static boolean sendAccountInfo(String toEmail, String username, String password) {
+        Transport transport = null;
         try {
             Properties props = createSMTPProperties();
             Session session = createAuthenticatedSession(props);
@@ -180,18 +303,31 @@ public class MailService {
             String textContent = createAccountInfoEmailTemplate(username, password);
             message.setContent(textContent, "text/plain; charset=utf-8");
 
-            Transport.send(message);
+            transport = session.getTransport("smtp");
+            transport.connect(SMTP_HOST, FROM_EMAIL, APP_PASSWORD);
+            transport.sendMessage(message, message.getAllRecipients());
+
             logger.info("Account info email sent successfully to: " + toEmail);
             return true;
 
+        } catch (MessagingException e) {
+            logger.log(Level.SEVERE, "MessagingException when sending account info email to: " + toEmail + " - " + e.getMessage(), e);
+            return false;
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to send account info email to: " + toEmail, e);
             return false;
+        } finally {
+            if (transport != null) {
+                try {
+                    transport.close();
+                } catch (MessagingException e) {
+                    logger.log(Level.WARNING, "Failed to close transport", e);
+                }
+            }
         }
     }
 
     // ====================== PRIVATE HELPER METHODS ======================
-
     private static Properties createSMTPProperties() {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
@@ -200,6 +336,15 @@ public class MailService {
         props.put("mail.smtp.port", SMTP_PORT);
         props.put("mail.smtp.ssl.trust", SMTP_HOST);
         props.put("mail.smtp.ssl.protocols", "TLSv1.2");
+
+        // Additional connection properties for better reliability
+        props.put("mail.smtp.connectiontimeout", "10000"); // 10 seconds
+        props.put("mail.smtp.timeout", "10000"); // 10 seconds
+        props.put("mail.smtp.writetimeout", "10000"); // 10 seconds
+
+        // Debug mode - set to true if you want detailed SMTP logs
+        props.put("mail.debug", "false");
+
         return props;
     }
 
