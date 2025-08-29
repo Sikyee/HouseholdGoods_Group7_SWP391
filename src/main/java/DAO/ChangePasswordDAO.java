@@ -389,4 +389,43 @@ public class ChangePasswordDAO {
         }
         return false;
     }
+
+    public String getCurrentPassword(int userID) {
+        String sql = "SELECT password FROM " + TABLE_NAME + " WHERE userID = ?";
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBConnection.getConnection();
+            ps = conn.prepareStatement(sql);
+            ps.setInt(1, userID);
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                String currentPassword = rs.getString("password");
+                System.out.println("Retrieved current password for userID: " + userID);
+                return currentPassword;
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting current password: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.err.println("Error closing resources: " + e.getMessage());
+            }
+        }
+
+        return null;
+    }
 }
