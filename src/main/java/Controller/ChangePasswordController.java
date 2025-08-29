@@ -54,6 +54,12 @@ public class ChangePasswordController extends HttpServlet {
         String confirmPassword = request.getParameter("confirmPassword");
 
         try {
+            // Lấy password hiện tại từ database để đảm bảo chính xác
+            String actualCurrentPassword = changePasswordDAO.getCurrentPassword(sessionUser.getUserID());
+            if (actualCurrentPassword != null) {
+                sessionUser.setPassword(actualCurrentPassword);
+            }
+
             // Validate input
             List<String> errors = validatePasswordChange(sessionUser, currentPassword, newPassword, confirmPassword);
 
@@ -137,7 +143,7 @@ public class ChangePasswordController extends HttpServlet {
         }
 
         // 4. Check if new password is same as current
-        if (!isEmpty(newPassword) && newPassword.equals(user.getPassword())) {
+        if (!isEmpty(newPassword) && user.getPassword() != null && newPassword.equals(user.getPassword())) {
             errors.add("New password must be different from current password.");
         }
 
