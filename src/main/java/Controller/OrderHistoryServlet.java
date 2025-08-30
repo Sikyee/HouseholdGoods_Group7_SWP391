@@ -77,7 +77,7 @@ public class OrderHistoryServlet extends HttpServlet {
         List<Order> orders = od.getOrdersByUser(userID);
 
         request.setAttribute("orders", orders);
-        request.getRequestDispatcher("order-history.jsp").forward(request, response);
+        request.getRequestDispatcher("order_history.jsp").forward(request, response);
     }
 
     /**

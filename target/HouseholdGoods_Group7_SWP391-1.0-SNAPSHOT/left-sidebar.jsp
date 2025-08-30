@@ -77,6 +77,11 @@
                 <i class="fas fa-comments me-2"></i> Feedback
             </a>
         </li>
+        <li class="nav-item mb-1">
+            <a href="Inventory" class="nav-link text-dark">
+                <i class="fas fa-comments me-2"></i> Inventory
+            </a>
+        </li>
         <li class="nav-item mt-3">
             <a href="<%= request.getContextPath()%>/logout" class="nav-link text-danger">
                 <i class="fas fa-sign-out-alt me-2"></i> Logout
