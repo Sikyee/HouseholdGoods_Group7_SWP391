@@ -1,25 +1,16 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package Controller;
 
 import DAO.OrderDAO;
 import DAO.CancelReasonDAO;
 import Model.CancelReason;
+import Model.User;
 
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-
 import java.io.IOException;
-/**
- *
- * @author TriTM
- */
 
-
-@WebServlet(name = "CancelOrderController", urlPatterns = {"/cancel-order"})
+@WebServlet(name = "CancelOrderController", urlPatterns = {"/cancelOrder", "/cancel-order"})
 public class CancelOrderController extends HttpServlet {
 
     @Override
@@ -27,10 +18,13 @@ public class CancelOrderController extends HttpServlet {
         throws ServletException, IOException {
 
         HttpSession session = request.getSession();
-        Integer role = (Integer) session.getAttribute("role");
-        Integer userID = (Integer) session.getAttribute("userID");
 
-        if (role == null || role != 3 || userID == null) {
+        User userObj = (User) session.getAttribute("user");
+        Integer roleAttr = (Integer) session.getAttribute("role");
+        Integer roleId = roleAttr != null ? roleAttr : (userObj != null ? userObj.getRoleID() : null);
+
+        // Chỉ cho Customer (role == 3) đã đăng nhập
+        if (roleId == null || roleId != 3) {
             response.sendRedirect("login.jsp");
             return;
         }
@@ -39,20 +33,20 @@ public class CancelOrderController extends HttpServlet {
             int orderID = Integer.parseInt(request.getParameter("orderID"));
             String reasonText = request.getParameter("reason");
 
-            // Lưu lý do hủy
             CancelReasonDAO reasonDAO = new CancelReasonDAO();
-            CancelReason reason = new CancelReason(0, orderID, reasonText);
-            reasonDAO.insertCancelReason(reason);
+            reasonDAO.insertCancelReason(new CancelReason(0, orderID, reasonText));
 
-            // Update trạng thái đơn hàng sang Canceled (6)
             OrderDAO orderDAO = new OrderDAO();
-            orderDAO.updateOrderStatus(orderID, 6);
+            boolean ok = orderDAO.cancelOrderAndRestock(orderID);
 
-            response.sendRedirect("order");
-
+            if (ok) {
+                response.sendRedirect("order-detail?orderID=" + orderID + "&msg=cancelled");
+            } else {
+                response.sendRedirect("order-detail?orderID=" + orderID + "&err=cancel_failed");
+            }
         } catch (Exception e) {
             e.printStackTrace();
-            response.sendRedirect("order");
+            response.sendRedirect("order?err=internal");
         }
     }
 }

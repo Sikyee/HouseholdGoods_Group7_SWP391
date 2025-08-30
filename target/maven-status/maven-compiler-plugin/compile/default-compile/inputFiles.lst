@@ -42,6 +42,7 @@ D:\ProjectSWP\New Folder\HouseholdGoods_Group7_SWP391\src\main\java\Model\Promot
 D:\ProjectSWP\New Folder\HouseholdGoods_Group7_SWP391\src\main\java\DB\DBConnection.java
 D:\ProjectSWP\New Folder\HouseholdGoods_Group7_SWP391\src\main\java\DAO\CartDAO.java
 D:\ProjectSWP\New Folder\HouseholdGoods_Group7_SWP391\src\main\java\Model\OrderDetail.java
+D:\ProjectSWP\New Folder\HouseholdGoods_Group7_SWP391\src\main\java\Security\PasswordHasher.java
 D:\ProjectSWP\New Folder\HouseholdGoods_Group7_SWP391\src\main\java\Controller\UserController.java
 D:\ProjectSWP\New Folder\HouseholdGoods_Group7_SWP391\src\main\java\Controller\HomeController.java
 D:\ProjectSWP\New Folder\HouseholdGoods_Group7_SWP391\src\main\java\Controller\LoginController.java

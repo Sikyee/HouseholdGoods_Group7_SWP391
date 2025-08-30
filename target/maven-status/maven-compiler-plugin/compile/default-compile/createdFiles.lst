@@ -42,6 +42,7 @@ Controller\WishlistController.class
 Model\dto\WeeklyRevenue.class
 Controller\VoucherController.class
 DAO\ChangePasswordDAO.class
+Security\PasswordHasher.class
 Controller\RegisterController.class
 DAO\SubCategoryDAO.class
 Model\Brand.class
@@ -74,6 +75,7 @@ Model\Attribute.class
 Controller\OrderController.class
 Model\User.class
 Model\Voucher.class
+Security\PasswordHasher$SecurePasswordHash.class
 DAO\VoucherDAO.class
 Controller\LoginController.class
 Controller\ViewFeedbackOrdersController.class
