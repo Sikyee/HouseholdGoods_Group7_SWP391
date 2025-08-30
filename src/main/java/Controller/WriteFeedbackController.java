@@ -31,18 +31,22 @@ public class WriteFeedbackController extends HttpServlet {
         }
 
         String odid = request.getParameter("orderDetailID");
-        if (odid != null) {
-            int orderDetailID = Integer.parseInt(odid);
-            OrderDetail od = dao.getOrderDetailByID(orderDetailID);
-            request.setAttribute("orderDetail", od);
+        if (odid != null && !odid.trim().isEmpty()) {
+            try {
+                int orderDetailID = Integer.parseInt(odid);
+                OrderDetail od = dao.getOrderDetailByID(orderDetailID);
+                request.setAttribute("orderDetail", od);
 
-            if (dao.hasFeedback(orderDetailID)) {
-                request.setAttribute("alreadyFeedback", true);
-                Feedback fb = dao.getFeedbackByOrderDetailID(orderDetailID);
-                request.setAttribute("existingFeedback", fb);
+                if (dao.hasFeedback(orderDetailID)) {
+                    request.setAttribute("alreadyFeedback", true);
+                    Feedback fb = dao.getFeedbackByOrderDetailID(orderDetailID);
+                    request.setAttribute("existingFeedback", fb);
+                }
+
+                request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
+            } catch (NumberFormatException e) {
+                response.sendRedirect("order"); // nếu ID không hợp lệ
             }
-
-            request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
         } else {
             response.sendRedirect("order");
         }
@@ -61,7 +65,22 @@ public class WriteFeedbackController extends HttpServlet {
             return;
         }
 
-        int orderDetailID = Integer.parseInt(request.getParameter("orderDetailID"));
+        String odid = request.getParameter("orderDetailID");
+        if (odid == null || odid.trim().isEmpty()) {
+            request.setAttribute("error", "OrderDetailID is missing.");
+            request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
+            return;
+        }
+
+        int orderDetailID;
+        try {
+            orderDetailID = Integer.parseInt(odid.trim());
+        } catch (NumberFormatException e) {
+            request.setAttribute("error", "Invalid OrderDetailID.");
+            request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
+            return;
+        }
+
         String ratingStr = request.getParameter("rating");
         String comment = request.getParameter("comment");
 
@@ -98,8 +117,8 @@ public class WriteFeedbackController extends HttpServlet {
         }
 
         // Validate comment
-        if (comment == null || comment.trim().length() < 5 
-                || comment.trim().length() > 500 
+        if (comment == null || comment.trim().length() < 5
+                || comment.trim().length() > 500
                 || comment.toLowerCase().contains("<script")) {
             request.setAttribute("error", "Comment must be 5–500 characters and safe.");
             OrderDetail od = dao.getOrderDetailByID(orderDetailID);
