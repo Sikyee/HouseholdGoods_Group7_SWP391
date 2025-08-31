@@ -153,7 +153,7 @@ public class WishlistController extends HttpServlet {
 
         } catch (Exception e) {
             e.printStackTrace();
-            response.sendRedirect("error.jsp");
-        }
+request.setAttribute("errorMessage", "Could not add to wishlist.");
+request.getRequestDispatcher("wishlist.jsp").forward(request, response);        }
     }
 }
