@@ -21,24 +21,27 @@ public class OrderDAO {
 
     // ===================== Utilities =====================
 
-    /** Dò tên cột tồn kho thật sự trong bảng Product */
-    private String detectProductQtyColumn(Connection conn) throws SQLException {
+    /** Thử dò tên cột tồn kho trong bảng Product; ưu tiên stonkQuantity. Nếu không thấy thì fallback "stonkQuantity". */
+    private String detectProductQtyColumn(Connection conn) {
         String sql = "SELECT COLUMN_NAME " +
-                     "FROM INFORMATION_SCHEMA.COLUMNS " +
-                     "WHERE TABLE_NAME = 'Product' " +
-                     "  AND COLUMN_NAME IN ('stonkQuantity','stockQuantity','quantity','qty','stock')";
+                "FROM INFORMATION_SCHEMA.COLUMNS " +
+                "WHERE TABLE_NAME = 'Product' " +
+                "  AND COLUMN_NAME IN ('stonkQuantity','stockQuantity','quantity','qty','stock')";
+        List<String> found = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            // Ưu tiên theo thứ tự đã nêu
-            List<String> found = new ArrayList<>();
             while (rs.next()) found.add(rs.getString(1));
-
-            String[] priority = {"stonkQuantity","stockQuantity","quantity","qty","stock"};
-            for (String c : priority) {
-                if (found.contains(c)) return c;
-            }
+        } catch (Exception e) {
+            Logger.getLogger(OrderDAO.class.getName()).log(Level.WARNING,
+                    "detectProductQtyColumn query failed, will fallback to 'stonkQuantity'.", e);
         }
-        throw new SQLException("No stock column found on table Product. Expected one of stonkQuantity/stockQuantity/quantity/qty/stock");
+        String[] priority = {"stonkQuantity","stockQuantity","quantity","qty","stock"};
+        for (String c : priority) if (found.contains(c)) return c;
+
+        // Fallback an toàn cho schema của bạn
+        Logger.getLogger(OrderDAO.class.getName()).log(Level.WARNING,
+                "No stock column found among {stonkQuantity,stockQuantity,quantity,qty,stock}. Fallback to 'stonkQuantity'.");
+        return "stonkQuantity";
     }
 
     /** Hoàn kho cho toàn bộ item của 1 order vào bảng Product.<qtyCol> */
@@ -110,8 +113,13 @@ public class OrderDAO {
         return null;
     }
 
-    /** Cập nhật trạng thái; nếu chuyển sang Canceled(6) lần đầu thì hoàn kho vào Product.<qtyCol> */
+    /**
+     * Cập nhật trạng thái.
+     * Nếu chuyển sang Canceled(6) từ Pending(1)/Paid(7) lần đầu thì cố gắng restock (thất bại vẫn commit).
+     */
     public void updateOrderStatus(int orderID, int newStatusID) {
+        final int PENDING  = 1;
+        final int PAID     = 7;
         final int CANCELED = 6;
 
         String sqlSelectStatus = "SELECT orderStatusID FROM OrderInfo WITH (UPDLOCK, ROWLOCK) WHERE orderID = ?";
@@ -139,8 +147,14 @@ public class OrderDAO {
                 if (psUpd.executeUpdate() == 0) { conn.rollback(); return; }
             }
 
-            if (newStatusID == CANCELED && oldStatus != CANCELED) {
-                restockOrderItems(conn, orderID);
+            boolean needRestock = (newStatusID == CANCELED) && (oldStatus == PENDING || oldStatus == PAID);
+            if (needRestock) {
+                try {
+                    restockOrderItems(conn, orderID);
+                } catch (Exception restockEx) {
+                    Logger.getLogger(OrderDAO.class.getName()).log(Level.WARNING,
+                            "Status updated but restock failed; committing anyway.", restockEx);
+                }
             }
 
             conn.commit();
@@ -423,8 +437,8 @@ public class OrderDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(new StatusCount(rs.getInt("orderStatusID"),
-                                             rs.getLong("cnt"),
-                                             rs.getString("statusName")));
+                            rs.getLong("cnt"),
+                            rs.getString("statusName")));
                 }
             }
         } catch (Exception ex) {
@@ -463,9 +477,12 @@ public class OrderDAO {
 
     // ==== Các hàm phục vụ flow trạng thái ====
 
-    /** Pending/Paid -> Canceled + hoàn kho */
+    /** Pending/Paid -> Canceled + hoàn kho (restock lỗi vẫn trả true để không báo cancel_failed) */
     public boolean cancelOrderAndRestock(int orderID) {
+        final int PENDING  = 1;
+        final int PAID     = 7;
         final int CANCELED = 6;
+
         String sqlSelectStatus = "SELECT orderStatusID FROM OrderInfo WITH (UPDLOCK, ROWLOCK) WHERE orderID = ?";
         String sqlUpdateStatus = "UPDATE OrderInfo SET orderStatusID = ? WHERE orderID = ?";
 
@@ -491,7 +508,15 @@ public class OrderDAO {
                 if (psUpd.executeUpdate() == 0) { conn.rollback(); return false; }
             }
 
-            restockOrderItems(conn, orderID);
+            // Chỉ restock khi trước đó là Pending/Paid
+            if (oldStatus == PENDING || oldStatus == PAID) {
+                try {
+                    restockOrderItems(conn, orderID);
+                } catch (Exception restockEx) {
+                    Logger.getLogger(OrderDAO.class.getName()).log(Level.WARNING,
+                            "Restock failed after cancel; committing cancel anyway.", restockEx);
+                }
+            }
 
             conn.commit();
             return true;
@@ -535,7 +560,12 @@ public class OrderDAO {
                 if (psUpd.executeUpdate() == 0) { conn.rollback(); return false; }
             }
 
-            restockOrderItems(conn, orderID);
+            try {
+                restockOrderItems(conn, orderID);
+            } catch (Exception restockEx) {
+                Logger.getLogger(OrderDAO.class.getName()).log(Level.WARNING,
+                        "Restock failed on return-complete; committing status anyway.", restockEx);
+            }
 
             conn.commit();
             return true;
@@ -553,9 +583,9 @@ public class OrderDAO {
     public int autoAdvanceByOrderDate(int shipDays, int deliveredDays) {
         int affected = 0;
         String sqlShip = "UPDATE OrderInfo SET orderStatusID = 4 " +
-                         "WHERE orderStatusID = 3 AND DATEDIFF(day, orderDate, GETDATE()) >= ?";
+                "WHERE orderStatusID = 3 AND DATEDIFF(day, orderDate, GETDATE()) >= ?";
         String sqlDone = "UPDATE OrderInfo SET orderStatusID = 5 " +
-                         "WHERE orderStatusID = 4 AND DATEDIFF(day, orderDate, GETDATE()) >= ?";
+                "WHERE orderStatusID = 4 AND DATEDIFF(day, orderDate, GETDATE()) >= ?";
         try (Connection c = DBConnection.getConnection()) {
             try (PreparedStatement ps = c.prepareStatement(sqlShip)) {
                 ps.setInt(1, shipDays);

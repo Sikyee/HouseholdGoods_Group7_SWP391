@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="java.util.*, java.text.SimpleDateFormat, Model.*" %>
+<%@ page import="java.util.*, java.text.*, Model.*" %>
 
 <%
     OrderInfo order = (OrderInfo) request.getAttribute("order");
@@ -8,16 +8,27 @@
     List<OrderStatus> orderStatusList = (List<OrderStatus>) request.getAttribute("orderStatusList");
     User user = (User) session.getAttribute("user");
 
+    if (order == null) {
+        response.sendRedirect("order.jsp"); // hoặc manageOrder.jsp tùy trang bạn dùng
+        return;
+    }
+
     int userRole = (user != null) ? user.getRoleID() : 4;
 
-    int statusID      = order.getOrderStatusID();
-    boolean isPending = (statusID == 1);
-    boolean isProcessing = (statusID == 2);
-    boolean isDelivering = (statusID == 3);
-    boolean isDelivered  = (statusID == 4);
-    boolean isCompleted  = (statusID == 5);
-    boolean isCanceled   = (statusID == 6);
-    boolean isPaid       = (statusID == 7); // Paid
+    int statusID        = order.getOrderStatusID();
+    boolean isPending   = (statusID == 1);
+    boolean isProcessing= (statusID == 2);
+    boolean isDelivering= (statusID == 3);
+    boolean isDelivered = (statusID == 4);
+    boolean isCompleted = (statusID == 5);
+    boolean isCanceled  = (statusID == 6);
+    boolean isPaid      = (statusID == 7);
+
+    // Formatters
+    DateFormat dateFmt = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+    NumberFormat moneyFmt = NumberFormat.getInstance(new Locale("vi", "VN"));
+
+    String orderDateText = (order.getOrderDate() != null) ? dateFmt.format(order.getOrderDate()) : "—";
 
     // ETA khi đang Shipping: +3 ngày từ orderDate (mô phỏng)
     String etaText = "";
@@ -25,8 +36,15 @@
         Calendar cal = Calendar.getInstance();
         cal.setTime(order.getOrderDate());
         cal.add(Calendar.DATE, 3);
-        Date eta = cal.getTime();
-        etaText = new SimpleDateFormat("dd/MM/yyyy").format(eta);
+        etaText = new SimpleDateFormat("dd/MM/yyyy").format(cal.getTime());
+    }
+
+    // Resolve status name an toàn
+    String statusName = "Unknown";
+    if (orderStatusList != null) {
+        for (OrderStatus st : orderStatusList) {
+            if (st.getOrderStatusID() == statusID) { statusName = st.getStatusName(); break; }
+        }
     }
 %>
 
@@ -39,6 +57,7 @@
     <style>
         body { background-color: #f8f9fa; }
         .content { margin-left: 240px; padding: 2rem; }
+        .muted { color:#6c757d; }
     </style>
 </head>
 <body>
@@ -62,20 +81,11 @@
 
         <div class="card mb-4">
             <div class="card-body">
-                <p><strong>Order Date:</strong> <%= order.getOrderDate() %></p>
+                <p><strong>Order Date:</strong> <%= orderDateText %></p>
                 <p><strong>Full Name:</strong> <%= order.getFullName() %></p>
                 <p><strong>Phone:</strong> <%= order.getPhone() %></p>
                 <p><strong>Address:</strong> <%= order.getDeliveryAddress() %></p>
-                <p><strong>Order Status:</strong>
-                    <%
-                        for (OrderStatus st : orderStatusList) {
-                            if (st.getOrderStatusID() == statusID) {
-                                out.print(st.getStatusName());
-                                break;
-                            }
-                        }
-                    %>
-                </p>
+                <p><strong>Order Status:</strong> <%= statusName %></p>
 
                 <% if (isDelivering) { %>
                     <div class="alert alert-warning mt-2">
@@ -98,7 +108,7 @@
                     <!-- Modal nhập lý do hủy -->
                     <div class="modal fade" id="customerCancelModal" tabindex="-1" aria-hidden="true">
                       <div class="modal-dialog">
-                        <form action="cancelOrder" method="post" class="modal-content"><%-- nếu servlet bạn map /cancel-order thì đổi action cho khớp --%>
+                        <form action="cancelOrder" method="post" class="modal-content">
                           <div class="modal-header">
                             <h5 class="modal-title">Cancel Order #<%= order.getOrderID() %></h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -109,7 +119,7 @@
                                 <label for="reason" class="form-label">Reason for Cancellation</label>
                                 <textarea class="form-control" name="reason" id="reason" rows="4" required>Khách hàng yêu cầu hủy</textarea>
                             </div>
-                            <div class="alert alert-warning">
+                            <div class="alert alert-warning mb-0">
                                 Hủy đơn sẽ hoàn số lượng về kho ngay lập tức.
                             </div>
                           </div>
@@ -132,9 +142,7 @@
                     </form>
                 <% } %>
 
-                <%-- FORM UPDATE CHUNG --%>
                 <%
-                    // Cho update khi Pending/Paid/Processing (Shipping & các trạng thái khác: khóa)
                     boolean allowUpdate = (isPending || isPaid || isProcessing);
                 %>
                 <% if (userRole == 1 || userRole == 2) { %>
@@ -147,34 +155,32 @@
                                 <select name="orderStatusID" id="orderStatus" class="form-select" onchange="handleStatusChange()">
                                     <option value="" disabled selected>-- Update status --</option>
                                     <%
-                                        for (OrderStatus st : orderStatusList) {
-                                            int id = st.getOrderStatusID();
-                                            String label = st.getStatusName();
-                                            boolean show = false;
+                                        if (orderStatusList != null) {
+                                            for (OrderStatus st : orderStatusList) {
+                                                int id = st.getOrderStatusID();
+                                                String label = st.getStatusName();
+                                                boolean show = false;
 
-                                            // Pending/Paid -> chỉ Processing (2) ở dropdown (Canceled dùng nút riêng)
-                                            if ((isPending || isPaid) && id == 2) {
-                                                show = true; label = "Order confirmed (Move to processing)";
-                                            }
-
-                                            // Processing -> Shipping (3) | Completed (5: customer return)
-                                            if (isProcessing && (id == 3 || id == 5)) {
-                                                show = true;
-                                                if (id == 3) label = "Move to shipping";
-                                                if (id == 5) label = "Customer returned the item (Complete)";
-                                            }
-
-                                            if (show) {
+                                                if ((isPending || isPaid) && id == 2) { // -> Processing
+                                                    show = true; label = "Order confirmed (Move to processing)";
+                                                }
+                                                if (isProcessing && (id == 3 || id == 5)) { // -> Shipping | Completed (return)
+                                                    show = true;
+                                                    if (id == 3) label = "Move to shipping";
+                                                    if (id == 5) label = "Customer returned the item (Complete)";
+                                                }
+                                                if (show) {
                                     %>
                                         <option value="<%= id %>"><%= label %></option>
                                     <%
+                                                }
                                             }
                                         }
                                     %>
                                 </select>
                             </div>
 
-                            <div class="mt-3" id="return-reason-box" style="display: none;">
+                            <div class="mt-3" id="return-reason-box" style="display:none;">
                                 <input type="hidden" name="returnReason" value="Người dùng hoàn hàng"/>
                                 <div class="alert alert-info mb-0">
                                     Completing due to customer return. Inventory will be restocked.
@@ -197,25 +203,35 @@
                 <thead class="table-light">
                     <tr>
                         <th>Product Name</th>
-                        <th>Quantity</th>
-                        <th>Total Price</th>
+                        <th class="text-end">Quantity</th>
+                        <th class="text-end">Total Price</th>
                     </tr>
                 </thead>
                 <tbody>
-                <% for (OrderDetail od : orderDetailList) { %>
+                <%
+                    if (orderDetailList != null && !orderDetailList.isEmpty()) {
+                        for (OrderDetail od : orderDetailList) {
+                %>
                     <tr>
                         <td><%= od.getOrderName() %></td>
-                        <td><%= od.getQuantity() %></td>
-                        <td><%= od.getTotalPrice() %></td>
+                        <td class="text-end"><%= od.getQuantity() %></td>
+                        <td class="text-end"><%= moneyFmt.format(od.getTotalPrice()) %> ₫</td>
                     </tr>
-                <% } %>
+                <%
+                        }
+                    } else {
+                %>
+                    <tr><td colspan="3" class="text-center muted">No items found.</td></tr>
+                <%
+                    }
+                %>
                 </tbody>
             </table>
         </div>
 
         <div class="mt-4">
-            <h5>Total Price: <%= order.getTotalPrice() %></h5>
-            <h5>Final Price (after discount): <%= order.getFinalPrice() %></h5>
+            <h5>Total Price: <%= moneyFmt.format(order.getTotalPrice()) %> ₫</h5>
+            <h5>Final Price (after discount): <%= moneyFmt.format(order.getFinalPrice()) %> ₫</h5>
         </div>
     </div>
 </div>
