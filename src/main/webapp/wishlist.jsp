@@ -30,7 +30,7 @@
     <div class="ms-3 flex-grow-1">
         <div><%= p.getProductName() %></div>
         <div class="d-flex align-items-center mt-2">
-            <!-- Nút gi?m quantity -->
+            <!-- N t gi?m quantity -->
             <form method="post" action="<%= context %>/Wishlist" style="display:inline;">
                 <input type="hidden" name="action" value="decreaseQty">
                 <input type="hidden" name="wishlistID" value="<%= w.getWishlistID() %>">
@@ -39,7 +39,7 @@
 
             <span class="mx-2">Qty: <%= w.getQuantity() %></span>
 
-            <!-- Nút t?ng quantity -->
+            <!-- N t t?ng quantity -->
             <form method="post" action="<%= context %>/Wishlist" style="display:inline;">
                 <input type="hidden" name="action" value="increaseQty">
                 <input type="hidden" name="wishlistID" value="<%= w.getWishlistID() %>">
