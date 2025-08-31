@@ -93,6 +93,17 @@ session = request.getSession(false);
 
 <!-- Orders With Feedback -->
 <div class="tab-pane fade <%= "with-feedback".equals(request.getAttribute("activeTab")) ? "show active" : "" %>" id="with-feedback">
+
+    <%-- Hiển thị thông báo thành công khi viết feedback xong --%>
+    <%
+        String successMsg = (String) session.getAttribute("successMsg");
+        if (successMsg != null) {
+    %>
+        <div class="alert alert-success"><%= successMsg %></div>
+    <%
+            session.removeAttribute("successMsg"); // để reload không hiện lại nữa
+        }
+    %>
     <table class="table table-bordered">
         <thead class="table-secondary">
             <tr>
