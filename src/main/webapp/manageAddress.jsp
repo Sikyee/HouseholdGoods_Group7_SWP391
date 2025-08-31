@@ -133,7 +133,7 @@
                 transition: border-color 0.3s ease;
             }
 
-            .address-page input:focus, .address-page textarea:focus {
+            .address-page input:focus, .address-page textarea:focus, .address-page select:focus {
                 outline: none;
                 border-color: #3498db;
                 box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
@@ -296,7 +296,7 @@
                 display: block;
             }
 
-            .address-page input.error, .address-page textarea.error {
+            .address-page input.error, .address-page textarea.error, .address-page select.error {
                 border-color: #e74c3c;
                 background-color: #fdf2f2;
             }
@@ -557,10 +557,13 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label>Address Type</label>
-                                        <input type="text" name="addressType" 
-                                               value="<%= editAddress.getAddressType() != null ? editAddress.getAddressType() : ""%>" 
-                                               placeholder="e.g., Home, Office, etc.">
+                                        <label for="editAddressType">Address Type</label>
+                                        <select name="addressType" id="editAddressType" class="form-control">
+                                            <option value="">Select address type</option>
+                                            <option value="Home" <%= "Home".equals(editAddress.getAddressType()) ? "selected" : "" %>>Home</option>
+                                            <option value="Office" <%= "Office".equals(editAddress.getAddressType()) ? "selected" : "" %>>Office</option>
+                                            <option value="Home Friend" <%= "Home Friend".equals(editAddress.getAddressType()) ? "selected" : "" %>>Friend's House</option>
+                                        </select>
                                     </div>
 
                                     <div class="form-group">
@@ -740,7 +743,7 @@
 
             function clearErrors() {
                 const errorElements = document.querySelectorAll('.error-message');
-                const fieldElements = document.querySelectorAll('input, textarea');
+                const fieldElements = document.querySelectorAll('input, textarea, select');
 
                 errorElements.forEach(el => {
                     el.classList.remove('show');
