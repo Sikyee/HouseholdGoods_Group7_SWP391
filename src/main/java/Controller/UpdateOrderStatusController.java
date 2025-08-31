@@ -1,18 +1,18 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package Controller;
 
-import DAO.OrderDAO;
 import DAO.CancelReasonDAO;
+import DAO.OrderDAO;
 import Model.CancelReason;
 import Model.OrderInfo;
+import Model.User;
 
-import jakarta.servlet.*;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
-
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
 /**
@@ -31,31 +31,45 @@ public class UpdateOrderStatusController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session = request.getSession();
-        Integer role = (Integer) session.getAttribute("role");
-        Integer userID = (Integer) session.getAttribute("userID");
-
-        // Chỉ cho Admin (1) hoặc Staff (2)
-        if (role == null || (role != 1 && role != 2) || userID == null) {
+        // Dùng session hiện có; nếu không có thì yêu cầu đăng nhập
+        HttpSession session = request.getSession(false);
+        if (session == null) {
             response.sendRedirect("login.jsp");
             return;
         }
 
+        // JSP đang lưu user vào session với key "user"
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            response.sendRedirect("login.jsp");
+            return;
+        }
+
+        // Chỉ cho Admin(1) hoặc Staff(2)
+        int roleId = user.getRoleID();
+        String orderIdParam = request.getParameter("orderID");
+        if (roleId != 1 && roleId != 2) {
+            String back = (orderIdParam != null && !orderIdParam.isEmpty())
+                    ? ("order-detail?orderID=" + orderIdParam + "&err=forbidden")
+                    : "order.jsp";
+            response.sendRedirect(back);
+            return;
+        }
+
         try {
-            int orderID = Integer.parseInt(request.getParameter("orderID"));
+            int orderID = Integer.parseInt(orderIdParam);
             int newStatus = Integer.parseInt(request.getParameter("orderStatusID"));
 
             OrderDAO orderDAO = new OrderDAO();
 
-            // Lấy trạng thái hiện tại để biết có phải Paid trước đó không
+            // Lấy trạng thái hiện tại (để biết trước đó có phải Paid hay không)
             OrderInfo oi = orderDAO.getOrderByID(orderID);
             int oldStatus = (oi != null ? oi.getOrderStatusID() : 0);
 
-            String flash = null;
+            String flash;
 
             switch (newStatus) {
-                case 6: { // Cancelled
-                    // Lưu lý do nếu có (vd: Out of stock)
+                case 6: { // Cancelled + hoàn kho
                     String reason = request.getParameter("cancelReason");
                     if (reason != null && !reason.trim().isEmpty()) {
                         try {
@@ -67,8 +81,7 @@ public class UpdateOrderStatusController extends HttpServlet {
                     flash = ok ? "Order cancelled and items restocked." : "Cancel failed or already cancelled.";
                     break;
                 }
-                case 5: { // Completed do khách trả hàng (từ Processing)
-                    // Lưu lý do trả hàng
+                case 5: { // Completed do khách trả hàng (từ Processing) + hoàn kho
                     String returnReason = request.getParameter("returnReason");
                     if (returnReason == null || returnReason.trim().isEmpty()) {
                         returnReason = "Customer returned the item.";
@@ -80,11 +93,9 @@ public class UpdateOrderStatusController extends HttpServlet {
 
                     boolean ok = orderDAO.completeReturnAndRestock(orderID);
                     if (ok) {
-                        if (oldStatus == 7) {
-                            flash = "Return completed. Inventory restocked and payment refunded.";
-                        } else {
-                            flash = "Return completed. Inventory restocked.";
-                        }
+                        flash = (oldStatus == 7)
+                                ? "Return completed. Inventory restocked and payment refunded."
+                                : "Return completed. Inventory restocked.";
                     } else {
                         flash = "Complete return failed (order must be in Processing).";
                     }
@@ -92,8 +103,8 @@ public class UpdateOrderStatusController extends HttpServlet {
                 }
                 case 2: // Processing
                 case 3: // Shipping
-                case 4: // Delivered (không nên set tay ở UI, nhưng vẫn handle cho an toàn)
-                case 7: // Paid (hiếm khi update tay)
+                case 4: // Delivered
+                case 7: // Paid
                 case 1: // Pending
                 default: {
                     orderDAO.updateOrderStatus(orderID, newStatus);
@@ -102,6 +113,7 @@ public class UpdateOrderStatusController extends HttpServlet {
                     else if (newStatus == 4) flash = "Marked as Delivered.";
                     else if (newStatus == 7) flash = "Marked as Paid.";
                     else if (newStatus == 1) flash = "Back to Pending.";
+                    else                      flash = "Order status updated.";
                     break;
                 }
             }

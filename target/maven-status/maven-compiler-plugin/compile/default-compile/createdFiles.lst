@@ -63,6 +63,7 @@ DAO\OrderDAO.class
 Model\SubCategory.class
 Model\Product.class
 DAO\ReplyFeedbackDAO.class
+Controller\AddressController.class
 Model\ProductAttribute.class
 Controller\CartController.class
 Controller\UpdateUserController.class
