@@ -134,15 +134,21 @@ public class WriteFeedbackController extends HttpServlet {
         fb.setRating(rating);
         fb.setComment(comment.trim());
 
-        boolean success = dao.insertFeedback(fb);
-        if (success) {
-            request.setAttribute("success", "Your feedback has been submitted successfully!");
-        } else {
-            request.setAttribute("error", "Failed to submit feedback. Please try again.");
-        }
+ boolean success = dao.insertFeedback(fb);
+if (success) {
+    // Lưu message vào session
+     session = request.getSession();
+    session.setAttribute("successMsg", "Feedback submitted successfully!");
 
-        OrderDetail od = dao.getOrderDetailByID(orderDetailID);
-        request.setAttribute("orderDetail", od);
-        request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
+    // Redirect về tab reviewed
+    response.sendRedirect(request.getContextPath() + "/ViewFeedbackOrders?tab=with-feedback");
+    return;
+} else {
+    request.setAttribute("error", "Failed to submit feedback. Please try again.");
+    OrderDetail od = dao.getOrderDetailByID(orderDetailID);
+    request.setAttribute("orderDetail", od);
+    request.getRequestDispatcher("writeFeedback.jsp").forward(request, response);
+}
+
     }
 }
